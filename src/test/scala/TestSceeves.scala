@@ -73,12 +73,16 @@ class ExampleSceeves extends FunSuite with Sceeves {
     val s = sudoku(input); 
     for (i <- 0 until N)
       println(s(i).map(concretize(_)).toList.mkString("["," ","]"))   
+  }
+
+  ignore ("sudoku performance") {
+    val PROBLEMS = 10;
 
     // measure average time
     import scala.io.Source
     val source = Source.fromURL(getClass.getResource("/sudoku17.txt"));
 
-    val result = (for (l <- source.getLines.take(3);         
+    val result = (for (l <- source.getLines.take(PROBLEMS);         
          start = System.currentTimeMillis;
          s = sudoku(l);
          end = System.currentTimeMillis)
