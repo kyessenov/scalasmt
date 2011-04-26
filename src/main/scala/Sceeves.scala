@@ -31,6 +31,7 @@ trait Sceeves {
       for (v <- vs) SMT.assignDefault(v)
       // clean environment
       for (f <- CONSTRAINTS) assert (f.eval);
+      for (v <- VARS) assert (v.assigned);
       CONSTRAINTS = Nil;
       VARS = Nil;
     }
