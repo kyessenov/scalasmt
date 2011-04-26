@@ -64,7 +64,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
          mj <- 0 until M)
       distinct(for (i <- 0 until M; j <- 0 until M) yield s(M*mi + i)(M*mj + j))
     
-    assume (input.length == N * N);
+    assert (input.length == N * N);
     for (i <- 0 until N; 
          j <- 0 until N;
          c = input(i*N + j);
