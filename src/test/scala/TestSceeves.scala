@@ -31,7 +31,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
     val x = defer (_ > 0);
     val y = defer (_ > 0);
     val z = defer (_ > 0);
-    assert(x + y + z === 3);
+    assume(x + y + z === 3);
     expect(1) {concretize(x)};
     expect(1) {concretize(y)};
     expect(1) {concretize(z)}; 
@@ -51,7 +51,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
     for (i <- 0 until N; j <- 0 until N) s(i)(j) = defer (x => x > 0 && x <= N)
     
     def distinct(vs: Traversable[Var]) =
-      for (vs1 <- vs; vs2 <- vs; if (vs1 != vs2)) assert ( ! (vs1 === vs2))
+      for (vs1 <- vs; vs2 <- vs; if (vs1 != vs2)) assume ( ! (vs1 === vs2))
 
     // all rows are distinct
     for (i <- 0 until N) distinct(s(i))
@@ -64,7 +64,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
          mj <- 0 until M)
       distinct(for (i <- 0 until M; j <- 0 until M) yield s(M*mi + i)(M*mj + j))
     
-    assert (input.length == N * N);
+    assume (input.length == N * N);
     for (i <- 0 until N; 
          j <- 0 until N;
          c = input(i*N + j);
@@ -99,5 +99,30 @@ class ExampleSceeves extends FunSuite with Sceeves {
 
     println (result.size + " problems");
     println (result.mkString("[", " ", "]") + " time");
+  }
+
+  test ("graph coloring") {
+    case class Node(name: String);
+    case class Edge(from: Node, to: Node)
+    case class Graph(edges: Traversable[Edge], nodes: Traversable[Node])
+
+    def color(k: Int, g: Graph) = {
+      val c = Map() ++ g.nodes.map(n => (n, defer {c => c >= 0 && c < k}));
+      for (e <- g.edges) 
+        assume (c(e.from) !== c(e.to));  
+      g.nodes.map(n => concretize(c(n)));
+    }
+
+    val a = Node("a");
+    val b = Node("b");
+    val c = Node("c");
+    val ab = Edge(a, b);
+    val bc = Edge(b, c);
+    val ca = Edge(c, a);
+    val g = Graph(ab :: bc :: ca :: Nil, a :: b :: c :: Nil)
+
+    expect(Set(0,1,2)) {
+      color(3,g).toSet;
+    }
   }
 }

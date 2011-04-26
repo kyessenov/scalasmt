@@ -11,7 +11,9 @@ object SMT {
   var Z3_PATH = "/home/kuat/opt/z3/bin/z3"
   var Z3_COMMANDS ="-smtc" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
   var DEFAULT = 0
-   
+  var PRINT_INPUT = false;
+  var PRINT_OUTPUT = false;  
+
   private def smtlib(f: Formula): String = f match {
     case And(a,b) => "(and " + smtlib(a) + " " + smtlib(b) + ")"
     case Or(a,b) => "(or " + smtlib(a) + " " + smtlib(b) + ")"
@@ -72,15 +74,16 @@ object SMT {
     val p = pb.start;
     val os = new BufferedWriter(new OutputStreamWriter(p.getOutputStream));
     for (l <- input) os.write(l);
+    if (PRINT_INPUT) for (l <- input) println(l);
     os.close;
     
     val is = new BufferedReader(new InputStreamReader(p.getInputStream));
     var line: String = is.readLine;
     var output:List[String] = Nil;
     while (line != null) {
+      if (PRINT_OUTPUT) println(line);
       output = line :: output;
       line = is.readLine;
-      //println(line);
     }
     is.close;
 

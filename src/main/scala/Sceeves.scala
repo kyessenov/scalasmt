@@ -20,13 +20,6 @@ trait Sceeves {
     x
   }
     
-  def defer(spec: (Var, Var) => Formula): (Var, Var) = {
-    val x = mkVar;
-    val y = mkVar;
-    mkConstraint(spec(x, y));
-    (x, y);
-  }
-
   private def solve {
     val vs = VARS.filter(! _.assigned);
     // relevant constraints
@@ -48,7 +41,11 @@ trait Sceeves {
     e.eval;
   }
 
-  def assert(f: Formula) {
+  /**
+   * Avoid using assert keyword since implicit conversion from boolean does not play
+   * well.
+   */
+  def assume(f: Formula) {
     mkConstraint(f);
   }
 }
