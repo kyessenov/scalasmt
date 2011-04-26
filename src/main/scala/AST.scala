@@ -8,8 +8,8 @@ sealed abstract class Formula {
   def &&(that: Formula) = And(this, that)
   def ||(that: Formula) = Or(this, that)
   // TODO: what is the precedence?
-  // def |=> (that: Formula) = Or(Not(this), that)
-  def ===(that: Formula) = this && that || ! this && ! that;
+  def ==> (that: Formula) = Or(Not(this), that)
+  def ===(that: Formula) = (this && that) || (! this && ! that);
   def unary_! = Not(this)
 
   def vars: Set[Var] = this match {
@@ -55,6 +55,7 @@ case object FalseF extends Atomic
 // expressions
 sealed abstract class Expr {
   def ===(that: Expr) = Eq(this, that)
+  def !==(that: Expr) = ! (this === that)
   def <=(that: Expr) = Leq(this, that)
   def >=(that: Expr) = Geq(this, that)
   def <(that: Expr) = LT(this, that)

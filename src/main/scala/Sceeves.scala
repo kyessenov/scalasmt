@@ -27,24 +27,24 @@ trait Sceeves {
     (x, y);
   }
 
-  private def solve (v: Traversable[Var]) {
-    val vs = v.filter(! _.assigned);
-    for (v <- vs) assert (VARS contains v);
+  private def solve {
+    val vs = VARS.filter(! _.assigned);
     // relevant constraints
-    val vcs = CONSTRAINTS.filter(c => vs.exists(v => c.vars contains v)).reverse; 
-    val f = vcs.foldLeft(TrueF: Formula)((f, vs) => f && vs);
-    // solve
-    SMT.solve(f);
-    // assign default value
-    for (v <- vs) SMT.assignDefault(v)
-    // clean environment
-    for (f <- CONSTRAINTS) assert (f.eval);
-    CONSTRAINTS = Nil;
-    VARS = Nil;
+    if (CONSTRAINTS.size > 0) {
+      val f = CONSTRAINTS.reverse.reduceLeft((f, vs) => f && vs);
+      // solve
+      SMT.solve(f);
+      // assign default value
+      for (v <- vs) SMT.assignDefault(v)
+      // clean environment
+      for (f <- CONSTRAINTS) assert (f.eval);
+      CONSTRAINTS = Nil;
+      VARS = Nil;
+    }
   }
 
   def concretize(e: Expr) = {
-    solve(VARS);
+    solve;
     e.eval;
   }
 

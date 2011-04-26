@@ -3,7 +3,10 @@ package cap.scalasmt
 // translator to SMT expressions
 // TODO: use dynamic linking library (as soon as x64 JNI issue is resolved)
 // TODO: avoid the cost of the process creation
+
 object SMT {
+  object UnsatException extends RuntimeException("model is not satisfiable")
+
   var TIMEOUT = 10
   var Z3_PATH = "/home/kuat/opt/z3/bin/z3"
   var Z3_COMMANDS ="-smtc" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
@@ -92,7 +95,7 @@ object SMT {
     var nextsat :: middle = rest.reverse;
     var model = middle.reverse.mkString("","","");
     if (sat != "sat") {
-      throw new RuntimeException("formula is not satisfiable")
+      throw UnsatException
     }
     if (nextsat == "sat") 
       println("Warning: there are more than one possible assignments")    

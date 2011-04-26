@@ -6,22 +6,31 @@ import org.scalatest.Assertions.{expect}
 
 class ExampleSceeves extends FunSuite with Sceeves {
   test ("defer") {
-    val x = defer (x => x === 1);
+    val x = defer (_ === 1);
     expect(1) {concretize(x)};
     expect(1) {concretize(x)};
   }
 
+  test ("unsatisfiable") {
+    new Sceeves {
+      val x = defer (_ => false);
+      intercept[SMT.UnsatException.type] {
+        println(concretize(x));
+      }
+    }
+  }
+
   test ("defer 2") {
-    val y = defer (y => y > 0);
+    val y = defer (_ > 0);
     val z = defer (z => y === z && z === 1);
     expect(1) {concretize(z)};
     expect(1) {concretize(y)};
   }
 
   test ("defer many") {
-    val x = defer (x => x > 0);
-    val y = defer (y => y > 0);
-    val z = defer (z => z > 0);
+    val x = defer (_ > 0);
+    val y = defer (_ > 0);
+    val z = defer (_ > 0);
     assert(x + y + z === 3);
     expect(1) {concretize(x)};
     expect(1) {concretize(y)};
@@ -29,7 +38,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
   }
 
   test ("conditional") {
-    val x = defer (x => x > 1337);
+    val x = defer (_ > 1337);
     val y: Expr = IF (x > 1337) {1} ELSE {0};
     expect(1) {concretize(y)};
   }
