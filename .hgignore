@@ -1,0 +1,11 @@
+syntax:glob
+target
+lib_managed
+src_managed
+project/boot
+servlet/build
+*.iml
+.idea
+var
+*.class
+.DS_Store
