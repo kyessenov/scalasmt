@@ -41,7 +41,7 @@ case class Or(left: Formula, right: Formula = FalseF) extends BinaryFormula
 case class Not(sub: Formula) extends Formula
 // atomic formulas
 sealed abstract class Atomic extends Formula 
-trait BinaryAtomic extends Atomic {
+sealed abstract class BinaryAtomic extends Atomic {
   def left: Expr;
   def right: Expr;
 }
@@ -55,21 +55,8 @@ case object TrueF extends Atomic
 case object FalseF extends Atomic
 // expressions
 sealed abstract class Expr {
-  def vars: Set[Var] = this match {
-    case c: BinaryExpr => c.left.vars ++ c.right.vars;
-    case IfThenElse(cond, thn, els) => cond.vars ++ thn.vars ++ els.vars;
-    case v: Var => Set(v)
-    case n: Num => Set()
-  }
-  def eval: Int = this match { 
-    case Plus(l, r) => l.eval + r.eval;
-    case Minus(l, r) => l.eval - r.eval;
-    case Times(l, r) => l.eval * r.eval;
-    case IfThenElse(cond, thn, els) => if (cond.eval) thn.eval else els.eval;
-    case Num(i) => i
-    case v: Var => v.value
-  }
-}
+  def vars: Set[Var]
+} 
 sealed abstract class IntExpr extends Expr {
   def ===(that: IntExpr) = Eq(this, that)
   def !==(that: IntExpr) = ! (this === that)
@@ -81,20 +68,46 @@ sealed abstract class IntExpr extends Expr {
   def +(that: IntExpr) = Plus(this, that)
   def -(that: IntExpr) = Minus(this, that)
   def *(that: IntExpr) = Times(this, that)
+
+  override def vars = this match {
+    case c: BinaryIntExpr => c.left.vars ++ c.right.vars;
+    case IfThenElse(cond, thn, els) => cond.vars ++ thn.vars ++ els.vars;
+    case v: IntVar => Set(v)
+    case n: Num => Set()
+  }
+  def eval: Int = this match { 
+    case Plus(l, r) => l.eval + r.eval;
+    case Minus(l, r) => l.eval - r.eval;
+    case Times(l, r) => l.eval * r.eval;
+    case IfThenElse(cond, thn, els) => if (cond.eval) thn.eval else els.eval;
+    case Num(i) => i
+    case v: IntVar => v.value
+  }
 }
-trait BinaryExpr extends Expr {
+sealed abstract class BinaryIntExpr extends IntExpr {
   def left: Expr;
   def right: Expr;
 }
-case class Plus(left: Expr, right: Expr) extends IntExpr with BinaryExpr
-case class Minus(left: Expr, right: Expr) extends IntExpr with BinaryExpr
-case class Times(left: Expr, right: Expr) extends IntExpr with BinaryExpr
+case class Plus(left: IntExpr, right: IntExpr) extends BinaryIntExpr
+case class Minus(left: IntExpr, right: IntExpr) extends BinaryIntExpr
+case class Times(left: IntExpr, right: IntExpr) extends BinaryIntExpr
 case class IfThenElse(cond: Formula, thn: IntExpr, els: IntExpr) extends IntExpr
 case class Num(i: Int) extends IntExpr
-// invariant: only one Var for every id
-case class Var private(id: Int) extends IntExpr {
-  override def toString = "var" + id
-  def copy: Var = throw new RuntimeException;
+trait Var {
+  def id: Int;
+  def assigned: Boolean;
+}
+// invariant: one var per id
+object IntVar {
+  private var COUNTER = 0;
+  def make = {
+    COUNTER = COUNTER + 1;
+    IntVar(COUNTER);
+  }
+}
+case class IntVar private(id: Int) extends IntExpr with Var {
+  override def toString = "ivar" + id;
+  def copy: IntVar = throw new RuntimeException;
 
   private var rep: Option[Int] = None
   def assigned = rep.isDefined
@@ -105,13 +118,6 @@ case class Var private(id: Int) extends IntExpr {
   def value = rep match {
     case Some(i) => i;
     case None => throw new RuntimeException("no value assigned to " + this);
-  }
-}
-object Var {
-  private var COUNTER = 0;
-  def make = {
-    COUNTER = COUNTER + 1;
-    Var(COUNTER);
   }
 }
 

@@ -5,32 +5,32 @@ import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
 
 class ExampleSceeves extends FunSuite with Sceeves {
-  test ("defer") {
-    val x = defer (_ === 1);
+  test ("pick") {
+    val x = pick (_ === 1);
     expect(1) {concretize(x)};
     expect(1) {concretize(x)};
   }
 
   test ("unsatisfiable") {
     new Sceeves {
-      val x = defer (_ => false);
+      val x = pick (_ => false);
       intercept[SMT.UnsatException.type] {
         println(concretize(x));
       }
     }
   }
 
-  test ("defer 2") {
-    val y = defer (_ > 0);
-    val z = defer (z => y === z && z === 1);
+  test ("pick 2") {
+    val y = pick (_ > 0);
+    val z = pick (z => y === z && z === 1);
     expect(1) {concretize(z)};
     expect(1) {concretize(y)};
   }
 
-  test ("defer many") {
-    val x = defer (_ > 0);
-    val y = defer (_ > 0);
-    val z = defer (_ > 0);
+  test ("pick many") {
+    val x = pick (_ > 0);
+    val y = pick (_ > 0);
+    val z = pick (_ > 0);
     assume(x + y + z === 3);
     expect(1) {concretize(x)};
     expect(1) {concretize(y)};
@@ -38,7 +38,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
   }
 
   test ("conditional") {
-    val x = defer (_ > 1337);
+    val x = pick (_ > 1337);
     val y: Expr = IF (x > 1337) {1} ELSE {0};
     expect(1) {concretize(y)};
   }
@@ -47,10 +47,10 @@ class ExampleSceeves extends FunSuite with Sceeves {
   val N = M * M;
  
   def sudoku(input: String) = {
-    val s = Array.ofDim[Var](N,N);
-    for (i <- 0 until N; j <- 0 until N) s(i)(j) = defer (x => x > 0 && x <= N)
+    val s = Array.ofDim[IntVar](N,N);
+    for (i <- 0 until N; j <- 0 until N) s(i)(j) = pick (x => x > 0 && x <= N)
     
-    def distinct(vs: Traversable[Var]) =
+    def distinct(vs: Traversable[IntVar]) =
       for (vs1 <- vs; vs2 <- vs; if (vs1 != vs2)) assume ( ! (vs1 === vs2))
 
     // all rows are distinct
@@ -107,7 +107,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
     case class Graph(edges: Traversable[Edge], nodes: Traversable[Node])
 
     def color(k: Int, g: Graph) = {
-      val c = Map() ++ g.nodes.map(n => (n, defer {c => c >= 0 && c < k}));
+      val c = Map() ++ g.nodes.map(n => (n, pick {c => c >= 0 && c < k}));
       for (e <- g.edges) 
         assume (c(e.from) !== c(e.to));  
       g.nodes.map(n => concretize(c(n)));

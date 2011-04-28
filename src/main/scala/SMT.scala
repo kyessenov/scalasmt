@@ -33,7 +33,7 @@ object SMT {
     case Times(a,b) => "(* " + smtlib(a) + " " + smtlib(b) + ")"
     case IfThenElse(c,a,b) => "(if " + smtlib(c) + " " + smtlib(a) + " " + smtlib(b) + ")"
     case Num(i) => i.toString
-    case v: Var =>
+    case v: IntVar =>
       if (v.assigned)
         v.value.toString
       else 
@@ -111,12 +111,12 @@ object SMT {
     val defs = defines.split("\\(define |\\)\\s*");
     for (d <- defs; if d.size > 0) {
       val List(vr,vl) = d.split("var|\\s").toList.drop(1).map(_.toInt)
-      for (v @ Var(i) <- vs; if i == vr) 
+      for (v @ IntVar(i) <- vs; if i == vr)  
         v.value = vl;
     }
   }
 
-  def assignDefault(v: Var): Int = {
+  def assignDefault(v: IntVar): Int = {
     if (! v.assigned)
       v.value = 0;
     v.value;

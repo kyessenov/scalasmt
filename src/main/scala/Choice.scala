@@ -6,15 +6,15 @@ package cap.scalasmt
 object ChoiceStmt {
   import SMT._
 
-  def choose(spec: Var => Formula): Int = {
-    val x = Var.make;
+  def choose(spec: IntVar => Formula): Int = {
+    val x = IntVar.make;
     solve(spec(x))
     assignDefault(x)
   }
 
-  def choose(spec: (Var, Var) => Formula): (Int, Int) = {
-    val x = Var.make;
-    val y = Var.make;
+  def choose(spec: (IntVar, IntVar) => Formula): (Int, Int) = {
+    val x = IntVar.make;
+    val y = IntVar.make;
     solve(spec(x, y))
     (assignDefault(x), assignDefault(y))
   }

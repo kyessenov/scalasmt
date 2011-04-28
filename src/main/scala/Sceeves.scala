@@ -5,7 +5,7 @@ trait Sceeves {
   private var VARS: List[Var] = Nil
 
   private def mkVar = {    
-    val v = Var.make;
+    val v = IntVar.make;
     VARS = v :: VARS;
     v
   }
@@ -14,12 +14,6 @@ trait Sceeves {
     CONSTRAINTS = f :: CONSTRAINTS
   }
 
-  def defer(spec: Var => Formula): Var = {
-    val x = mkVar;
-    mkConstraint(spec(x));
-    x
-  }
-    
   private def solve {
     val vs = VARS.filter(! _.assigned);
     // relevant constraints
@@ -28,7 +22,7 @@ trait Sceeves {
       // solve
       SMT.solve(f);
       // assign default value
-      for (v <- vs) SMT.assignDefault(v)
+      for (v @ IntVar(_) <- vs) SMT.assignDefault(v)
       // clean environment
       for (f <- CONSTRAINTS) assert (f.eval);
       for (v <- VARS) assert (v.assigned);
@@ -37,9 +31,17 @@ trait Sceeves {
     }
   }
 
+  def pick(spec: IntVar => Formula): IntVar = {
+    val x = mkVar;
+    mkConstraint(spec(x));
+    x
+  }
+    
   def concretize(e: Expr) = {
     solve;
-    e.eval;
+    e match {
+      case e: IntExpr => e.eval;
+    }
   }
 
   /**
