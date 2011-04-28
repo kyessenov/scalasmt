@@ -9,7 +9,7 @@ object SMT {
 
   var TIMEOUT = 10
   var Z3_PATH = "/home/kuat/opt/z3/bin/z3"
-  var Z3_COMMANDS ="-smtc" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
+  var Z3_COMMANDS ="-smt2" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
   var DEFAULT = 0
   var PRINT_INPUT = false;
   var PRINT_OUTPUT = false;  
@@ -46,8 +46,10 @@ object SMT {
     case _ => 
       "(assert " + smtlib(f) + ")" :: Nil
   }
-
+  
+  /** Follow SMT-LIB 2 format */
   private def smt(vs: List[Var], f: Formula): List[String] = {
+    "(set-logic QF_NIA)" ::
     "(declare-funs (" ::
     (for (v <- vs) yield "  (" + v + " Int) ") :::
     "))" ::
@@ -110,7 +112,12 @@ object SMT {
     val defines = model.substring(PREFIX.size, model.size - SUFFIX.size);
     val defs = defines.split("\\(define |\\)\\s*");
     for (d <- defs; if d.size > 0) {
-      val List(vr,vl) = d.split("var|\\s").toList.drop(1).map(_.toInt)
+      val List(vr,vl) = d.split("var|\\s").toList.drop(1).map{s =>
+        val out = s.toInt;
+        if (s != out.toString)
+          println("Warning: value " + s + " is rounded by converting to Int")
+        out
+      }
       for (v @ IntVar(i) <- vs; if i == vr)  
         v.value = vl;
     }
