@@ -13,9 +13,9 @@ sealed abstract class Formula {
   def unary_! = Not(this)
 
   def vars: Set[Var] = this match {
-    case c: CompositeFormula => c.left.vars ++ c.right.vars
+    case c: BinaryFormula => c.left.vars ++ c.right.vars
     case Not(sub) => sub.vars
-    case c: CompositeAtomic => c.left.vars ++ c.right.vars
+    case c: BinaryAtomic => c.left.vars ++ c.right.vars
     case TrueF => Set()
     case FalseF => Set()     
   }
@@ -32,41 +32,31 @@ sealed abstract class Formula {
     case FalseF => false;
   }  
 }
-sealed abstract class CompositeFormula extends Formula {
+sealed abstract class BinaryFormula extends Formula {
   def left: Formula;
   def right: Formula;
 }
-case class And(left: Formula, right: Formula = TrueF) extends CompositeFormula
-case class Or(left: Formula, right: Formula = FalseF) extends CompositeFormula
+case class And(left: Formula, right: Formula = TrueF) extends BinaryFormula
+case class Or(left: Formula, right: Formula = FalseF) extends BinaryFormula
 case class Not(sub: Formula) extends Formula
 // atomic formulas
 sealed abstract class Atomic extends Formula 
-sealed abstract class CompositeAtomic extends Atomic {
+trait BinaryAtomic extends Atomic {
   def left: Expr;
   def right: Expr;
 }
-case class Eq(left: Expr, right: Expr) extends CompositeAtomic
-case class Leq(left: Expr, right: Expr) extends CompositeAtomic
-case class Geq(left: Expr, right: Expr) extends CompositeAtomic
-case class LT(left: Expr, right: Expr) extends CompositeAtomic
-case class GT(left: Expr, right: Expr) extends CompositeAtomic
+sealed abstract class IntFormula extends BinaryAtomic
+case class Eq(left: IntExpr, right: IntExpr) extends IntFormula
+case class Leq(left: IntExpr, right: IntExpr) extends IntFormula
+case class Geq(left: IntExpr, right: IntExpr) extends IntFormula
+case class LT(left: IntExpr, right: IntExpr) extends IntFormula
+case class GT(left: IntExpr, right: IntExpr) extends IntFormula
 case object TrueF extends Atomic
 case object FalseF extends Atomic
 // expressions
 sealed abstract class Expr {
-  def ===(that: Expr) = Eq(this, that)
-  def !==(that: Expr) = ! (this === that)
-  def <=(that: Expr) = Leq(this, that)
-  def >=(that: Expr) = Geq(this, that)
-  def <(that: Expr) = LT(this, that)
-  def >(that: Expr) = GT(this, that)
-  def unary_- = Minus(Num(0), this)
-  def +(that: Expr) = Plus(this, that)
-  def -(that: Expr) = Minus(this, that)
-  def *(that: Expr) = Times(this, that)
-  
   def vars: Set[Var] = this match {
-    case c: CompositeExpr => c.left.vars ++ c.right.vars;
+    case c: BinaryExpr => c.left.vars ++ c.right.vars;
     case IfThenElse(cond, thn, els) => cond.vars ++ thn.vars ++ els.vars;
     case v: Var => Set(v)
     case n: Num => Set()
@@ -80,17 +70,29 @@ sealed abstract class Expr {
     case v: Var => v.value
   }
 }
-sealed abstract class CompositeExpr extends Expr {
+sealed abstract class IntExpr extends Expr {
+  def ===(that: IntExpr) = Eq(this, that)
+  def !==(that: IntExpr) = ! (this === that)
+  def <=(that: IntExpr) = Leq(this, that)
+  def >=(that: IntExpr) = Geq(this, that)
+  def <(that: IntExpr) = LT(this, that)
+  def >(that: IntExpr) = GT(this, that)
+  def unary_- = Minus(Num(0), this)
+  def +(that: IntExpr) = Plus(this, that)
+  def -(that: IntExpr) = Minus(this, that)
+  def *(that: IntExpr) = Times(this, that)
+}
+trait BinaryExpr extends Expr {
   def left: Expr;
   def right: Expr;
 }
-case class Plus(left: Expr, right: Expr) extends CompositeExpr
-case class Minus(left: Expr, right: Expr) extends CompositeExpr
-case class Times(left: Expr, right: Expr) extends CompositeExpr
-case class IfThenElse(cond: Formula, thn: Expr, els: Expr) extends Expr
-case class Num(i: Int) extends Expr
+case class Plus(left: Expr, right: Expr) extends IntExpr with BinaryExpr
+case class Minus(left: Expr, right: Expr) extends IntExpr with BinaryExpr
+case class Times(left: Expr, right: Expr) extends IntExpr with BinaryExpr
+case class IfThenElse(cond: Formula, thn: IntExpr, els: IntExpr) extends IntExpr
+case class Num(i: Int) extends IntExpr
 // invariant: only one Var for every id
-case class Var private(id: Int) extends Expr {
+case class Var private(id: Int) extends IntExpr {
   override def toString = "var" + id
   def copy: Var = throw new RuntimeException;
 
@@ -121,6 +123,6 @@ object Formula {
   implicit def fromBool(i: Boolean) = if (i) TrueF else FalseF
 }
 object `package` {
-  def IF(cond: Formula)(thn: Expr) = new {def ELSE(els: Expr) = IfThenElse(cond, thn, els)}
+  def IF(cond: Formula)(thn: IntExpr) = new {def ELSE(els: IntExpr) = IfThenElse(cond, thn, els)}
 }
 
