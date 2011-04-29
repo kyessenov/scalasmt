@@ -20,6 +20,16 @@ class ExampleSceeves extends FunSuite with Sceeves {
     }
   }
 
+  test ("overflow") {
+    new Sceeves {
+      val x = pick (_ === Int.MaxValue);
+      val y = pick (_ === x + 1);
+      intercept[java.lang.NumberFormatException] {
+        println(concretize(y));
+      }
+    }
+  }
+
   test ("pick 2") {
     val y = pick (_ > 0);
     val z = pick (z => y === z && z === 1);
@@ -48,21 +58,20 @@ class ExampleSceeves extends FunSuite with Sceeves {
  
   def sudoku(input: String) = {
     val s = Array.ofDim[IntVar](N,N);
-    for (i <- 0 until N; j <- 0 until N) s(i)(j) = pick (x => x > 0 && x <= N)
+    for (i <- 0 until N; j <- 0 until N) 
+      s(i)(j) = pick (x => x > 0 && x <= N)
     
-    def distinct(vs: Traversable[IntVar]) =
-      for (vs1 <- vs; vs2 <- vs; if (vs1 != vs2)) assume ( ! (vs1 === vs2))
-
     // all rows are distinct
-    for (i <- 0 until N) distinct(s(i))
+    for (i <- 0 until N) assume(DISTINCT(s(i)))
 
     // all columns are distinct
-    for (j <- 0 until N) distinct(for (i <- 0 until N) yield s(i)(j))
+    for (j <- 0 until N) assume(DISTINCT(for (i <- 0 until N) yield s(i)(j)))
 
     // all M blocks are distinct
     for (mi <- 0 until M;
          mj <- 0 until M)
-      distinct(for (i <- 0 until M; j <- 0 until M) yield s(M*mi + i)(M*mj + j))
+      assume(DISTINCT(for (i <- 0 until M; j <- 0 until M) 
+                yield s(M*mi + i)(M*mj + j)))
     
     assert (input.length == N * N);
     for (i <- 0 until N; 
@@ -73,6 +82,8 @@ class ExampleSceeves extends FunSuite with Sceeves {
  
     for (i <- 0 until N; j <- 0 until N) concretize(s(i)(j));
 
+    for (i <- 1 to N) 
+      expect(N) {s.map(s => s.count(v => concretize(v) == i)).sum}
     s;
   }
 
@@ -123,6 +134,25 @@ class ExampleSceeves extends FunSuite with Sceeves {
 
     expect(Set(0,1,2)) {
       color(3,g).toSet;
+    }
+  }
+
+  test ("sendmoremoney") {
+    def digit = pick (x => x >= 0 && x <= 9);
+    val vars = (1 to 8).toList.map(_ => digit);
+    val List(s,e,n,d,m,o,r,y) = vars;
+     
+    assume (s !== 0)
+    assume (m !== 0)
+    assume (DISTINCT(vars))
+
+    val send = s*1000 + e*100 + n*10 + d;
+    val more = m*1000 + o*100 + r*10 + e;
+    val money = m*10000 + o*1000 + n*100 + e*10 + y;
+    assume (send + more === money);
+
+    expect (List(9, 5, 6, 7, 1, 0, 8, 2)) {
+      vars.map(concretize(_))
     }
   }
 }

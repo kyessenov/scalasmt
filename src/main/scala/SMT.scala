@@ -112,12 +112,7 @@ object SMT {
     val defines = model.substring(PREFIX.size, model.size - SUFFIX.size);
     val defs = defines.split("\\(define |\\)\\s*");
     for (d <- defs; if d.size > 0) {
-      val List(vr,vl) = d.split("var|\\s").toList.drop(1).map{s =>
-        val out = s.toInt;
-        if (s != out.toString)
-          println("Warning: value " + s + " is rounded by converting to Int")
-        out
-      }
+      val List(vr,vl) = d.split("var|\\s").toList.drop(1).map(_.toInt)
       for (v @ IntVar(i) <- vs; if i == vr)  
         v.value = vl;
     }

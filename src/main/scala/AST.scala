@@ -75,6 +75,7 @@ sealed abstract class IntExpr extends Expr {
     case v: IntVar => Set(v)
     case n: Num => Set()
   }
+  // TODO: make aware of overflow
   def eval: Int = this match { 
     case Plus(l, r) => l.eval + r.eval;
     case Minus(l, r) => l.eval - r.eval;
@@ -127,8 +128,12 @@ object Expr {
 }
 object Formula {
   implicit def fromBool(i: Boolean) = if (i) TrueF else FalseF
+  implicit def fromFormulaList(l: Traversable[Formula]) = 
+    l.foldLeft(TrueF: Formula)((l, f) => l && f)
 }
 object `package` {
   def IF(cond: Formula)(thn: IntExpr) = new {def ELSE(els: IntExpr) = IfThenElse(cond, thn, els)}
+  def DISTINCT(vs: Traversable[IntVar]) = 
+    for (vs1 <- vs; vs2 <- vs; if (vs1 != vs2)) yield ( ! (vs1 === vs2))
 }
 
