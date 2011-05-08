@@ -14,7 +14,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
   test ("unsatisfiable") {
     new Sceeves {
       val x = pick (_ => false);
-      intercept[SMT.UnsatException.type] {
+      intercept[Inconsistent.type] {
         println(concretize(x));
       }
     }
@@ -49,7 +49,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
 
   test ("conditional") {
     val x = pick (_ > 1337);
-    val y: Expr = IF (x > 1337) {1} ELSE {0};
+    val y = (x > 1337) ? 1 ! 0;
     expect(1) {concretize(y)};
   }
 
@@ -154,5 +154,14 @@ class ExampleSceeves extends FunSuite with Sceeves {
     expect (List(9, 5, 6, 7, 1, 0, 8, 2)) {
       vars.map(concretize(_))
     }
+  }
+
+  test ("defaults") {
+    val x = pick(1, _ > 0);
+    expect(1) {concretize(x)}
+
+    val y = pick(1, _ > 0);
+    assume(y === 2);
+    expect(2) {concretize(y)}
   }
 }

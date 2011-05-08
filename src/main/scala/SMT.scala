@@ -10,7 +10,7 @@ object SMT {
   var TIMEOUT = 10
   var Z3_PATH = "/home/kuat/opt/z3/bin/z3"
   var Z3_COMMANDS ="-smt2" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
-  var DEFAULT = 0
+  
   var PRINT_INPUT = false;
   var PRINT_OUTPUT = false;  
 
@@ -31,7 +31,7 @@ object SMT {
     case Plus(a,b) => "(+ " + smtlib(a) + " " + smtlib(b) + ")"
     case Minus(a,b) => "(- " + smtlib(a) + " " + smtlib(b) + ")"
     case Times(a,b) => "(* " + smtlib(a) + " " + smtlib(b) + ")"
-    case IfThenElse(c,a,b) => "(if " + smtlib(c) + " " + smtlib(a) + " " + smtlib(b) + ")"
+    case Ite(c,a,b) => "(if " + smtlib(c) + " " + smtlib(a) + " " + smtlib(b) + ")"
     case Num(i) => i.toString
     case v: IntVar =>
       if (v.assigned)
@@ -71,12 +71,17 @@ object SMT {
     
     // call Z3
     import java.io._
+    import scala.Console.err
     val pb = new ProcessBuilder((Z3_PATH :: Z3_COMMANDS).toArray: _*);
     pb.redirectErrorStream(true);
     val p = pb.start;
+
     val os = new BufferedWriter(new OutputStreamWriter(p.getOutputStream));
-    for (l <- input) os.write(l);
-    if (PRINT_INPUT) for (l <- input) println(l);
+    for (l <- input) {
+      os.write(l);
+      if (PRINT_INPUT) 
+        println(l);
+    }
     os.close;
     
     val is = new BufferedReader(new InputStreamReader(p.getInputStream));
@@ -92,18 +97,19 @@ object SMT {
     p.destroy;
 
     if (output.size < 2) {
-      println("unexpected output: " + output.reverse);
-      println("on input: " + input);
-      throw new RuntimeException("SMT failed");
+      err.println("unexpected output: " + output.reverse);
+      err.println("on input: " + input);
+      throw new RuntimeException("unexpected output from SMT");
     }
-    var sat :: rest = output.reverse;
-    var nextsat :: middle = rest.reverse;
-    var model = middle.reverse.mkString("","","");
-    if (sat != "sat") {
+    val sat :: rest = output.reverse;
+    val nextsat :: middle = rest.reverse;
+    val model = middle.reverse.mkString("","","");
+
+    if (sat != "sat") 
       throw UnsatException
-    }
+    
     if (nextsat == "sat") 
-      println("Warning: there are more than one possible assignments")    
+      err.println("Warning: there are more than one possible assignments")    
     
     // parse model
     var m: Map[Int, Int] = Map();
@@ -118,9 +124,10 @@ object SMT {
     }
   }
 
+  /** Assign the default value if it is not assigned. */
   def assignDefault(v: IntVar): Int = {
     if (! v.assigned)
-      v.value = 0;
+      v.value = IntVar.DEFAULT;
     v.value;
   }
 }

@@ -7,7 +7,6 @@ package cap.scalasmt
 sealed abstract class Formula {
   def &&(that: Formula) = And(this, that)
   def ||(that: Formula) = Or(this, that)
-  // TODO: what is the precedence?
   def ==> (that: Formula) = Or(Not(this), that)
   def ===(that: Formula) = (this && that) || (! this && ! that);
   def unary_! = Not(this)
@@ -30,7 +29,9 @@ sealed abstract class Formula {
     case GT(l, r) => l.eval > r.eval;
     case TrueF => true;
     case FalseF => false;
-  }  
+  } 
+
+  def ?(thn: IntExpr) = new {def !(els: IntExpr) = Ite(Formula.this, thn, els)}
 }
 sealed abstract class BinaryFormula extends Formula {
   def left: Formula;
@@ -71,7 +72,7 @@ sealed abstract class IntExpr extends Expr {
 
   override def vars = this match {
     case c: BinaryIntExpr => c.left.vars ++ c.right.vars;
-    case IfThenElse(cond, thn, els) => cond.vars ++ thn.vars ++ els.vars;
+    case Ite(cond, thn, els) => cond.vars ++ thn.vars ++ els.vars;
     case v: IntVar => Set(v)
     case n: Num => Set()
   }
@@ -80,7 +81,7 @@ sealed abstract class IntExpr extends Expr {
     case Plus(l, r) => l.eval + r.eval;
     case Minus(l, r) => l.eval - r.eval;
     case Times(l, r) => l.eval * r.eval;
-    case IfThenElse(cond, thn, els) => if (cond.eval) thn.eval else els.eval;
+    case Ite(cond, thn, els) => if (cond.eval) thn.eval else els.eval;
     case Num(i) => i
     case v: IntVar => v.value
   }
@@ -92,7 +93,7 @@ sealed abstract class BinaryIntExpr extends IntExpr {
 case class Plus(left: IntExpr, right: IntExpr) extends BinaryIntExpr
 case class Minus(left: IntExpr, right: IntExpr) extends BinaryIntExpr
 case class Times(left: IntExpr, right: IntExpr) extends BinaryIntExpr
-case class IfThenElse(cond: Formula, thn: IntExpr, els: IntExpr) extends IntExpr
+case class Ite(cond: Formula, thn: IntExpr, els: IntExpr) extends IntExpr
 case class Num(i: Int) extends IntExpr
 trait Var {
   def id: Int;
@@ -100,6 +101,7 @@ trait Var {
 }
 // invariant: one var per id
 object IntVar {
+  val DEFAULT = 0;
   private var COUNTER = 0;
   def make = {
     COUNTER = COUNTER + 1;
@@ -132,7 +134,7 @@ object Formula {
     l.foldLeft(TrueF: Formula)((l, f) => l && f)
 }
 object `package` {
-  def IF(cond: Formula)(thn: IntExpr) = new {def ELSE(els: IntExpr) = IfThenElse(cond, thn, els)}
+  def IF(cond: Formula)(thn: IntExpr) = new {def ELSE(els: IntExpr) = Ite(cond, thn, els)}
   def DISTINCT(vs: Traversable[IntVar]) = 
     for (vs1 <- vs; vs2 <- vs; if (vs1 != vs2)) yield ( ! (vs1 === vs2))
 }
