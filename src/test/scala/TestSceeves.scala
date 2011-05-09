@@ -164,4 +164,19 @@ class ExampleSceeves extends FunSuite with Sceeves {
     assume(y === 2);
     expect(2) {concretize(y)}
   }
+
+  test ("euler") {
+    // problem 9
+    val a = pick(_ > 0);
+    val b = pick(_ > a);
+    val c = pick(_ > b);
+    assume(a + b + c === 1000);
+    assume(a*a + b*b === c*c);
+    assume(a === 200);
+    assume(b === 375);
+    assume(c === 425);
+
+    expect(31875000) {concretize(a*b*c)}
+  }
+
 }
