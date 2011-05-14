@@ -18,7 +18,7 @@ trait Sceeves {
       case SMT.UnsatException => None
     }
 
-  @unchecked
+  // TODO: fight Scala's type inference
   private def defaults = DEFAULTS.vars.foldLeft(ENV) {
     (env, i) => 
       if (env.has(i)) 
@@ -30,7 +30,7 @@ trait Sceeves {
       }
     }
   
-  private def solve(e: IntExpr) {
+  private def solve {
     if (CONSTRAINTS.size > 0) {
       // try with defaults
       ENV = solve(defaults) match {
@@ -43,7 +43,8 @@ trait Sceeves {
       
       // clean environment
       for (f <- CONSTRAINTS) 
-        assert(f.eval(ENV));
+        if (! f.eval(ENV))
+          throw Inconsistent;
       CONSTRAINTS = Nil;
     }
   }
@@ -60,7 +61,13 @@ trait Sceeves {
     x
   }
     
-  def concretize(e: IntExpr) = {solve(e); e.eval(ENV)}
+  def concretize(e: IntExpr): Int = {solve; e.eval(ENV)}
+  def concretize(e: IntExpr, context: Var[Int], v: Int): Int = 
+    new Sceeves {
+      CONSTRAINTS = this.CONSTRAINTS;
+      DEFAULTS = this.DEFAULTS;
+      ENV = this.ENV + (context -> v);
+    }.concretize(e);      
   def assume(f: Formula) = CONSTRAINTS = f :: CONSTRAINTS
   def assign[T](i: Var[T], v: T) {ENV = ENV + (i -> v)}
 }

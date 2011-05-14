@@ -179,4 +179,10 @@ class ExampleSceeves extends FunSuite with Sceeves {
     expect(31875000) {concretize(a*b*c)}
   }
 
+  test ("context") {
+    val context = pick(_ > 0);
+    val hidden = (context === 1) ? 1 ! 0;
+    expect(1) {concretize(hidden, context, 1)}
+    expect(0) {concretize(hidden, context, 2)}
+  }
 }
