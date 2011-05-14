@@ -78,7 +78,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
          j <- 0 until N;
          c = input(i*N + j);
          if c != '0')
-      s(i)(j).value = c.toString.toInt;
+      assign(s(i)(j), c.toString.toInt);
  
     for (i <- 0 until N; j <- 0 until N) concretize(s(i)(j));
 

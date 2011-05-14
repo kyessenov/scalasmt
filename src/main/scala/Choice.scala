@@ -7,15 +7,15 @@ object ChoiceStmt {
   import SMT._
 
   def choose(spec: IntVar => Formula): Int = {
-    val x = IntVar.make;
-    solve(spec(x))
-    assignDefault(x)
+    val x = IntVar.make
+    val out = solve(spec(x), EmptyEnv)
+    out(x);
   }
 
   def choose(spec: (IntVar, IntVar) => Formula): (Int, Int) = {
-    val x = IntVar.make;
-    val y = IntVar.make;
-    solve(spec(x, y))
-    (assignDefault(x), assignDefault(y))
+    val x = IntVar.make
+    val y = IntVar.make
+    val out = solve(spec(x, y), EmptyEnv)
+    (out(x), out(y))
   }
 }

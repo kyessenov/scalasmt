@@ -3,46 +3,48 @@ package cap.scalasmt
 /** 
  * Constraint environment for Sceeves.
  * Note change to terminology: pick = defer, assume = assert (since overriding assert is a bad idea given the implicits.
+ * Variable bindings are disassociated from AST and kept here. Note that this prevents them from being garbage collected.
  */
 object Inconsistent extends RuntimeException("cannot build a model")
 trait Sceeves {
   private var CONSTRAINTS: List[Formula] = Nil
-  private var DEFAULTS: Map[IntVar, Int] = Map();
+  private var DEFAULTS: Environment = EmptyEnv
+  private var ENV: Environment = EmptyEnv
 
-  private def solve(fs: List[Formula]) = 
+  private def solve(env: Environment) = 
     try {
-      SMT.solve(fs);
-      true;
+      Some(SMT.solve(CONSTRAINTS, env))
     } catch {
-      case SMT.UnsatException => false;
+      case SMT.UnsatException => None
+    }
+
+  @unchecked
+  private def defaults = DEFAULTS.vars.foldLeft(ENV) {
+    (env, i) => 
+      if (env.has(i)) 
+        env
+      else i match {
+        case i: Var[Int] => 
+          val v = DEFAULTS(i);
+          env + (i -> v)
+      }
     }
   
   private def solve(e: IntExpr) {
     if (CONSTRAINTS.size > 0) {
       // try with defaults
-      val defaults = solve (CONSTRAINTS ++ 
-        (for (v: IntVar <- e.vars.collect{case v: IntVar => v}; 
-             if (! v.assigned);
-             if (DEFAULTS.contains(v)))
-             yield v === DEFAULTS(v))
-       )
+      ENV = solve(defaults) match {
+        case None => solve(ENV) match {
+          case None => throw Inconsistent;
+          case Some(env) => env;
+        }
+        case Some(env) => env;
+      }
       
-      if (! defaults) {
-        if (! solve(CONSTRAINTS))
-          throw Inconsistent;
-      }
-            
-      for (c <- CONSTRAINTS;
-           v <- c.vars;
-           if ! v.assigned) v match {
-        case v: IntVar => v.value = IntVar.DEFAULT;
-      }
-
       // clean environment
       for (f <- CONSTRAINTS) 
-        assert(f.eval);
+        assert(f.eval(ENV));
       CONSTRAINTS = Nil;
-      DEFAULTS = DEFAULTS.filterKeys(! _.assigned);
     }
   }
 
@@ -58,6 +60,7 @@ trait Sceeves {
     x
   }
     
-  def concretize(e: IntExpr) = {solve(e); e.eval}
-  def assume(f: Formula) = CONSTRAINTS = f :: CONSTRAINTS;
+  def concretize(e: IntExpr) = {solve(e); e.eval(ENV)}
+  def assume(f: Formula) = CONSTRAINTS = f :: CONSTRAINTS
+  def assign[T](i: Var[T], v: T) {ENV = ENV + (i -> v)}
 }

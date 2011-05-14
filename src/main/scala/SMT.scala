@@ -8,13 +8,13 @@ object SMT {
   object UnsatException extends RuntimeException("model is not satisfiable")
 
   var TIMEOUT = 10
-  var Z3_PATH = "/home/kuat/opt/z3/bin/z3"
+  var Z3_PATH = System.getProperty("user.home") + "/opt/z3/bin/z3"
   var Z3_COMMANDS ="-smt2" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
   
   var PRINT_INPUT = false;
   var PRINT_OUTPUT = false;  
 
-  private def smtlib(f: Formula): String = f match {
+  private def smtlib(f: Formula)(implicit env: Environment): String = f match {
     case And(a,b) => "(and " + smtlib(a) + " " + smtlib(b) + ")"
     case Or(a,b) => "(or " + smtlib(a) + " " + smtlib(b) + ")"
     case Not(a) => "(not " + smtlib(a) + ")"
@@ -27,20 +27,20 @@ object SMT {
     case GT(a,b) => "(> " + smtlib(a) + " " + smtlib(b) + ")"   
   }
 
-  private def smtlib(e: Expr): String = e match {
+  private def smtlib(e: Expr)(implicit env: Environment): String = e match {
     case Plus(a,b) => "(+ " + smtlib(a) + " " + smtlib(b) + ")"
     case Minus(a,b) => "(- " + smtlib(a) + " " + smtlib(b) + ")"
     case Times(a,b) => "(* " + smtlib(a) + " " + smtlib(b) + ")"
     case Ite(c,a,b) => "(if " + smtlib(c) + " " + smtlib(a) + " " + smtlib(b) + ")"
     case Num(i) => i.toString
-    case v: IntVar =>
-      if (v.assigned)
-        v.value.toString
+    case v: IntVar => 
+      if (env.has(v))
+        env(v).toString
       else 
         v.toString
   }
 
-  private def smt(f: Formula): List[String] = f match {
+  private def smt(f: Formula)(implicit env: Environment): List[String] = f match {
     case And(a,b) => 
       smt(a) ::: smt(b);
     case _ => 
@@ -48,10 +48,12 @@ object SMT {
   }
   
   /** Follow SMT-LIB 2 format */
-  private def smt(vs: List[Var], f: Formula): List[String] = {
+  private def translate(f: Formula)(implicit env: Environment): List[String] = {
     "(set-logic QF_NIA)" ::
     "(declare-funs (" ::
-    (for (v <- vs) yield "  (" + v + " Int) ") :::
+    (for (v <- f.vars.toList;
+          if ! env.has(v)) 
+      yield "  (" + v + " Int) ") :::
     "))" ::
     smt(f) ::: 
     "(check-sat)" ::
@@ -65,9 +67,8 @@ object SMT {
    * Some variables might be left without assignment.
    * TODO: is it worth keeping SMT session alive?
    */
-  def solve(f: Formula) {
-    val vs = f.vars.filter(! _.assigned).toList
-    val input = smt(vs, f);
+  def solve(f: Formula, env: Environment) = {
+    val input = translate(f)(env);
     
     // call Z3
     import java.io._
@@ -112,23 +113,17 @@ object SMT {
       err.println("Warning: there are more than one possible assignments")    
     
     // parse model
-    var m: Map[Int, Int] = Map();
+    var result = env;
     val PREFIX = "(\"model\" \"";
     val SUFFIX = "\")";
     val defines = model.substring(PREFIX.size, model.size - SUFFIX.size);
     val defs = defines.split("\\(define |\\)\\s*");
     for (d <- defs; if d.size > 0) {
-      val List(vr,vl) = d.split("var|\\s").toList.drop(1).map(_.toInt)
-      for (v @ IntVar(i) <- vs; if i == vr)  
-        v.value = vl;
+      val List(vr,vl) = d.split("var|\\s").toList.drop(1).map(_.toInt);
+      for (v @ IntVar(i) <- f.vars; if i == vr)  
+        result = result + (v -> vl);
     }
-  }
-
-  /** Assign the default value if it is not assigned. */
-  def assignDefault(v: IntVar): Int = {
-    if (! v.assigned)
-      v.value = IntVar.DEFAULT;
-    v.value;
+    result;
   }
 }
 

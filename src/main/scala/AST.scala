@@ -11,14 +11,14 @@ sealed abstract class Formula {
   def ===(that: Formula) = (this && that) || (! this && ! that);
   def unary_! = Not(this)
 
-  def vars: Set[Var] = this match {
+  def vars: Set[Var[_]] = this match {
     case c: BinaryFormula => c.left.vars ++ c.right.vars
     case Not(sub) => sub.vars
     case c: BinaryAtomic => c.left.vars ++ c.right.vars
     case TrueF => Set()
     case FalseF => Set()     
   }
-  def eval: Boolean = this match {
+  def eval(implicit env: Environment): Boolean = this match {
     case And(l, r) => l.eval && r.eval;
     case Or(l, r) => l.eval || r.eval;
     case Not(s) => ! s.eval;
@@ -56,7 +56,7 @@ case object TrueF extends Atomic
 case object FalseF extends Atomic
 // expressions
 sealed abstract class Expr {
-  def vars: Set[Var]
+  def vars: Set[Var[_]]
 } 
 sealed abstract class IntExpr extends Expr {
   def ===(that: IntExpr) = Eq(this, that)
@@ -77,13 +77,13 @@ sealed abstract class IntExpr extends Expr {
     case n: Num => Set()
   }
   // TODO: make aware of overflow
-  def eval: Int = this match { 
+  def eval(implicit env: Environment): Int = this match { 
     case Plus(l, r) => l.eval + r.eval;
     case Minus(l, r) => l.eval - r.eval;
     case Times(l, r) => l.eval * r.eval;
     case Ite(cond, thn, els) => if (cond.eval) thn.eval else els.eval;
     case Num(i) => i
-    case v: IntVar => v.value
+    case v: IntVar => env(v)
   }
 }
 sealed abstract class BinaryIntExpr extends IntExpr {
@@ -95,33 +95,39 @@ case class Minus(left: IntExpr, right: IntExpr) extends BinaryIntExpr
 case class Times(left: IntExpr, right: IntExpr) extends BinaryIntExpr
 case class Ite(cond: Formula, thn: IntExpr, els: IntExpr) extends IntExpr
 case class Num(i: Int) extends IntExpr
-trait Var {
+trait Var[T] {
   def id: Int;
-  def assigned: Boolean;
+  def default: T;
+}
+trait Environment {
+  def vars: Set[Var[_]]
+  def +[T](b: (Var[T], T)): Environment = Binding(b._1, b._2, this)
+  def has[T](i: Var[T]): Boolean
+  def apply[T](i: Var[T]): T
+}
+object EmptyEnv extends Environment {
+  def vars = Set()
+  def has[T](i: Var[T]) = false
+  def apply[T](i: Var[T]) = i.default
+}
+case class Binding[U](bi: Var[U], bv: U, p: Environment) extends Environment {
+  def vars = p.vars + bi;
+  def has[T](i: Var[T]) = (i == bi) || p.has(i);
+  // TODO: make type inference do the work
+  def apply[T](i: Var[T]) = if (i == bi) bv.asInstanceOf[T] else p(i);
 }
 // invariant: one var per id
 object IntVar {
-  val DEFAULT = 0;
   private var COUNTER = 0;
   def make = {
     COUNTER = COUNTER + 1;
     IntVar(COUNTER);
   }
 }
-case class IntVar private(id: Int) extends IntExpr with Var {
+case class IntVar private(id: Int) extends IntExpr with Var[Int] {
+  def default = 0;
   override def toString = "ivar" + id;
   def copy: IntVar = throw new RuntimeException;
-
-  private var rep: Option[Int] = None
-  def assigned = rep.isDefined
-  def value_=(i: Int) {
-    assert (! assigned);
-    rep = Some(i);
-  }
-  def value = rep match {
-    case Some(i) => i;
-    case None => throw new RuntimeException("no value assigned to " + this);
-  }
 }
 
 // compiler looks up implicit conversions here 
