@@ -8,7 +8,7 @@ package cap.scalasmt
 object Inconsistent extends RuntimeException("cannot build a model")
 trait Sceeves {
   private var CONSTRAINTS: List[Formula] = Nil
-  private var DEFAULTS: Environment = EmptyEnv
+  private var DEFAULTS: Map[IntVar, Int] = Map()
   private var ENV: Environment = EmptyEnv
 
   private def solve(env: Environment) = 
@@ -18,22 +18,14 @@ trait Sceeves {
       case SMT.UnsatException => None
     }
 
-  // TODO: fight Scala's type inference
-  private def defaults = DEFAULTS.vars.foldLeft(ENV) {
+  private def DEFAULT_ENV = DEFAULTS.keys.foldLeft(ENV) {
     (env, i) => 
-      if (env.has(i)) 
-        env
-      else i match {
-        case i: Var[Int] => 
-          val v = DEFAULTS(i);
-          env + (i -> v)
-      }
+      if (env.has(i)) env else env + (i -> DEFAULTS(i))      
     }
   
   private def solve {
     if (CONSTRAINTS.size > 0) {
-      // try with defaults
-      ENV = solve(defaults) match {
+      ENV = solve(DEFAULT_ENV) match {
         case None => solve(ENV) match {
           case None => throw Inconsistent;
           case Some(env) => env;
@@ -41,10 +33,8 @@ trait Sceeves {
         case Some(env) => env;
       }
       
-      // clean environment
       for (f <- CONSTRAINTS) 
-        if (! f.eval(ENV))
-          throw Inconsistent;
+        assert(f.eval(ENV))
       CONSTRAINTS = Nil;
     }
   }
@@ -69,5 +59,8 @@ trait Sceeves {
       ENV = this.ENV + (context -> v);
     }.concretize(e);      
   def assume(f: Formula) = CONSTRAINTS = f :: CONSTRAINTS
-  def assign[T](i: Var[T], v: T) {ENV = ENV + (i -> v)}
+  def assign[T](i: Var[T], v: T) {
+    assert (! ENV.has(i))
+    ENV = ENV + (i -> v)
+  }
 }
