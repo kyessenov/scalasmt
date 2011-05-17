@@ -185,4 +185,35 @@ class ExampleSceeves extends FunSuite with Sceeves {
     expect(1) {concretize(hidden, context, 1)}
     expect(0) {concretize(hidden, context, 2)}
   }
+
+  test ("queens") {
+    val N = 16;
+
+    val cells = (1 to N).map{_ => 
+      (pick(x => x >= 0 && x < N), pick(y => y >= 0 && y < N))
+    }.toList;
+
+    assume (DISTINCT(cells.map (_._1)));
+    assume (DISTINCT(cells.map (_._2)));
+    assume (DISTINCT(cells.map (c => c._1 + c._2)));
+    assume (DISTINCT(cells.map (c => c._1 - c._2)));
+
+    // break symmetries
+    for (i <- 0 until N)
+      assign(cells(i)._1, i);
+
+    def spaces(sp: Int) = "".padTo(sp, '.');
+    
+    for (j <- 0 until N) 
+      cells.find(c => concretize(c._1) == j) match {
+        case Some(c) => 
+          val i = concretize(c._2);
+          print(spaces(i));
+          print("*");
+          print(spaces(N-i-1));
+          println;
+        case None => 
+          fail("Constraints are wrong")
+      }
+  }
 }
