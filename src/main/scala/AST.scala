@@ -1,7 +1,7 @@
 package cap.scalasmt
 
 /*
- * A DSL for arithmetic constraints.
+ * A DSL for arithmetic and bounded atom universe constraints.
  * @author kuat
  */
 sealed abstract class Formula {
