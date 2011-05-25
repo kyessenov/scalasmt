@@ -18,15 +18,8 @@ trait Sceeves {
       case SMT.UnsatException => None
     }
 
-  private def WITH_DEFAULTS = {
-    val (nums, exprs) = DEFAULTS.filter(t => ! ENV.has(t._1)).partition {
-      case (_, Num(i)) => true
-      case _ => false
-    }
-
-    (CONSTRAINTS ++ exprs.map{case (iv, ie) => iv === ie},
-      nums.foldLeft(ENV) {case (env, (iv, Num(i))) => env + (iv -> i); case (env, _) => env})
-  }
+  private def WITH_DEFAULTS = 
+    (CONSTRAINTS ++ DEFAULTS.filter(t => ! ENV.has(t._1)).map{case (iv, ie) => iv === ie}, ENV)
   
   private def resolve {
     if (CONSTRAINTS.size > 0) {

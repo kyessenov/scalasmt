@@ -24,15 +24,16 @@ object SMT {
     case Leq(a,b) => "(<= " + smtlib(a) + " " + smtlib(b) + ")"
     case Geq(a,b) => "(>= " + smtlib(a) + " " + smtlib(b) + ")" 
     case LT(a,b) => "(< " + smtlib(a) + " " + smtlib(b) + ")"
-    case GT(a,b) => "(> " + smtlib(a) + " " + smtlib(b) + ")"   
+    case GT(a,b) => "(> " + smtlib(a) + " " + smtlib(b) + ")"  
+    case BoolConditional(c,a,b) => "(if " + smtlib(c) + " " + smtlib(a) + " " + smtlib(b) + ")" 
   }
 
-  private def smtlib(e: Expr)(implicit env: Environment): String = e match {
+  private def smtlib(e: IntExpr)(implicit env: Environment): String = e match {
     case Plus(a,b) => "(+ " + smtlib(a) + " " + smtlib(b) + ")"
     case Minus(a,b) => "(- " + smtlib(a) + " " + smtlib(b) + ")"
     case Times(a,b) => "(* " + smtlib(a) + " " + smtlib(b) + ")"
-    case Ite(c,a,b) => "(if " + smtlib(c) + " " + smtlib(a) + " " + smtlib(b) + ")"
-    case Num(i) => i.toString
+    case IntConditional(c,a,b) => "(if " + smtlib(c) + " " + smtlib(a) + " " + smtlib(b) + ")"
+    case Constant(i) => i.toString
     case v: IntVar => 
       if (env.has(v))
         env(v).toString
