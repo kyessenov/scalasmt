@@ -163,6 +163,9 @@ class ExampleSceeves extends FunSuite with Sceeves {
     val y = pick(1, _ > 0);
     assume(y === 2);
     expect(2) {concretize(y)}
+
+    val z = pick(y, _ > 0);
+    expect(2) {concretize(z)}
   }
 
   test ("euler") {
@@ -180,10 +183,13 @@ class ExampleSceeves extends FunSuite with Sceeves {
   }
 
   test ("context") {
-    val context = pick(_ > 0);
-    val hidden = (context === 1) ? 1 ! 0;
-    expect(1) {concretize(hidden, context, 1)}
-    expect(0) {concretize(hidden, context, 2)}
+    val key = pick(_ > 0);
+    val hidden = (key === 1) ? 1 ! 0;
+    expect(1) {let(key, 1).concretize(hidden)}
+    expect(0) {let(key, 2).concretize(hidden)}
+    intercept[Inconsistent.type] {
+      let(key, 0).concretize(hidden)
+    }
   }
 
   test ("queens") {

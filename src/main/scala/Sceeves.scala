@@ -8,25 +8,30 @@ package cap.scalasmt
 object Inconsistent extends RuntimeException("cannot build a model")
 trait Sceeves {
   private var CONSTRAINTS: List[Formula] = Nil
-  private var DEFAULTS: Map[IntVar, Int] = Map()
+  private var DEFAULTS: Map[IntVar, IntExpr] = Map()
   private var ENV: Environment = EmptyEnv
 
-  private def solve(env: Environment) = 
+  private def solve(fs: List[Formula], env: Environment) = 
     try {
-      Some(SMT.solve(CONSTRAINTS, env))
+      Some(SMT.solve(fs, env))
     } catch {
       case SMT.UnsatException => None
     }
 
-  private def DEFAULT_ENV = DEFAULTS.keys.foldLeft(ENV) {
-    (env, i) => 
-      if (env.has(i)) env else env + (i -> DEFAULTS(i))      
+  private def WITH_DEFAULTS = {
+    val (nums, exprs) = DEFAULTS.filter(t => ! ENV.has(t._1)).partition {
+      case (_, Num(i)) => true
+      case _ => false
     }
+
+    (CONSTRAINTS ++ exprs.map{case (iv, ie) => iv === ie},
+      nums.foldLeft(ENV) {case (env, (iv, Num(i))) => env + (iv -> i); case (env, _) => env})
+  }
   
-  private def solve {
+  private def resolve {
     if (CONSTRAINTS.size > 0) {
-      ENV = solve(DEFAULT_ENV) match {
-        case None => solve(ENV) match {
+      ENV = (solve _).tupled(WITH_DEFAULTS) match {
+        case None => solve(CONSTRAINTS, ENV) match {
           case None => throw Inconsistent;
           case Some(env) => env;
         }
@@ -35,8 +40,17 @@ trait Sceeves {
       
       for (f <- CONSTRAINTS) 
         assert(f.eval(ENV))
+      
       CONSTRAINTS = Nil;
     }
+  }
+
+  private def duplicate = {
+    val that = new Sceeves {};
+    that.CONSTRAINTS = this.CONSTRAINTS;
+    that.DEFAULTS = this.DEFAULTS;
+    that.ENV = this.ENV;
+    that;
   }
 
   def pick(spec: IntVar => Formula): IntVar = {
@@ -45,19 +59,18 @@ trait Sceeves {
     x
   }
 
-  def pick(default: Int, spec: IntVar => Formula): IntVar = {
+  def pick(default: IntExpr, spec: IntVar => Formula): IntVar = {
     val x = pick(spec);
     DEFAULTS = DEFAULTS + (x -> default);
     x
   }
     
-  def concretize(e: IntExpr): Int = {solve; e.eval(ENV)}
-  def concretize(e: IntExpr, context: Var[Int], v: Int): Int = 
-    new Sceeves {
-      CONSTRAINTS = this.CONSTRAINTS;
-      DEFAULTS = this.DEFAULTS;
-      ENV = this.ENV + (context -> v);
-    }.concretize(e);      
+  def concretize(e: IntExpr): Int = {resolve; e.eval(ENV)}
+  def let(i: Var[Int], v: Int) = {
+    val that = duplicate;
+    that.assign(i, v);
+    that;
+  }
   def assume(f: Formula) = CONSTRAINTS = f :: CONSTRAINTS
   def assign[T](i: Var[T], v: T) {
     assert (! ENV.has(i))
