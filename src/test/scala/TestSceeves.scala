@@ -24,9 +24,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
     new Sceeves {
       val x = pick (_ === Int.MaxValue);
       val y = pick (_ === x + 1);
-      intercept[java.lang.NumberFormatException] {
-        println(concretize(y));
-      }
+      expect(BigInt(Int.MaxValue) + 1) {concretize(y)};
     }
   }
 
@@ -185,11 +183,9 @@ class ExampleSceeves extends FunSuite with Sceeves {
   test ("context") {
     val key = pick(_ > 0);
     val hidden = (key === 1) ? 1 ! 0;
-    expect(1) {let(key, 1).concretize(hidden)}
-    expect(0) {let(key, 2).concretize(hidden)}
-    intercept[Inconsistent.type] {
-      let(key, 0).concretize(hidden)
-    }
+    expect(1) {concretize(key, 1, hidden)}
+    expect(0) {concretize(key, 2, hidden)}
+    intercept[Inconsistent.type] {concretize(key, 0, hidden)}
   }
 
   test ("queens") {
@@ -213,7 +209,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
     for (j <- 0 until N) 
       cells.find(c => concretize(c._1) == j) match {
         case Some(c) => 
-          val i = concretize(c._2);
+          val i = concretize(c._2).toInt;
           print(spaces(i));
           print("*");
           print(spaces(N-i-1));
