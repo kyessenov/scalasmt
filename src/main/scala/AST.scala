@@ -8,7 +8,7 @@ package cap.scalasmt
 /**
  * Expressions.
  */
-sealed trait Expr[T] {
+@serializable sealed trait Expr[T] {
   def vars: Set[Var[_]]
   def eval(implicit env: Environment): T
 }
