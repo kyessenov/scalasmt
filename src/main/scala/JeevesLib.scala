@@ -37,7 +37,7 @@ object JeevesLib extends Sceeves {
             case None => throw new IllegalArgumentException("wrong field")
         };
         // Interpret the value as a constraint.
-//        assume(IF (context === keyval) (x === valConstraint) ELSE true)
+        assume(IF (context === keyval) (x === valConstraint) ELSE true)
     }
     ()
   }
