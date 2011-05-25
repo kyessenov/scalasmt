@@ -37,9 +37,9 @@ sealed abstract class BinaryFormula extends Formula {
   def left: Formula;
   def right: Formula;
 }
-case class And(left: Formula, right: Formula = TrueF) extends BinaryFormula
-case class Or(left: Formula, right: Formula = FalseF) extends BinaryFormula
-case class Not(sub: Formula) extends Formula
+@serializable case class And(left: Formula, right: Formula = TrueF) extends BinaryFormula
+@serializable case class Or(left: Formula, right: Formula = FalseF) extends BinaryFormula
+@serializable case class Not(sub: Formula) extends Formula
 // atomic formulas
 sealed abstract class Atomic extends Formula 
 sealed abstract class BinaryAtomic extends Atomic {
@@ -47,13 +47,13 @@ sealed abstract class BinaryAtomic extends Atomic {
   def right: Expr;
 }
 sealed abstract class IntFormula extends BinaryAtomic
-case class Eq(left: IntExpr, right: IntExpr) extends IntFormula
-case class Leq(left: IntExpr, right: IntExpr) extends IntFormula
-case class Geq(left: IntExpr, right: IntExpr) extends IntFormula
-case class LT(left: IntExpr, right: IntExpr) extends IntFormula
-case class GT(left: IntExpr, right: IntExpr) extends IntFormula
-case object TrueF extends Atomic
-case object FalseF extends Atomic
+@serializable case class Eq(left: IntExpr, right: IntExpr) extends IntFormula
+@serializable case class Leq(left: IntExpr, right: IntExpr) extends IntFormula
+@serializable case class Geq(left: IntExpr, right: IntExpr) extends IntFormula
+@serializable case class LT(left: IntExpr, right: IntExpr) extends IntFormula
+@serializable case class GT(left: IntExpr, right: IntExpr) extends IntFormula
+@serializable case object TrueF extends Atomic
+@serializable case object FalseF extends Atomic
 // expressions
 sealed abstract class Expr {
   def vars: Set[Var[_]]
@@ -90,11 +90,11 @@ sealed abstract class BinaryIntExpr extends IntExpr {
   def left: Expr;
   def right: Expr;
 }
-case class Plus(left: IntExpr, right: IntExpr) extends BinaryIntExpr
-case class Minus(left: IntExpr, right: IntExpr) extends BinaryIntExpr
-case class Times(left: IntExpr, right: IntExpr) extends BinaryIntExpr
-case class Ite(cond: Formula, thn: IntExpr, els: IntExpr) extends IntExpr
-case class Num(i: Int) extends IntExpr
+@serializable case class Plus(left: IntExpr, right: IntExpr) extends BinaryIntExpr
+@serializable case class Minus(left: IntExpr, right: IntExpr) extends BinaryIntExpr
+@serializable case class Times(left: IntExpr, right: IntExpr) extends BinaryIntExpr
+@serializable case class Ite(cond: Formula, thn: IntExpr, els: IntExpr) extends IntExpr
+@serializable case class Num(i: Int) extends IntExpr
 trait Var[T] {
   def id: Int;
   def default: T;
@@ -124,7 +124,7 @@ object IntVar {
     IntVar(COUNTER);
   }
 }
-case class IntVar private(id: Int) extends IntExpr with Var[Int] {
+@serializable case class IntVar private(id: Int) extends IntExpr with Var[Int] {
   def default = 0;
   override def toString = "ivar" + id;
   def copy: IntVar = throw new RuntimeException;
