@@ -82,11 +82,13 @@ object JeevesLib extends Sceeves {
 
   /* DATABASE.  Access to the backend database.
   */
+  /*
   def putDatabaseValue[T]
-    (field : String) (value : T, permission : String) : Unit = {
+    (db : DatabaseLib, field : String, value : T, permission : String)
+    : Unit = {
     // Make a permission string.
-    DatabaseLib.putField(field, value);
-    DatabaseLib.putField(field, permission)
+    db.putField(field, value);
+    db.putField(field, permission)
   }
 
   def getDatabaseValue (field : String) : IntExpr = {
@@ -101,4 +103,5 @@ object JeevesLib extends Sceeves {
         }
     }
   }
+  */
 }
