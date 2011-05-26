@@ -4,12 +4,12 @@ import cap.scalasmt._
 import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
 
-class ExampleSerialize extends FunSuite with Sceeves with SceevesStr {
+class ExampleSerialize extends FunSuite with Sceeves {
   test ("serialize_pick") {
     val x = pick (_ === 1);
-    val x_ser = serialize[IntVar](x);
-    val x_unser = unserialize[IntVar](x_ser);
-    expect(1) {concretize(x_unser)};
+    val xSer = Persistence.serialize(x);
+    val xUnser = Persistence.deserialize[IntVar](xSer);
+    expect(1) {concretize(xUnser)};
   }
 
   // TODO: Serialize some other things.
