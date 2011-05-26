@@ -55,9 +55,9 @@ trait Sceeves {
   }  
   def assume(f: Formula) = CONSTRAINTS = f :: CONSTRAINTS
   def concretize[T](e: Expr[T]): T = {resolve; e.eval(ENV)}
-  def concretize[T,U](i: IntVar, v: BigInt, e: Expr[T]): T = {
+  def concretize[T,U](i: IntVar, v: IntExpr, e: Expr[T]): T = {
     val that = duplicate;
-    that.assign(i, v);
+    that.assume(i === v);
     that.concretize(e);
   }
   def assign[T](i: IntVar, v: BigInt) {
