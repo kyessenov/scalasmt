@@ -120,7 +120,7 @@ object SMT {
     val defines = model.substring(PREFIX.size, model.size - SUFFIX.size);
     val defs = defines.split("\\(define |\\)\\s*");
     for (d <- defs; if d.size > 0) {
-      val List(vr,vl) = d.split("var|\\s").toList.drop(1).map(_.toInt);
+      val List(vr,vl) = d.split("var|\\s").toList.drop(1).map(BigInt(_));
       for (v @ IntVar(i) <- f.vars; if i == vr)  
         result = result + (v -> vl);
     }
