@@ -29,7 +29,7 @@ object JeevesLib extends Sceeves {
 
   // Associates a constraint with a field.
   private def createSensitiveValue (vals : Map[String, IntExpr])
-    : Expr[Int] = {
+    : IntExpr = {
     var x = pick(_ => true);
 
     // See if there is a default.
@@ -61,14 +61,14 @@ object JeevesLib extends Sceeves {
   }
 
   /* This function returns an IntVar representing the sensitive value. */
-  private def string2Expr (str : String) : Expr[Int] =
+  private def string2Expr (str : String) : IntExpr =
     createSensitiveValue(getValueMappings(str))
-  private def expr2String (e : Expr[Int]) : String =
+  private def expr2String (e : IntExpr) : String =
     e match {
-      case Plus(l, r) => throw Undefined
+/*      case Plus(l, r) => throw Undefined
       case Minus(l, r) => throw Undefined
       case Times(l, r) => throw Undefined
-      case IntConditional(cond, thn, els) => throw Undefined
+      case IntConditional(cond, thn, els) => throw Undefined */
       case Constant(i) => i.toString()
       case v: IntVar => throw Undefined
       case other => throw Undefined
@@ -83,13 +83,13 @@ object JeevesLib extends Sceeves {
   /* DATABASE.  Access to the backend database.
   */
   def putDatabaseValue[T]
-    (field : String) (value : T) (permission : Map[String, IntExpr])
-    : Unit = {
+    (field : String) (value : T, permission : String) : Unit = {
     // Make a permission string.
-    () // TODO: Actually put the thing and its permission into the database.
+    DatabaseLib.putField(field, value);
+    DatabaseLib.putField(field, permission)
   }
 
-  def getDatabaseValue (field : String) : Expr[Int] = {
+  def getDatabaseValue (field : String) : IntExpr = {
     // TODO: Get permissions from database and interpret them as a
     // Map[String, IntExpr]
     DatabaseLib.getField[Int](field) match {
