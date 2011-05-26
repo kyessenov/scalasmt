@@ -89,15 +89,13 @@ object JeevesLib extends Sceeves {
     () // TODO: Actually put the thing and its permission into the database.
   }
 
-  private def getField[T] (field : String) : Option[T] = throw Undefined
-  /* Get a value from a database with the field attached. */
   def getDatabaseValue (field : String) : Expr[Int] = {
     // TODO: Get permissions from database and interpret them as a
     // Map[String, IntExpr]
-    getField[Int](field) match {
+    DatabaseLib.getField[Int](field) match {
       case Some(intval) => Constant(intval)
       case None =>
-        getField[String]("__" + field) match {
+        DatabaseLib.getField[String]("__" + field) match {
           case Some(strval) => string2Expr(strval)
           case None => throw Undefined
         }
