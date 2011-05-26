@@ -120,9 +120,12 @@ object SMT {
     val defines = model.substring(PREFIX.size, model.size - SUFFIX.size);
     val defs = defines.split("\\(define |\\)\\s*");
     for (d <- defs; if d.size > 0) {
-      val List(vr,vl) = d.split("var|\\s").toList.drop(1).map(BigInt(_));
-      for (v @ IntVar(i) <- f.vars; if i == vr)  
-        result = result + (v -> vl);
+      val List(name, value) = d.split("\\s").toList;
+      for (v <- f.vars; if name == v.toString)
+        v match {
+          case v: IntVar => 
+            result = result + (v -> BigInt(value));
+        }
     }
     result;
   }
