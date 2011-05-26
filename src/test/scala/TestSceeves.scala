@@ -188,18 +188,15 @@ class ExampleSceeves extends FunSuite with Sceeves {
     intercept[Inconsistent.type] {concretize(key, 0, hidden)}
   }
 
-/*
   test("symbolic_context") {
     val key = pick(_ > 0);
     val hidden = (key === 1) ? 1 ! 0;
-    val x = pick(x => x > 0 && x < 2);
-    expect(1) {let(key, x).concretize(hidden)}
-    expect(0) {let(key, x).concretize(hidden)}
-    intercept[Inconsistent.type] {
-      let(key, 0).concretize(hidden)
-    }
+    val x = pick(_ === 1);
+    val y = pick(_ === 2);
+    expect(1) {concretize(key, x, hidden)}
+    expect(0) {concretize(key, y, hidden)}
+    intercept[Inconsistent.type] { concretize(key, 0, hidden) }
   }
-*/
 
   test ("queens") {
     val N = 16;
