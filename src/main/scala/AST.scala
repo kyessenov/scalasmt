@@ -12,23 +12,23 @@ package cap.scalasmt
   def vars: Set[Var[_]]
   def eval(implicit env: Environment): T
 }
-sealed trait Ite[T] {
+sealed trait Ite[T] extends Expr[T] {
   def cond: Expr[Boolean]
   def thn: Expr[T]
   def els: Expr[T]
   def vars = cond.vars ++ thn.vars ++ els.vars
   def eval(implicit env: Environment): T = if (cond.eval) thn.eval else els.eval
 }
-sealed trait BinaryExpr[T] {
-  def left: Expr[T]
-  def right: Expr[T]
-  def vars = left.vars ++ right.vars
-}
-sealed trait Var[T] {
+sealed trait Var[T] extends Expr[T] {
   def id: Int
   def default: T
   def vars: Set[Var[_]] = Set(this)
   def eval(implicit env: Environment) = env(this)
+}
+sealed trait BinaryExpr[T] /* T is sub-exprs type */ {
+  def left: Expr[T]
+  def right: Expr[T]
+  def vars = left.vars ++ right.vars
 }
 
 /** 
@@ -131,7 +131,7 @@ case class IntVar private(id: Int) extends IntExpr with Var[BigInt] {
 /** 
  * Environment.
  */
-trait Environment {
+@serializable trait Environment {
   def vars: Set[Var[_]]
   def +[T](b: (Var[T], T)): Environment = Binding(b._1, b._2, this)
   def has[T](i: Var[T]): Boolean
