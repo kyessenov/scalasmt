@@ -67,7 +67,7 @@ case object FalseF extends Formula {
   def vars = Set()
   def eval(implicit env: Environment) = false
 }
-sealed abstract class IntFormula extends Formula with BinaryExpr[Int] 
+sealed abstract class IntFormula extends Formula with BinaryExpr[BigInt] 
 case class Eq(left: IntExpr, right: IntExpr) extends IntFormula {
   def eval(implicit env: Environment) = left.eval == right.eval
 }
@@ -87,7 +87,7 @@ case class GT(left: IntExpr, right: IntExpr) extends IntFormula {
 /**
  * Integer expresssion with Peano arithmetic.
  */
-sealed abstract class IntExpr extends Expr[Int] {
+sealed abstract class IntExpr extends Expr[BigInt] {
   def ===(that: IntExpr) = Eq(this, that)
   def !==(that: IntExpr) = ! (this === that)
   def <=(that: IntExpr) = Leq(this, that)
@@ -99,7 +99,7 @@ sealed abstract class IntExpr extends Expr[Int] {
   def -(that: IntExpr) = Minus(this, that)
   def *(that: IntExpr) = Times(this, that)
 }
-sealed abstract class BinaryIntExpr extends IntExpr with BinaryExpr[Int]
+sealed abstract class BinaryIntExpr extends IntExpr with BinaryExpr[BigInt]
 case class Plus(left: IntExpr, right: IntExpr) extends BinaryIntExpr {
   def eval(implicit env: Environment) = left.eval + right.eval
 }
@@ -113,7 +113,7 @@ case class Constant(i: Int) extends IntExpr {
   def vars = Set()
   def eval(implicit env: Environment) = i
 }
-case class IntConditional(cond: Formula, thn: IntExpr, els: IntExpr) extends IntExpr with Ite[Int]
+case class IntConditional(cond: Formula, thn: IntExpr, els: IntExpr) extends IntExpr with Ite[BigInt]
 // invariant: one var per id
 object IntVar {
   private var COUNTER = 0
@@ -122,7 +122,7 @@ object IntVar {
     IntVar(COUNTER);
   }
 }
-case class IntVar private(id: Int) extends IntExpr with Var[Int] {
+case class IntVar private(id: Int) extends IntExpr with Var[BigInt] {
   def default = 0
   override def toString = "ivar" + id
   def copy: IntVar = throw new RuntimeException

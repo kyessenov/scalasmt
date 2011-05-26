@@ -46,26 +46,21 @@ trait Sceeves {
     that;
   }
 
-  def pick(spec: IntVar => Formula): IntVar = {
-    val x = IntVar.make;
-    assume(spec(x));
-    x
-  }
-
+  def pick: IntVar = IntVar.make;
+  def pick(spec: IntVar => Formula): IntVar = {val x = pick; assume(spec(x)); x}
   def pick(default: IntExpr, spec: IntVar => Formula): IntVar = {
     val x = pick(spec);
     DEFAULTS = DEFAULTS + (x -> default);
     x
-  }
-    
-  def concretize(e: IntExpr): Int = {resolve; e.eval(ENV)}
-  def let(i: Var[Int], v: Int) = {
-    val that = duplicate;
-    that.assign(i, v);
-    that;
-  }
+  }  
   def assume(f: Formula) = CONSTRAINTS = f :: CONSTRAINTS
-  def assign[T](i: Var[T], v: T) {
+  def concretize[T](e: Expr[T]): T = {resolve; e.eval(ENV)}
+  def concretize[T,U](i: IntVar, v: IntExpr, e: Expr[T]): T = {
+    val that = duplicate;
+    that.assume(i === v);
+    that.concretize(e);
+  }
+  def assign[T](i: IntVar, v: BigInt) {
     assert (! ENV.has(i))
     ENV = ENV + (i -> v)
   }
