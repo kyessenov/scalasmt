@@ -50,7 +50,7 @@ object SocialNetBackend extends Sceeves {
 
   /* Define relationship between privacy levels. */
   private def setPrivacyLevels () : Unit = {
-    assume((context === 1) ==> (level === friends));
+    assume((context === (1 : BigInt)) ==> (level === friends));
   }
 
   /* Initialization function. */
