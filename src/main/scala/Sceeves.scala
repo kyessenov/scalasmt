@@ -19,7 +19,9 @@ trait Sceeves {
     }
 
   private def WITH_DEFAULTS = 
-    (CONSTRAINTS ++ DEFAULTS.filter(t => ! ENV.has(t._1)).map{case (iv, ie) => iv === ie}, ENV)
+    ( CONSTRAINTS ++
+      DEFAULTS.filter(t => ! ENV.has(t._1)).map{case (iv, ie) => iv === ie}
+    , ENV )
   
   private def resolve {
     if (CONSTRAINTS.size > 0) {
