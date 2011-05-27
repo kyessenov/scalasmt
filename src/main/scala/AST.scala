@@ -151,7 +151,7 @@ case class Binding[U](bi: Var[U], bv: U, parent: Environment) extends Environmen
  * Implicit conversions.
  */
 object IntExpr {
-  implicit def fromInt(i: Int) = Constant(i)  
+  implicit def fromBigInt(i: BigInt) = Constant(i)  
 }
 object Formula {
   implicit def fromBool(i: Boolean) = if (i) TrueF else FalseF
