@@ -149,6 +149,10 @@ class ExampleSceeves extends FunSuite with Sceeves {
     val money = m*10000 + o*1000 + n*100 + e*10 + y;
     assume (send + more === money);
 
+    // help solver
+
+    assume (s === 9)
+
     expect (List(9, 5, 6, 7, 1, 0, 8, 2)) {
       vars.map(concretize(_))
     }
@@ -173,9 +177,11 @@ class ExampleSceeves extends FunSuite with Sceeves {
     val c = pick(_ > b);
     assume(a + b + c === 1000);
     assume(a*a + b*b === c*c);
+    
+    // help solver
+
     assume(a === 200);
     assume(b === 375);
-    assume(c === 425);
 
     expect(31875000) {concretize(a*b*c)}
   }
@@ -188,7 +194,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
     intercept[Inconsistent.type] {concretize(key, 0, hidden)}
   }
 
-  test("symbolic_context") {
+  test("symbolic context") {
     val key = pick(_ > 0);
     val hidden = (key === 1) ? 1 ! 0;
     val x = pick(_ === 1);
@@ -198,8 +204,8 @@ class ExampleSceeves extends FunSuite with Sceeves {
     intercept[Inconsistent.type] { concretize(key, 0, hidden) }
   }
 
-  test ("queens") {
-    val N = 16;
+  test ("n queens") {
+    val N = 8;
 
     val cells = (1 to N).map{_ => 
       (pick(x => x >= 0 && x < N), pick(y => y >= 0 && y < N))
@@ -227,5 +233,27 @@ class ExampleSceeves extends FunSuite with Sceeves {
         case None => 
           fail("Constraints are wrong")
       }
+  }
+
+  test ("coefficient synthesis") {
+    val c = pick;
+    
+    def linear(x: Int) = (c*x === x + x);
+
+    assume (linear(2))
+    assume (linear(3))
+
+    expect(2) {concretize(c)}
+
+    val a = pick;
+    val b = pick;
+    
+    def quadratic(x: Int) = (b + a*x + x*x === (x - 1)*(x - 1));
+
+    assume (quadratic(2))
+    assume (quadratic(3))
+
+    expect(-2) {concretize(a)}
+    expect(1) {concretize(b)}
   }
 }
