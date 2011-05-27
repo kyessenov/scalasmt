@@ -109,7 +109,7 @@ case class Minus(left: IntExpr, right: IntExpr) extends BinaryIntExpr {
 case class Times(left: IntExpr, right: IntExpr) extends BinaryIntExpr {
   def eval(implicit env: Environment) = left.eval * right.eval
 }
-case class Constant(i: Int) extends IntExpr {
+case class Constant(i: BigInt) extends IntExpr {
   def vars = Set()
   def eval(implicit env: Environment) = i
 }
