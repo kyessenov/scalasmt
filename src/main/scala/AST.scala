@@ -20,7 +20,7 @@ sealed trait Ite[T] extends Expr[T] {
   def eval(implicit env: Environment): T = if (cond.eval) thn.eval else els.eval
 }
 sealed trait Var[T] extends Expr[T] {
-  def id: Int
+  def id: String
   def default: T
   def vars: Set[Var[_]] = Set(this)
   def eval(implicit env: Environment) = env(this)
@@ -109,23 +109,21 @@ case class Minus(left: IntExpr, right: IntExpr) extends BinaryIntExpr {
 case class Times(left: IntExpr, right: IntExpr) extends BinaryIntExpr {
   def eval(implicit env: Environment) = left.eval * right.eval
 }
-case class Constant(i: Int) extends IntExpr {
+case class Constant(i: BigInt) extends IntExpr {
   def vars = Set()
   def eval(implicit env: Environment) = i
 }
 case class IntConditional(cond: Formula, thn: IntExpr, els: IntExpr) extends IntExpr with Ite[BigInt]
-// invariant: one var per id
 object IntVar {
   private var COUNTER = 0
   def make = {
     COUNTER = COUNTER + 1;
-    IntVar(COUNTER);
+    IntVar(COUNTER.toString);
   }
 }
-case class IntVar private(id: Int) extends IntExpr with Var[BigInt] {
+case class IntVar(id: String) extends IntExpr with Var[BigInt] {
   def default = 0
-  override def toString = "ivar" + id
-  def copy: IntVar = throw new RuntimeException
+  override def toString = "i" + id
 }
 
 /** 
