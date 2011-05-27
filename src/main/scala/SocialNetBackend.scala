@@ -35,9 +35,6 @@ object SocialNetBackend extends Sceeves {
       case None => throw Undefined
     }
 
-  // TODO: Think about moving this into here.
-//  private var Privacy_levels = Map.empty[String, IntVar]
-
   private val context : IntVar = pick(_ => true);
 
   /* Privacy levels--introduce delegated variable for levels and then define
@@ -82,17 +79,12 @@ object SocialNetBackend extends Sceeves {
     __db.putEntry(iUname, user);
   }
 
-
   /* Define functions the backend supports. */
-
-  // TODO: Get list of friends.
-
   def getFriends (ctxt : IntVar, user : BigInt) : List[BigInt] = {
     val curRecord = __db.getEntry(user);
     val curFriends = curRecord.getFriends();
     val outputFriendsBigInt = concretize(context, ctxt, curFriends);
     val friendsList = asIVarList(outputFriendsBigInt);
-    /* friendsList.map(x => concretize(context, ctxt, x)); */
-    throw Undefined;
+    friendsList.map(x => concretize(context, ctxt, x))
   }
 }
