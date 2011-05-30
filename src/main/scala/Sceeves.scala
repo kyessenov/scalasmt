@@ -62,8 +62,4 @@ trait Sceeves {
     that.assume(i === v);
     that.concretize(e);
   }
-  def assign[T](i: IntVar, v: BigInt) {
-    assert (! ENV.has(i))
-    ENV = ENV + (i -> v)
-  }
 }
