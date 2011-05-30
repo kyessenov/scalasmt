@@ -25,6 +25,13 @@ sealed trait Var[T] extends Expr[T] {
   def vars: Set[Var[_]] = Set(this)
   def eval(implicit env: Environment) = env(this)
 }
+object Var {
+  private var COUNTER = 0
+  private def inc {COUNTER = COUNTER + 1}
+  def makeInt = {inc; IntVar(COUNTER.toString)}
+  def makeBool = {inc; BoolVar(COUNTER.toString)}
+} 
+
 sealed trait BinaryExpr[T] /* T is sub-exprs type */ {
   def left: Expr[T]
   def right: Expr[T]
@@ -88,6 +95,10 @@ case class LT(left: IntExpr, right: IntExpr) extends IntFormula {
 case class GT(left: IntExpr, right: IntExpr) extends IntFormula {
   def eval(implicit env: Environment) = left.eval > right.eval
 }
+case class BoolVar(id: String) extends Formula with Var[Boolean] {
+  def default = true
+  override def toString = "b" + id
+}
 
 /**
  * Integer expresssion with Peano arithmetic.
@@ -119,13 +130,6 @@ case class Constant(i: BigInt) extends IntExpr {
   def eval(implicit env: Environment) = i
 }
 case class IntConditional(cond: Formula, thn: IntExpr, els: IntExpr) extends IntExpr with Ite[BigInt]
-object IntVar {
-  private var COUNTER = 0
-  def make = {
-    COUNTER = COUNTER + 1;
-    IntVar(COUNTER.toString);
-  }
-}
 case class IntVar(id: String) extends IntExpr with Var[BigInt] {
   def default = 0
   override def toString = "i" + id
