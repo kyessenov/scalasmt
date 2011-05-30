@@ -18,42 +18,49 @@ object SMT {
   }
   def Z3_COMMANDS ="-smt2" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
   
-  private def smtlib(f: Formula)(implicit env: Environment): String = f match {
-    case And(a,b) => "(and " + smtlib(a) + " " + smtlib(b) + ")"
-    case Or(a,b) => "(or " + smtlib(a) + " " + smtlib(b) + ")"
-    case Not(a) => "(not " + smtlib(a) + ")"
+  private def variable(v: Var[_])(implicit env: Environment) =
+    if (env.has(v))
+      env(v).toString
+    else
+      v.toString
+
+  private def formula(f: Formula)(implicit env: Environment): String = f match {
+    case And(a,b) => "(and " + formula(a) + " " + formula(b) + ")"
+    case Or(a,b) => "(or " + formula(a) + " " + formula(b) + ")"
+    case Not(a) => "(not " + formula(a) + ")"
     case TrueF => "true"
     case FalseF => "false"
-    case Eq(a,b) => "(= " + smtlib(a) + " " + smtlib(b) + ")"
-    case Leq(a,b) => "(<= " + smtlib(a) + " " + smtlib(b) + ")"
-    case Geq(a,b) => "(>= " + smtlib(a) + " " + smtlib(b) + ")" 
-    case LT(a,b) => "(< " + smtlib(a) + " " + smtlib(b) + ")"
-    case GT(a,b) => "(> " + smtlib(a) + " " + smtlib(b) + ")"  
-    case BoolConditional(c,a,b) => "(if " + smtlib(c) + " " + smtlib(a) + " " + smtlib(b) + ")" 
+    case Eq(a,b) => "(= " + integer(a) + " " + integer(b) + ")"
+    case Leq(a,b) => "(<= " + integer(a) + " " + integer(b) + ")"
+    case Geq(a,b) => "(>= " + integer(a) + " " + integer(b) + ")" 
+    case LT(a,b) => "(< " + integer(a) + " " + integer(b) + ")"
+    case GT(a,b) => "(> " + integer(a) + " " + integer(b) + ")"  
+    case BoolConditional(c,a,b) => "(if " + formula(c) + " " + formula(a) + " " + formula(b) + ")" 
+    case v: BoolVar => variable(v)
   }
 
-  private def smtlib(e: IntExpr)(implicit env: Environment): String = e match {
-    case Plus(a,b) => "(+ " + smtlib(a) + " " + smtlib(b) + ")"
-    case Minus(a,b) => "(- " + smtlib(a) + " " + smtlib(b) + ")"
-    case Times(a,b) => "(* " + smtlib(a) + " " + smtlib(b) + ")"
-    case IntConditional(c,a,b) => "(if " + smtlib(c) + " " + smtlib(a) + " " + smtlib(b) + ")"
+  private def integer(e: IntExpr)(implicit env: Environment): String = e match {
+    case Plus(a,b) => "(+ " + integer(a) + " " + integer(b) + ")"
+    case Minus(a,b) => "(- " + integer(a) + " " + integer(b) + ")"
+    case Times(a,b) => "(* " + integer(a) + " " + integer(b) + ")"
+    case IntConditional(c,a,b) => "(if " + formula(c) + " " + integer(a) + " " + integer(b) + ")"
     case Constant(i) => i.toString
-    case v: IntVar => 
-      if (env.has(v))
-        env(v).toString
-      else 
-        v.toString
+    case v: IntVar => variable(v) 
   }
 
   /** Follow SMT-LIB 2 format */
-  private def translate(f: Formula)(implicit env: Environment): List[String] = {
+  private def translate(f: Formula, env: Environment): List[String] = {
     "(set-logic QF_NIA)" ::
     "(declare-funs (" ::
-    (for (v <- f.vars.toList;
-          if ! env.has(v)) 
-      yield "  (" + v + " Int) ") :::
+    {for (v <- f.vars.toList;
+          if ! env.has(v))
+      yield v match {
+        case _: IntVar => "  (" + v + " Int) "
+        case _: BoolVar => "  (" + v + " Bool)"
+      }
+    } :::
     "))" ::
-    (for (clause <- f.clauses) yield "(assert " + smtlib(clause)(env) + ")") ::: 
+    {for (clause <- f.clauses) yield "(assert " + formula(clause)(env) + ")"} ::: 
     "(check-sat)" ::
     "(model)" ::
     "(next-sat)" ::
@@ -65,7 +72,7 @@ object SMT {
    * Some variables might be left without assignment.
    */
   def solve(f: Formula, env: Environment) = {
-    val input = translate(f)(env);
+    val input = translate(f, env);
     
     // call Z3
     import java.io._
@@ -118,8 +125,8 @@ object SMT {
       val List(name, value) = d.split("\\s").toList;
       for (v <- f.vars; if name == v.toString)
         v match {
-          case v: IntVar => 
-            result = result + (v -> BigInt(value));
+          case v: IntVar => result = result + (v -> BigInt(value))
+          case v: BoolVar => result = result + (v -> value.toBoolean)
         }
     }
     result;

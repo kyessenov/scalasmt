@@ -48,7 +48,8 @@ trait Sceeves {
     that;
   }
 
-  def pick: IntVar = IntVar.make;
+  def pick: IntVar = Var.makeInt;
+  def * = Var.makeBool;
   def pick(spec: IntVar => Formula): IntVar = {val x = pick; assume(spec(x)); x}
   def pick(default: IntExpr, spec: IntVar => Formula): IntVar = {
     val x = pick(spec);
