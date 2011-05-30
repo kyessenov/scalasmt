@@ -42,6 +42,11 @@ sealed abstract class Formula extends Expr[Boolean] {
   def unary_! = Not(this)
   def ?(thn: Formula) = new {def !(els: Formula) = BoolConditional(Formula.this, thn, els)}
   def ?(thn: IntExpr) = new {def !(els: IntExpr) = IntConditional(Formula.this, thn, els)}
+
+  def clauses: List[Formula] = this match {
+    case And(a,b) => a.clauses ++ b.clauses
+    case _ => this :: Nil
+  }
 }
 sealed abstract class BinaryFormula extends Formula with BinaryExpr[Boolean] 
 case class And(left: Formula, right: Formula = TrueF) extends BinaryFormula {

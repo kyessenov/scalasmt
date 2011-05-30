@@ -23,7 +23,7 @@ object JeevesLib extends Sceeves {
   // Associates a constraint with a field.
   def createSensitiveValue (context : IntVar, vals : SensitiveMap)
     : SensitiveTy = {
-    var x = pick(_ => true);
+    var x = pick;
 
     // See if there is a default.
     val defaultVal =  vals.get(default);
@@ -39,7 +39,7 @@ object JeevesLib extends Sceeves {
     // Go through keys and values.
     vals foreach {
       case (keyval, valConstraint) =>
-        assume(IF (context === keyval) (x === valConstraint) ELSE true)
+        assume((context === keyval) ==> (x === valConstraint))
     }
     x
   }

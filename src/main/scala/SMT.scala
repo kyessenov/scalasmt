@@ -1,19 +1,23 @@
 package cap.scalasmt
 
-// translator to SMT expressions
-// TODO: use dynamic linking library (as soon as x64 JNI issue is resolved)
-// TODO: avoid the cost of the process creation
-
+/* 
+ * Translator to SMT-LIB2.
+ * TODO: use dynamic linking library (as soon as x64 JNI issue is resolved)
+ * TODO: avoid the cost of the process creation
+ */
 object SMT {
   object UnsatException extends RuntimeException("model is not satisfiable")
 
   var TIMEOUT = 10
-  var Z3_PATH = System.getProperty("user.home") + "/opt/z3/bin/z3"
-  var Z3_COMMANDS ="-smt2" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
-  
   var PRINT_INPUT = false;
   var PRINT_OUTPUT = false;  
 
+  private var Z3_PATH = Option(System.getProperty("smt.home")) match {
+    case Some(path) => path
+    case None => System.getProperty("user.home") + "/opt/z3/bin/z3"
+  }
+  def Z3_COMMANDS ="-smt2" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
+  
   private def smtlib(f: Formula)(implicit env: Environment): String = f match {
     case And(a,b) => "(and " + smtlib(a) + " " + smtlib(b) + ")"
     case Or(a,b) => "(or " + smtlib(a) + " " + smtlib(b) + ")"
@@ -41,13 +45,6 @@ object SMT {
         v.toString
   }
 
-  private def smt(f: Formula)(implicit env: Environment): List[String] = f match {
-    case And(a,b) => 
-      smt(a) ::: smt(b);
-    case _ => 
-      "(assert " + smtlib(f) + ")" :: Nil
-  }
-  
   /** Follow SMT-LIB 2 format */
   private def translate(f: Formula)(implicit env: Environment): List[String] = {
     "(set-logic QF_NIA)" ::
@@ -56,7 +53,7 @@ object SMT {
           if ! env.has(v)) 
       yield "  (" + v + " Int) ") :::
     "))" ::
-    smt(f) ::: 
+    (for (clause <- f.clauses) yield "(assert " + smtlib(clause)(env) + ")") ::: 
     "(check-sat)" ::
     "(model)" ::
     "(next-sat)" ::
@@ -66,7 +63,6 @@ object SMT {
   /**
    * Solves for an assignment to satisfy the formula.
    * Some variables might be left without assignment.
-   * TODO: is it worth keeping SMT session alive?
    */
   def solve(f: Formula, env: Environment) = {
     val input = translate(f)(env);
@@ -81,8 +77,7 @@ object SMT {
     val os = new BufferedWriter(new OutputStreamWriter(p.getOutputStream));
     for (l <- input) {
       os.write(l);
-      if (PRINT_INPUT) 
-        println(l);
+      if (PRINT_INPUT) println(l);
     }
     os.close;
     

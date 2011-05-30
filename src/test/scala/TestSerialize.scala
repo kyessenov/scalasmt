@@ -4,13 +4,20 @@ import cap.scalasmt._
 import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
 
+import Persistence.{serialize, deserialize}
+
 class ExampleSerialize extends FunSuite with Sceeves {
-  test ("serialize_pick") {
+  test ("pick") {
     val x = pick (_ === 1);
-    val xSer = Persistence.serialize(x);
-    val xUnser = Persistence.deserialize[IntVar](xSer);
-    expect(1) {concretize(xUnser)};
+    val x0 = deserialize[IntVar](serialize(x));
+    expect(1) {concretize(x0)};
   }
 
-  // TODO: Serialize some other things.
+  test ("conditional pick") {
+    val y = pick;
+    val x = pick (_ === y);
+    val x0 = deserialize[IntVar](serialize(x));
+    assume (y === 1);
+    expect(1) {concretize(x0)};
+  }
 }

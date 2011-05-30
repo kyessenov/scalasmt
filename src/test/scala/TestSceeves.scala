@@ -39,7 +39,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
     val x = pick (_ > 0);
     val y = pick (_ > 0);
     val z = pick (_ > 0);
-    assume(x + y + z === 3);
+    assume (x + y + z === 3);
     expect(1) {concretize(x)};
     expect(1) {concretize(y)};
     expect(1) {concretize(z)}; 
@@ -71,12 +71,13 @@ class ExampleSceeves extends FunSuite with Sceeves {
       assume(DISTINCT(for (i <- 0 until M; j <- 0 until M) 
                 yield s(M*mi + i)(M*mj + j)))
     
+    // partial table
     assert (input.length == N * N);
     for (i <- 0 until N; 
          j <- 0 until N;
          c = input(i*N + j);
          if c != '0')
-      assign(s(i)(j), c.toString.toInt);
+      assume(s(i)(j) === c.toString.toInt);
  
     for (i <- 0 until N; j <- 0 until N) concretize(s(i)(j));
 
@@ -207,6 +208,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
   test ("n queens") {
     val N = 8;
 
+    // coordinates
     val cells = (1 to N).map{_ => 
       (pick(x => x >= 0 && x < N), pick(y => y >= 0 && y < N))
     }.toList;
@@ -218,7 +220,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
 
     // break symmetries
     for (i <- 0 until N)
-      assign(cells(i)._1, i);
+      assume(cells(i)._1 === i);
 
     def spaces(sp: Int) = "".padTo(sp, '.');
     
