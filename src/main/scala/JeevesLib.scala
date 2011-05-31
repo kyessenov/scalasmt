@@ -24,7 +24,6 @@ object JeevesLib extends Sceeves {
     var x = pick;
 
     // See if there is a default.
-    /*
     val defaultVal =  vals.get(default);
     defaultVal match {
       case Some(v) => {
@@ -32,7 +31,6 @@ object JeevesLib extends Sceeves {
       }
       case None => { } // Do nothing for now.
     }
-    */
 
     // Go through keys and values.
     vals foreach {
