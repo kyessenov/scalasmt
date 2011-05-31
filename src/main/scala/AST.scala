@@ -163,13 +163,17 @@ case class Object(o: AnyRef) extends RelExpr {
   def vars = Set()
   def eval(implicit env: Environment) = Set(o)
 }
+case class ObjectSet(elts: Traversable[_ <: AnyRef]) extends RelExpr {
+  def vars = Set()
+  def eval(implicit env: Environment) = elts.toSet[AnyRef]
+}
 case class AtomVar(id: String) extends RelExpr with Var[Set1[AnyRef]] {
   def default = new Set1(null)
   override def toString = "a" + id
 }
-case class ObjectSet(elts: Traversable[_ <: AnyRef]) extends RelExpr {
-  def vars = Set()
-  def eval(implicit env: Environment) = elts.toSet[AnyRef]
+case class AtomSetVar(id: String) extends RelExpr with Var[Set[AnyRef]] {
+  def default = Set()
+  override def toString = "s" + id
 }
 case class FieldDesc(name: String)
 case class Join(root: RelExpr, f: FieldDesc) extends RelExpr {
