@@ -37,7 +37,8 @@ object SMT {
     case Geq(a,b) => "(>= " + integer(a) + " " + integer(b) + ")" 
     case LT(a,b) => "(< " + integer(a) + " " + integer(b) + ")"
     case GT(a,b) => "(> " + integer(a) + " " + integer(b) + ")"  
-    case BoolConditional(c,a,b) => "(if " + formula(c) + " " + formula(a) + " " + formula(b) + ")" 
+    case BoolConditional(c,a,b) => "(if " + formula(c) + " " + 
+      formula(a) + " " + formula(b) + ")" 
     case RelEq(a,b) => "(forall (x Object) (= " + 
       atom(a)("x", env) + " " + atom(b)("x", env) + "))"
     case RelSub(a,b) => "(forall (x Object) (=> " + 
@@ -69,6 +70,8 @@ object SMT {
         uniq(env(v).head)
       else
         v.toString) + " )"
+    case v: AtomSetVar => 
+      throw new RuntimeException("unimplemented")
   }
 
   case class FootPrint(
@@ -80,9 +83,10 @@ object SMT {
 
   private def univ(f: Formula): FootPrint = f match {
     case f: BinaryFormula => univ(f.left) ++ univ(f.right)
-    case BoolConditional(cond, thn, els) => univ(cond) ++ univ(thn) ++ univ(els)
     case _: IntFormula => FootPrint()
     case f: RelFormula => univ(f.left) ++ univ(f.right)
+    case BoolConditional(cond, thn, els) => 
+      univ(cond) ++ univ(thn) ++ univ(els)
     case FalseF => FootPrint()
     case TrueF => FootPrint()
     case Not(f) => univ(f)
@@ -93,10 +97,12 @@ object SMT {
     case f: BinaryRelExpr => univ(f.left) ++ univ(f.right)
     case Join(root, f) => univ(root) ++ FootPrint(fields = Set(f))
     case _: AtomVar => FootPrint()
+    case _: AtomSetVar => FootPrint()
     case o: Object => FootPrint(objects = o.eval)
     case os: ObjectSet => FootPrint(objects = os.eval)
   }
 
+  @annotation.tailrec 
   private def closure(fp: FootPrint): FootPrint = fp match {
     case FootPrint(objects, fields) =>
       val grow = objects ++ 
@@ -139,6 +145,7 @@ object SMT {
         case _: IntVar => "(" + v + " Int) "
         case _: BoolVar => "(" + v + " Bool)"
         case _: AtomVar => "(" + v + " Object)"
+        case _: AtomSetVar => "(" + v + " Object Bool)"
       })
     } :::
     "))" ::
