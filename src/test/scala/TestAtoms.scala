@@ -57,9 +57,8 @@ class ExampleAtoms extends FunSuite {
     val a = Var.makeAtom;
     val x = new Node;
     x.sub = x;
-    expect(Set(null)) {SMT.solve(a === NULL)(a)}
-    expect(Set(x)) {SMT.solve(x('sub) === a)(a)} 
-    // tricky one 
-    expect(Set(null)) {SMT.solve(a('sub) === a && a != x)(a)}
+    expect(Set(null)) {val env = SMT.solve(a === NULL); env(a)}
+    expect(Set(x)) {val env = SMT.solve(x('sub) === a); env(a)} 
+    expect(Set(x)) {val env = SMT.solve(a('sub) === x); env(a)}
   }
 }
