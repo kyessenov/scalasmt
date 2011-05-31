@@ -13,7 +13,7 @@ trait Sceeves {
 
   private def solve(fs: List[Formula], env: Environment) = 
     try {
-      Some(SMT.solve(fs, env))
+      Some(SMT.solve(fs)(env))
     } catch {
       case SMT.UnsatException => None
     }

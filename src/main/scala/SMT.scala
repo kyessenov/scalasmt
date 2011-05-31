@@ -127,24 +127,19 @@ object SMT {
         fp
   }
 
-  // TODO: global for objects to id mapping
-  private var UNIVERSE: List[AnyRef] = Nil
-  private def uniq(o: AnyRef) = "o" + UNIVERSE.indexOf(o)
+  private def uniq(o: AnyRef) = "o" + (if (o == null) "0" else System.identityHashCode(o))
 
   /**
    * SMT-LIB 2 translation.
    */
 
-  private def translate(f: Formula)(implicit env: Environment): List[String] = {
+  private def translate(f: Formula)(implicit env: Environment, fp: FootPrint): List[String] = {
     "(set-logic QF_NIA)" ::
     """(set-option set-param "ELIM_QUANTIFIERS" "true")""" :: 
     {
-      val FootPrint(objects, fields) = closure(univ(f));
-      UNIVERSE = objects.toList;
-      if (UNIVERSE.size > 1) 
-        println("Universe size: " + UNIVERSE.size)
+      val FootPrint(objects, fields) = fp;
       "(declare-datatypes ((Object " + 
-         UNIVERSE.map("(" + uniq(_) + ")").mkString(" ") + ")))" :: 
+         objects.map("(" + uniq(_) + ")").mkString(" ") + ")))" :: 
       {for (f <- fields) yield 
         "(declare-fun " + f.name + " (Object) Object)"}.toList :::
       {for (o <- objects; 
@@ -174,8 +169,9 @@ object SMT {
    * Solves for an assignment to satisfy the formula.
    * Some variables might be left without assignment.
    */
-  def solve(f: Formula, env: Environment = EmptyEnv) = {
-    val input = translate(f)(env);
+  def solve(f: Formula)(implicit env: Environment = EmptyEnv) = {
+    val fp @ FootPrint(objects, _) = closure(univ(f))
+    val input = translate(f)(env, fp);
     
     // call Z3
     import java.io._
@@ -232,7 +228,10 @@ object SMT {
           case v: IntVar => result = result + (v -> BigInt(value))
           case v: BoolVar => result = result + (v -> value.toBoolean)
           case v: AtomVar => result = result + 
-            (v -> new Set1(UNIVERSE(value.substring(1).toInt)))
+            (v -> new Set1(objects.find(o => uniq(o) == value).get))
+          case v: AtomSetVar => 
+            // TODO: better S-expression parsing
+            throw new RuntimeException("not implemented")
         }
     }
     result;
