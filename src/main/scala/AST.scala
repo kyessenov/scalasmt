@@ -10,7 +10,7 @@ package cap.scalasmt
  */
 @serializable sealed trait Expr[+T] {
   def vars: Set[Var[_]]
-  def eval(implicit env: Environment): T
+  def eval(implicit env: Environment = EmptyEnv): T
 }
 sealed trait Ite[T] extends Expr[T] {
   def cond: Expr[Boolean]
@@ -34,6 +34,8 @@ object Var {
   def makeAtom = AtomVar(name)
 } 
 sealed trait BinaryExpr[T <: Expr[_]] {
+  assert (left != null)
+  assert (right != null)
   def left: T
   def right: T
   def vars = left.vars ++ right.vars
@@ -170,24 +172,28 @@ case class ObjectSet(elts: Traversable[_ <: AnyRef]) extends RelExpr {
   def eval(implicit env: Environment) = elts.toSet[AnyRef]
 }
 case class FieldDesc(name: String)
-case class Join(left: RelExpr, f: FieldDesc) extends RelExpr {
-  def vars = left.vars
+case class Join(root: RelExpr, f: FieldDesc) extends RelExpr {
+  def vars = root.vars
   def eval(implicit env: Environment) = 
-    (for (o <- left.eval) yield {
+    (for (o <- root.eval) yield {
       try {
-        Some(o.getClass.getDeclaredMethod(f.name).invoke(o))
+        if (o == null)
+          None 
+        else
+          Some(o.getClass.getDeclaredMethod(f.name).invoke(o))
       } catch {
         case _: NoSuchMethodException => None
       }
     }).flatten 
 }
-case class Union(left: RelExpr, right: RelExpr) extends RelExpr with BinaryExpr[RelExpr] {
+sealed abstract class BinaryRelExpr extends RelExpr with BinaryExpr[RelExpr]
+case class Union(left: RelExpr, right: RelExpr) extends BinaryRelExpr {
   def eval(implicit inv: Environment) = left.eval ++ right.eval
 }
-case class Diff(left: RelExpr, right: RelExpr) extends RelExpr with BinaryExpr[RelExpr] {
+case class Diff(left: RelExpr, right: RelExpr) extends BinaryRelExpr {
   def eval(implicit inv: Environment) = left.eval -- right.eval
 }
-case class Intersect(left: RelExpr, right: RelExpr) extends RelExpr with BinaryExpr[RelExpr] {
+case class Intersect(left: RelExpr, right: RelExpr) extends BinaryRelExpr {
   def eval(implicit inv: Environment) = left.eval & right.eval
 }
 
@@ -233,5 +239,6 @@ object `package` {
   def IF(cond: Formula)(thn: Formula) = new {def ELSE(els: Formula) = cond ? thn ! els}
   def DISTINCT(vs: Traversable[IntExpr]) = 
     for (vs1 <- vs; vs2 <- vs; if (vs1 != vs2)) yield ( ! (vs1 === vs2))
+  def NULL = Object(null)
 }
 
