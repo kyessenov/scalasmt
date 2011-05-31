@@ -7,7 +7,6 @@ object Undefined extends RuntimeException("undefined")
 object JeevesLib extends Sceeves {
   type LevelTy = BigInt;
   type ValueTy = BigInt;
-  type SensitiveTy = IntVar;
   type SensitiveMap = Map[BigInt, BigInt];
 
   // Keep map of privacy levels.
@@ -21,24 +20,25 @@ object JeevesLib extends Sceeves {
   }
 
   // Associates a constraint with a field.
-  def createSensitiveValue (context : IntVar, vals : SensitiveMap)
-    : SensitiveTy = {
+  def createSensitiveValue (context : IntVar, vals : SensitiveMap) : IntVar = {
     var x = pick;
 
     // See if there is a default.
+    /*
     val defaultVal =  vals.get(default);
     defaultVal match {
       case Some(v) => {
         x = pick(v, _ => true);
       }
-      case None => {
-        /* Do nothing for now. */
-      }
+      case None => { } // Do nothing for now.
     }
+    */
 
     // Go through keys and values.
     vals foreach {
       case (keyval, valConstraint) =>
+        println(keyval);
+        println(valConstraint);
         assume((context === keyval) ==> (x === valConstraint))
     }
     x
