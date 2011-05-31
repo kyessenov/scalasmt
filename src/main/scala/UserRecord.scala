@@ -45,4 +45,8 @@ class UserRecord( uname : BigInt, name : List[BigInt], pwd : List[BigInt]
   def getEmail () : IntVar = __emailp;
   def getNetwork () : IntVar = __networkp
   def getFriends () : IntVar = __friendsp
+
+  def equals (other : UserRecord) : Boolean = {
+    true
+  }
 }
