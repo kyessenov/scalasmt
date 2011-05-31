@@ -3,6 +3,7 @@ package test.cap.scalasmt
 import cap.scalasmt._
 import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
+import IntExpr._
 
 class ExampleSceeves extends FunSuite with Sceeves {
   test ("pick") {
@@ -63,7 +64,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
   def sudoku(input: String) = {
     val s = Array.ofDim[IntVar](N,N);
     for (i <- 0 until N; j <- 0 until N) 
-      s(i)(j) = pick (x => x > 0 && x <= N)
+      s(i)(j) = pick (x => 0 < x && x <= N)
     
     // all rows are distinct
     for (i <- 0 until N) assume(DISTINCT(s(i)))
