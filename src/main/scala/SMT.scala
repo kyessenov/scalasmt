@@ -83,7 +83,9 @@ object SMT {
   }
 
   /** 
-   * Atom foot print of a formula
+   * Atom foot print of a formula.
+   * TODO: field decls make formulas depend on the heap implicitly.
+   * TODO: universe bounding might make certain disequalities unsatisfiable
    */
 
   case class FootPrint(
