@@ -27,11 +27,11 @@ sealed trait Var[T] extends Expr[T] {
 }
 object Var {
   private var COUNTER = 0
-  private def inc = {COUNTER = COUNTER + 1}
-  private def name = {inc; COUNTER.toString}
-  def makeInt = IntVar(name)
-  def makeBool = BoolVar(name)
-  def makeAtom = AtomVar(name)
+  private def inc = {COUNTER = COUNTER + 1; COUNTER.toString}
+  def makeInt = IntVar(inc)
+  def makeBool = BoolVar(inc)
+  def makeAtom = AtomVar(inc)
+  def makeAtomSet = AtomSetVar(inc)
 } 
 sealed trait BinaryExpr[T <: Expr[_]] {
   assert (left != null)
@@ -179,12 +179,9 @@ case class FieldDesc(name: String)
 case class Join(root: RelExpr, f: FieldDesc) extends RelExpr {
   def vars = root.vars
   def eval(implicit env: Environment) = 
-    (for (o <- root.eval) yield {
+    (for (o <- root.eval; if o != null) yield {
       try {
-        if (o == null)
-          None 
-        else
-          Some(o.getClass.getDeclaredMethod(f.name).invoke(o))
+        Some(o.getClass.getDeclaredMethod(f.name).invoke(o))
       } catch {
         case _: NoSuchMethodException => None
       }
