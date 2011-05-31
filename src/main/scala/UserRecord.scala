@@ -26,7 +26,7 @@ class UserRecord( uname : BigInt, name : List[BigInt], pwd : List[BigInt]
   private var __networkp = mkSensitiveValue(__network)
 
   private var __friends = friends;
-  private var __friendsp = throw Undefined
+  private var __friendsp = mkSensitiveValue(__friends)
 
   private val __context = context;
   private val __plevels = levels;
@@ -46,7 +46,14 @@ class UserRecord( uname : BigInt, name : List[BigInt], pwd : List[BigInt]
   def getNetwork () : IntVar = __networkp
   def getFriends () : IntVar = __friendsp
 
+  def getContext () : IntVar = __context
+  def getLevels () : List[BigInt] = __plevels
+
   def equals (other : UserRecord) : Boolean = {
-    true
+    (__realuname == other.getUname) && (__namep == other.getName()) &&
+    (__pwdp == other.getPwd()) && (__usernamep == other.getUsername()) &&
+    (__emailp == other.getEmail()) && (__networkp == other.getNetwork()) &&
+    (__friendsp == other.getFriends()) &&
+    (__context == other.getContext()) && (__plevels == other.getLevels())
   }
 }
