@@ -48,7 +48,8 @@ trait Sceeves {
     that;
   }
 
-  def pick: IntVar = IntVar.make;
+  def pick: IntVar = Var.makeInt;
+  def * = Var.makeBool;
   def pick(spec: IntVar => Formula): IntVar = {val x = pick; assume(spec(x)); x}
   def pick(default: IntExpr, spec: IntVar => Formula): IntVar = {
     val x = pick(spec);
@@ -61,9 +62,5 @@ trait Sceeves {
     val that = duplicate;
     that.assume(i === v);
     that.concretize(e);
-  }
-  def assign[T](i: IntVar, v: BigInt) {
-    assert (! ENV.has(i))
-    ENV = ENV + (i -> v)
   }
 }
