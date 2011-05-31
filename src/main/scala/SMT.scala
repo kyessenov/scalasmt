@@ -20,6 +20,10 @@ object SMT {
   }
   def Z3_COMMANDS ="-smt2" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
   
+  /**
+   * Expression translators.
+   */
+
   private def variable(v: Var[_])(implicit env: Environment) =
     if (env.has(v))
       env(v).toString
@@ -71,8 +75,16 @@ object SMT {
       else
         v.toString) + " )"
     case v: AtomSetVar => 
-      throw new RuntimeException("unimplemented")
+      if (env.has(v))
+        atom(ObjectSet(env(v)))
+      else
+        "(" + v + " " + q + ")"
+
   }
+
+  /** 
+   * Atom foot print of a formula
+   */
 
   case class FootPrint(
     objects: Set[AnyRef] = Set(), 
@@ -81,25 +93,24 @@ object SMT {
       FootPrint(this.objects ++ that.objects, this.fields ++ that.fields)
   }
 
-  private def univ(f: Formula): FootPrint = f match {
+  private def univ(f: Formula)(implicit env: Environment): FootPrint = f match {
     case f: BinaryFormula => univ(f.left) ++ univ(f.right)
-    case _: IntFormula => FootPrint()
+    case f: IntFormula => FootPrint()
     case f: RelFormula => univ(f.left) ++ univ(f.right)
-    case BoolConditional(cond, thn, els) => 
-      univ(cond) ++ univ(thn) ++ univ(els)
+    case BoolConditional(cond, thn, els) => univ(cond) ++ univ(thn) ++ univ(els)
     case FalseF => FootPrint()
     case TrueF => FootPrint()
     case Not(f) => univ(f)
     case _: BoolVar => FootPrint()
   }
 
-  private def univ(e: RelExpr): FootPrint = e match {
+  private def univ(e: RelExpr)(implicit env: Environment): FootPrint = e match {
     case f: BinaryRelExpr => univ(f.left) ++ univ(f.right)
     case Join(root, f) => univ(root) ++ FootPrint(fields = Set(f))
-    case _: AtomVar => FootPrint()
-    case _: AtomSetVar => FootPrint()
     case o: Object => FootPrint(objects = o.eval)
     case os: ObjectSet => FootPrint(objects = os.eval)
+    case v: AtomVar => FootPrint(objects = if (env.has(v)) env(v) else Set())
+    case v: AtomSetVar => FootPrint(objects = if (env.has(v)) env(v) else Set())
   }
 
   @annotation.tailrec 
@@ -120,8 +131,11 @@ object SMT {
   private var UNIVERSE: List[AnyRef] = Nil
   private def uniq(o: AnyRef) = "o" + UNIVERSE.indexOf(o)
 
-  /** Follow SMT-LIB 2 format */
-  private def translate(f: Formula, env: Environment): List[String] = {
+  /**
+   * SMT-LIB 2 translation.
+   */
+
+  private def translate(f: Formula)(implicit env: Environment): List[String] = {
     "(set-logic QF_NIA)" ::
     """(set-option set-param "ELIM_QUANTIFIERS" "true")""" :: 
     {
@@ -149,7 +163,7 @@ object SMT {
       })
     } :::
     "))" ::
-    {for (clause <- f.clauses) yield "(assert " + formula(clause)(env) + ")"} ::: 
+    {for (clause <- f.clauses) yield "(assert " + formula(clause) + ")"} ::: 
     "(check-sat)" ::
     "(get-info model)" ::
     "(next-sat)" ::
@@ -161,7 +175,7 @@ object SMT {
    * Some variables might be left without assignment.
    */
   def solve(f: Formula, env: Environment = EmptyEnv) = {
-    val input = translate(f, env);
+    val input = translate(f)(env);
     
     // call Z3
     import java.io._
