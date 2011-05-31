@@ -8,7 +8,7 @@ package cap.scalasmt
 /**
  * Expressions.
  */
-@serializable sealed trait Expr[T] {
+@serializable sealed trait Expr[+T] {
   def vars: Set[Var[_]]
   def eval(implicit env: Environment): T
 }
@@ -27,9 +27,11 @@ sealed trait Var[T] extends Expr[T] {
 }
 object Var {
   private var COUNTER = 0
-  private def inc {COUNTER = COUNTER + 1}
-  def makeInt = {inc; IntVar(COUNTER.toString)}
-  def makeBool = {inc; BoolVar(COUNTER.toString)}
+  private def inc = {COUNTER = COUNTER + 1}
+  private def name = {inc; COUNTER.toString}
+  def makeInt = IntVar(name)
+  def makeBool = BoolVar(name)
+  def makeAtom = AtomVar(name)
 } 
 sealed trait BinaryExpr[T <: Expr[_]] {
   def left: T
@@ -98,11 +100,11 @@ case class BoolVar(id: String) extends Formula with Var[Boolean] {
   def default = true
   override def toString = "b" + id
 }
-sealed abstract class AtomFormula extends Formula with BinaryExpr[AtomExpr]
-case class AEq(left: AtomExpr, right: AtomExpr) extends AtomFormula {
+sealed abstract class RelFormula extends Formula with BinaryExpr[RelExpr]
+case class RelEq(left: RelExpr, right: RelExpr) extends RelFormula {
   def eval(implicit env: Environment) = left.eval == right.eval
 }
-case class ASub(left: AtomExpr, right: AtomExpr) extends AtomFormula {
+case class RelSub(left: RelExpr, right: RelExpr) extends RelFormula {
   def eval(implicit env: Environment) = left.eval.subsetOf(right.eval)
 }
 
@@ -146,56 +148,46 @@ case class IntVar(id: String) extends IntExpr with Var[BigInt] {
 /**
  * Relational algebra.
  */
-sealed abstract class AtomExpr extends Expr[Set[Atom]] {
-  def ===(that: AtomExpr) = AEq(this, that)
-  def in(that: AtomExpr) = ASub(this, that)
-  def &(that: AtomExpr) = Intersect(this, that)
-  def ++(that: AtomExpr) = Union(this, that)
-  def --(that: AtomExpr) = Diff(this, that)
-  def apply(name: String) = Join(this, FieldDesc(name)) 
+import scala.collection.immutable.Set.Set1
+sealed abstract class RelExpr extends Expr[Set[AnyRef]] {
+  def ===(that: RelExpr) = RelEq(this, that)
+  def in(that: RelExpr) = RelSub(this, that)
+  def &(that: RelExpr) = Intersect(this, that)
+  def ++(that: RelExpr) = Union(this, that)
+  def --(that: RelExpr) = Diff(this, that)
+  def apply(name: Symbol) = Join(this, FieldDesc(name.name)) 
 }
-sealed abstract class Atom extends AtomExpr 
-case class AtomObject(o: AnyRef) extends Atom {
+case class Object(o: AnyRef) extends RelExpr {
   def vars = Set()
-  def eval(implicit env: Environment) = Set(this)
+  def eval(implicit env: Environment) = Set(o)
 }
-case class AtomVar(id: String) extends Atom with Var[Set[Atom]] {
-  def default = Set(AtomObject(null))
+case class AtomVar(id: String) extends RelExpr with Var[Set1[AnyRef]] {
+  def default = new Set1(null)
   override def toString = "a" + id
 }
-case class AtomSet(elts: Set[Atom]) extends AtomExpr {
-  def vars = elts.collect{case a: AtomVar => a}
-  def eval(implicit env: Environment) = elts
+case class ObjectSet(elts: Traversable[_ <: AnyRef]) extends RelExpr {
+  def vars = Set()
+  def eval(implicit env: Environment) = elts.toSet[AnyRef]
 }
 case class FieldDesc(name: String)
-case class Join(left: AtomExpr, f: FieldDesc) extends AtomExpr {
+case class Join(left: RelExpr, f: FieldDesc) extends RelExpr {
   def vars = left.vars
   def eval(implicit env: Environment) = 
-    (for (atom <- left.eval) yield {
-      val o = atom match {
-        case AtomObject(o) => o
-        case v: AtomVar => val value = env(v)
-          assert(value.size == 1)
-          value.head match {
-            case AtomObject(o) => o
-            case _ => throw new RuntimeException("unexpected value of an atom var")
-          }
-      }
-
+    (for (o <- left.eval) yield {
       try {
-        Some(AtomObject(o.getClass.getDeclaredMethod(f.name).invoke(o)))
+        Some(o.getClass.getDeclaredMethod(f.name).invoke(o))
       } catch {
         case _: NoSuchMethodException => None
       }
     }).flatten 
 }
-case class Union(left: AtomExpr, right: AtomExpr) extends AtomExpr with BinaryExpr[AtomExpr] {
+case class Union(left: RelExpr, right: RelExpr) extends RelExpr with BinaryExpr[RelExpr] {
   def eval(implicit inv: Environment) = left.eval ++ right.eval
 }
-case class Diff(left: AtomExpr, right: AtomExpr) extends AtomExpr with BinaryExpr[AtomExpr] {
-  def eval(implicit inv: Environment) = left.eval diff right.eval
+case class Diff(left: RelExpr, right: RelExpr) extends RelExpr with BinaryExpr[RelExpr] {
+  def eval(implicit inv: Environment) = left.eval -- right.eval
 }
-case class Intersect(left: AtomExpr, right: AtomExpr) extends AtomExpr with BinaryExpr[AtomExpr] {
+case class Intersect(left: RelExpr, right: RelExpr) extends RelExpr with BinaryExpr[RelExpr] {
   def eval(implicit inv: Environment) = left.eval & right.eval
 }
 
@@ -232,8 +224,9 @@ object Formula {
   implicit def fromFormulaList(l: Traversable[Formula]) = 
     l.foldLeft(TrueF: Formula)((l, f) => l && f)
 }
-object AtomExpr {
-  implicit def fromAnyRef(o: AnyRef) = AtomObject(o)
+object RelExpr {
+  implicit def fromAnyRef(o: AnyRef) = Object(o)
+  implicit def fromAnyRefSet(s: Traversable[_ <: AnyRef]) = ObjectSet(s)
 }
 object `package` {
   def IF(cond: Formula)(thn: IntExpr) = new {def ELSE(els: IntExpr) = cond ? thn ! els}
