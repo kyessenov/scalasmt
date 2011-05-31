@@ -1,5 +1,7 @@
 package cap.scalasmt
 
+import scala.collection.immutable.Set.Set1
+
 /* 
  * Translator to SMT-LIB2.
  * TODO: use dynamic linking library (as soon as x64 JNI issue is resolved)
@@ -36,6 +38,10 @@ object SMT {
     case LT(a,b) => "(< " + integer(a) + " " + integer(b) + ")"
     case GT(a,b) => "(> " + integer(a) + " " + integer(b) + ")"  
     case BoolConditional(c,a,b) => "(if " + formula(c) + " " + formula(a) + " " + formula(b) + ")" 
+    case RelEq(a,b) => "(forall (x Object) (= " + 
+      atom(a)("x", env) + " " + atom(b)("x", env) + "))"
+    case RelSub(a,b) => "(forall (x Object) (=> " + 
+      atom(a)("x", env) + " " + atom(b)("x", env) + "))"
     case v: BoolVar => variable(v)
   }
 
@@ -48,21 +54,97 @@ object SMT {
     case v: IntVar => variable(v) 
   }
 
+  private def atom(e: RelExpr)(implicit q: String, env: Environment): String = e match {
+    case Union(a,b) => "(or " + atom(a) + " " + atom(b) + ")"
+    case Diff(a,b) => "(and " + atom(a) + " (not " + atom(b) + "))"
+    case Intersect(a,b) => "(and " + atom(a) + " " + atom(b) + ")"
+    case Object(o) => "(= " + q + " " + uniq(o) + ")"
+    case ObjectSet(os) => "(or " + os.map("(= " + q + " " + uniq(_) + ")") + ")"
+    case Join(root, f) => 
+      val r = q + "0";
+      "(exists (" + r + " Object) (and (= " + q + 
+        " (" + f.name + " " + r + ")) " + atom(root)(r, env) + "))"
+    case v: AtomVar => "(= " + q + " " + 
+      (if (env.has(v)) 
+        uniq(env(v).head)
+      else
+        v.toString) + " )"
+  }
+
+  case class FootPrint(
+    objects: Set[AnyRef] = Set(), 
+     fields: Set[FieldDesc] = Set()) {
+    def ++ (that: FootPrint) = 
+      FootPrint(this.objects ++ that.objects, this.fields ++ that.fields)
+  }
+
+  private def univ(f: Formula): FootPrint = f match {
+    case f: BinaryFormula => univ(f.left) ++ univ(f.right)
+    case BoolConditional(cond, thn, els) => univ(cond) ++ univ(thn) ++ univ(els)
+    case _: IntFormula => FootPrint()
+    case f: RelFormula => univ(f.left) ++ univ(f.right)
+    case FalseF => FootPrint()
+    case TrueF => FootPrint()
+    case Not(f) => univ(f)
+    case _: BoolVar => FootPrint()
+  }
+
+  private def univ(e: RelExpr): FootPrint = e match {
+    case f: BinaryRelExpr => univ(f.left) ++ univ(f.right)
+    case Join(root, f) => univ(root) ++ FootPrint(fields = Set(f))
+    case _: AtomVar => FootPrint()
+    case o: Object => FootPrint(objects = o.eval)
+    case os: ObjectSet => FootPrint(objects = os.eval)
+  }
+
+  private def closure(fp: FootPrint): FootPrint = fp match {
+    case FootPrint(objects, fields) =>
+      val grow = objects ++ 
+        (for (o <- objects; f <- fields) yield 
+          Join(Object(o), f).eval).flatten ++
+        Set(null) 
+
+      if (grow.size > objects.size)
+        closure(FootPrint(grow, fields))
+      else 
+        fp
+  }
+
+  // TODO: global for objects to id mapping
+  private var UNIVERSE: List[AnyRef] = Nil
+  private def uniq(o: AnyRef) = "o" + UNIVERSE.indexOf(o)
+
   /** Follow SMT-LIB 2 format */
   private def translate(f: Formula, env: Environment): List[String] = {
     "(set-logic QF_NIA)" ::
+    """(set-option set-param "ELIM_QUANTIFIERS" "true")""" :: 
+    {
+      val FootPrint(objects, fields) = closure(univ(f));
+      UNIVERSE = objects.toList;
+      if (UNIVERSE.size > 1) 
+        println("Universe size: " + UNIVERSE.size)
+      "(declare-datatypes ((Object " + 
+         UNIVERSE.map("(" + uniq(_) + ")").mkString(" ") + ")))" :: 
+      {for (f <- fields) yield 
+        "(declare-fun " + f.name + " (Object) Object)"}.toList :::
+      {for (o <- objects; 
+        f <- fields;
+        v = Join(Object(o), f).eval) yield 
+        "(assert (= (" + f.name + " " + uniq(o) + ") " + (if (v.size == 0) uniq(null) else uniq(v.head)) + "))"}.toList
+    } :::
     "(declare-funs (" ::
     {for (v <- f.vars.toList;
           if ! env.has(v))
-      yield v match {
-        case _: IntVar => "  (" + v + " Int) "
-        case _: BoolVar => "  (" + v + " Bool)"
-      }
+      yield "  " + (v match {
+        case _: IntVar => "(" + v + " Int) "
+        case _: BoolVar => "(" + v + " Bool)"
+        case _: AtomVar => "(" + v + " Object)"
+      })
     } :::
     "))" ::
     {for (clause <- f.clauses) yield "(assert " + formula(clause)(env) + ")"} ::: 
     "(check-sat)" ::
-    "(model)" ::
+    "(get-info model)" ::
     "(next-sat)" ::
     Nil
   }
@@ -71,7 +153,7 @@ object SMT {
    * Solves for an assignment to satisfy the formula.
    * Some variables might be left without assignment.
    */
-  def solve(f: Formula, env: Environment) = {
+  def solve(f: Formula, env: Environment = EmptyEnv) = {
     val input = translate(f, env);
     
     // call Z3
@@ -101,8 +183,8 @@ object SMT {
     p.destroy;
 
     if (output.size < 2) {
-      err.println("unexpected output: " + output.reverse);
-      err.println("on input: " + input);
+      err.println("unexpected output: " + output.reverse.mkString("\n"));
+      err.println("on input: " + input.mkString("\n"));
       throw new RuntimeException("unexpected output from SMT");
     }
     val sat :: rest = output.reverse;
@@ -117,16 +199,19 @@ object SMT {
     
     // parse model
     var result = env;
-    val PREFIX = "(\"model\" \"";
-    val SUFFIX = "\")";
+    val PREFIX = "((\"model\" \"";
+    val SUFFIX = "\"))";
     val defines = model.substring(PREFIX.size, model.size - SUFFIX.size);
-    val defs = defines.split("\\(define |\\)\\s*");
-    for (d <- defs; if d.size > 0) {
-      val List(name, value) = d.split("\\s").toList;
+    
+    val defs = defines.split("\\(define ");
+    for (d <- defs; if d.size > 0 && ! d.startsWith("(")) {
+      val List(name, value) = d.split("\\)|\\s").toList;
       for (v <- f.vars; if name == v.toString)
         v match {
           case v: IntVar => result = result + (v -> BigInt(value))
           case v: BoolVar => result = result + (v -> value.toBoolean)
+          case v: AtomVar => result = result + 
+            (v -> new Set1(UNIVERSE(value.substring(1).toInt)))
         }
     }
     result;
