@@ -17,12 +17,4 @@ class Database[R] {
       case Some(record) => record
       case None => throw KeyException
     }
-  // TODO: Does this make sense?
-  /*
-  def getEntry (key : BigIntVar) : R =
-    elements.find((k, v) => k === key) match {
-      case Some(record) => record
-      case None => throw KeyException
-    }
-  */
 }
