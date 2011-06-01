@@ -1,6 +1,7 @@
 package test.cap.scalasmt
 
 import cap.scalasmt._
+import cap.scalasmt.RelExpr._
 import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
 import java.sql
@@ -17,10 +18,22 @@ class ExampleDatabase extends FunSuite with Sceeves {
                   , List(), 0  // friends, friendsp
                   , context, List(0))
 
-  test ("putGetUserRecord") {
+  private def mkTestDB() : Database = {
     val db = new Database();
     db.putEntry(uRecord.getUname(), uRecord);
-    expect(true) {
-      uRecord.equals(db.getEntry(uRecord.getUname()).asInstanceOf[UserRecord]) };
+    db
+  }
+
+  test ("put and get") {
+    val db = mkTestDB();
+    val entry = db.getEntry(uRecord.getUname()).asInstanceOf[UserRecord];
+    expect(true) { uRecord.equals(entry) };
+  }
+
+  test ("get record symbolic key") {
+    val db = mkTestDB();
+    val idx = pick(x => x === uRecord.getUname());
+    val entry = db.getEntry(idx);
+    expect(Set(uRecord)) { concretize(entry) }
   }
 }
