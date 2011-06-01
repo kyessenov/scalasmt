@@ -61,6 +61,7 @@ object SMT {
   }
 
   private def atom(e: ObjectExpr)(implicit env: Environment): String = e match {
+    case AtomConditional(cond, thn, els) => "(if " + formula(cond) + " " + atom(thn) + " " + atom(els) + ")"
     case Object(o) => uniq(o)
     case v: AtomVar =>  
       if (env.has(v)) 
@@ -89,7 +90,6 @@ object SMT {
 
   /** 
    * Atom foot print of a formula.
-   * TODO: field decls make formulas depend on the heap implicitly.
    * TODO: universe bounding might make certain disequalities unsatisfiable
    */
 
@@ -112,11 +112,16 @@ object SMT {
     case _: BoolVar => FootPrint()
   }
 
+  private def univ(e: ObjectExpr)(implicit env: Environment): FootPrint = e match {
+    case o : Object => FootPrint(objects = Set(o.eval))
+    case v : AtomVar => FootPrint(objects = if (env.has(v)) Set(env(v)) else Set())
+    case AtomConditional(cond, thn, els) => univ(cond) ++ univ(thn) ++ univ(els)
+  }
+
   private def univ(e: RelExpr)(implicit env: Environment): FootPrint = e match {
     case f: BinaryRelExpr => univ(f.left) ++ univ(f.right)
     case Join(root, f) => univ(root) ++ FootPrint(fields = Set(f))
-    case Singleton(o : Object) => FootPrint(objects = Set(o.eval))
-    case Singleton(v : AtomVar) => FootPrint(objects = if (env.has(v)) Set(env(v)) else Set())
+    case Singleton(a) => univ(a)
     case os: ObjectSet => FootPrint(objects = os.eval)
     case v: AtomSetVar => FootPrint(objects = if (env.has(v)) env(v) else Set())
   }
@@ -135,15 +140,13 @@ object SMT {
         fp
   }
 
-  private def uniq(o: AnyRef) = "o" + (if (o == null) "0" else o.toString.hashCode)
+  private def uniq(o: Atom) = "o" + (if (o == null) "0" else o.toString.hashCode)
 
   /**
    * SMT-LIB 2 translation.
    */
 
   private def translate(f: Formula)(implicit env: Environment, fp: FootPrint): List[String] = {
-    "(set-logic QF_NIA)" ::
-    """(set-option set-param "ELIM_QUANTIFIERS" "true")""" :: 
     {
       val FootPrint(objects, fields) = fp;
       "(declare-datatypes ((Object " + 
@@ -167,9 +170,13 @@ object SMT {
     } :::
     "))" ::
     {for (clause <- f.clauses) yield "(assert " + formula(clause) + ")"} ::: 
-    "(check-sat)" ::
-    "(get-info model)" ::
-    "(next-sat)" ::
+    """ 
+    |(set-logic QF_NIA)
+    |(set-option set-param "ELIM_QUANTIFIERS" "true") 
+    |(check-sat)
+    |(get-info model)
+    |(next-sat)
+    """.stripMargin ::
     Nil
   }
 
