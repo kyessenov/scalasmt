@@ -22,6 +22,15 @@ class ExampleAtoms extends FunSuite {
     expect(true) {eval(a ++ b in s)}
   }
 
+  test ("singleton and conditional") {
+    val a = Dummy(1);
+    val b = Dummy(2);
+    expect(a) {eval(a)}
+    expect(Set(a)) {eval(a ++ a)}
+    expect(a) {eval((a === a) ? a ! b)}
+    expect(Set(a,b)) {eval((a === a) ? (a ++ b) ! a)}
+  }
+
   class Node(var sub: Node = null)
 
   test ("join expression") {
@@ -57,8 +66,8 @@ class ExampleAtoms extends FunSuite {
     val a = Var.makeAtom;
     val x = new Node;
     x.sub = x;
-    expect(Set(null)) {val env = SMT.solve(a === NULL); env(a)}
-    expect(Set(x)) {val env = SMT.solve(x('sub) === a); env(a)} 
-    expect(Set(x)) {val env = SMT.solve(a('sub) === x); env(a)}
+    expect(null) {val env = SMT.solve(a === NULL); env(a)}
+    expect(x) {val env = SMT.solve(x('sub) === a); env(a)} 
+    expect(x) {val env = SMT.solve(a('sub) === x); env(a)}
   }
 }

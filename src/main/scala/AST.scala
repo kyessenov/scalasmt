@@ -17,7 +17,7 @@ sealed trait Ite[T] extends Expr[T] {
   def thn: Expr[T]
   def els: Expr[T]
   def vars = cond.vars ++ thn.vars ++ els.vars
-  def eval(implicit env: Environment): T = if (cond.eval) thn.eval else els.eval
+  def eval(implicit env: Environment)= if (cond.eval) thn.eval else els.eval
 }
 sealed trait Var[T] extends Expr[T] {
   def id: String
@@ -40,6 +40,9 @@ sealed trait BinaryExpr[T <: Expr[_]] {
   def right: T
   def vars = left.vars ++ right.vars
 }
+sealed trait Eq[T <: Expr[_]] extends Expr[Boolean] with BinaryExpr[T] {
+  def eval(implicit env: Environment) = left.eval == right.eval 
+}
 
 /** 
  * Boolean expressions and algebra.
@@ -52,6 +55,7 @@ sealed abstract class Formula extends Expr[Boolean] {
   def unary_! = Not(this)
   def ?(thn: Formula) = new {def !(els: Formula) = BoolConditional(Formula.this, thn, els)}
   def ?(thn: IntExpr) = new {def !(els: IntExpr) = IntConditional(Formula.this, thn, els)}
+  def ?[T <: AnyRef](thn: AtomExpr[T]) = new {def !(els: AtomExpr[T]) = AtomConditional[T](Formula.this, thn, els)}
 
   def clauses: List[Formula] = this match {
     case And(a,b) => a.clauses ++ b.clauses
@@ -83,9 +87,7 @@ case object FalseF extends Formula {
   def eval(implicit env: Environment) = false
 }
 sealed abstract class IntFormula extends Formula with BinaryExpr[IntExpr] 
-case class Eq(left: IntExpr, right: IntExpr) extends IntFormula {
-  def eval(implicit env: Environment) = left.eval == right.eval
-}
+case class IntEq(left: IntExpr, right: IntExpr) extends IntFormula with Eq[IntExpr] 
 case class Leq(left: IntExpr, right: IntExpr) extends IntFormula {
   def eval(implicit env: Environment) = left.eval <= right.eval
 }
@@ -103,9 +105,7 @@ case class BoolVar(id: String) extends Formula with Var[Boolean] {
   override def toString = "b" + id
 }
 sealed abstract class RelFormula extends Formula with BinaryExpr[RelExpr]
-case class RelEq(left: RelExpr, right: RelExpr) extends RelFormula {
-  def eval(implicit env: Environment) = left.eval == right.eval
-}
+case class RelEq(left: RelExpr, right: RelExpr) extends RelFormula with Eq[RelExpr]
 case class RelSub(left: RelExpr, right: RelExpr) extends RelFormula {
   def eval(implicit env: Environment) = left.eval.subsetOf(right.eval)
 }
@@ -115,7 +115,7 @@ case class RelSub(left: RelExpr, right: RelExpr) extends RelFormula {
  * Integer expression with Peano arithmetic.
  */
 sealed abstract class IntExpr extends Expr[BigInt] {
-  def ===(that: IntExpr) = Eq(this, that)
+  def ===(that: IntExpr) = IntEq(this, that)
   def !==(that: IntExpr) = ! (this === that)
   def <=(that: IntExpr) = Leq(this, that)
   def >=(that: IntExpr) = Geq(this, that)
@@ -150,26 +150,32 @@ case class IntVar(id: String) extends IntExpr with Var[BigInt] {
 /**
  * Relational algebra.
  */
-import scala.collection.immutable.Set.Set1
-sealed abstract class RelExpr extends Expr[Set[AnyRef]] {
-  def ===(that: RelExpr) = RelEq(this, that)
+sealed abstract class AtomExpr[+T <: AnyRef] extends Expr[T] 
+case class AtomConditional[T <: AnyRef](cond: Formula, thn: AtomExpr[T], els: AtomExpr[T]) extends AtomExpr[T] with Ite[T]
+sealed abstract class SingletonExpr[+T <: AnyRef] extends AtomExpr[T]
+case class Object[+T <: AnyRef](o: T) extends SingletonExpr[T] {
+  def vars = Set()
+  def eval(implicit env: Environment) = o
+}
+case class AtomVar(id: String) extends SingletonExpr[AnyRef] with Var[AnyRef] {
+  def default = null
+  override def toString = "a" + id
+}
+sealed abstract class RelExpr extends AtomExpr[Set[AnyRef]] {
+  def ===(that: RelExpr) = RelEq(this, that) // TODO: might be ambiguous for AtomExpr[Set[Object[BigInt]]]
   def in(that: RelExpr) = RelSub(this, that)
   def &(that: RelExpr) = Intersect(this, that)
   def ++(that: RelExpr) = Union(this, that)
   def --(that: RelExpr) = Diff(this, that)
   def apply(name: Symbol) = Join(this, FieldDesc(name.name)) 
 }
-case class Object(o: AnyRef) extends RelExpr {
-  def vars = Set()
-  def eval(implicit env: Environment) = Set(o)
+case class Singleton(sub: SingletonExpr[AnyRef]) extends RelExpr {
+  def vars = sub.vars
+  def eval(implicit env: Environment) = Set(sub.eval)
 }
 case class ObjectSet(elts: Traversable[_ <: AnyRef]) extends RelExpr {
   def vars = Set()
   def eval(implicit env: Environment) = elts.toSet[AnyRef]
-}
-case class AtomVar(id: String) extends RelExpr with Var[Set1[AnyRef]] {
-  def default = new Set1(null)
-  override def toString = "a" + id
 }
 case class AtomSetVar(id: String) extends RelExpr with Var[Set[AnyRef]] {
   def default = Set()
@@ -231,9 +237,14 @@ object Formula {
   implicit def fromFormulaList(l: Traversable[Formula]) = 
     l.foldLeft(TrueF: Formula)((l, f) => l && f)
 }
-object RelExpr {
-  implicit def fromAnyRef(o: AnyRef) = Object(o)
-  implicit def fromAnyRefSet(s: Traversable[_ <: AnyRef]) = ObjectSet(s)
+// prioritizing conversions: most specific one wins
+trait LowRelExpr { 
+  implicit def fromRefLow(o: AnyRef) = Singleton(Object(o))
+}
+object RelExpr extends LowRelExpr {
+  implicit def fromRef(o: AnyRef) = Object(o)
+  implicit def fromSingleton(o: SingletonExpr[AnyRef]) = Singleton(o)
+  implicit def fromRefSet(s: Traversable[_ <: AnyRef]) = ObjectSet(s)
 }
 object `package` {
   def IF(cond: Formula)(thn: IntExpr) = new {def ELSE(els: IntExpr) = cond ? thn ! els}
