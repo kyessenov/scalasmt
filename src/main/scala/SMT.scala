@@ -129,7 +129,7 @@ object SMT {
         fp
   }
 
-  private def uniq(o: AnyRef) = "o" + (if (o == null) "0" else System.identityHashCode(o))
+  private def uniq(o: AnyRef) = "o" + (if (o == null) "0" else o.toString.hashCode)
 
   /**
    * SMT-LIB 2 translation.
