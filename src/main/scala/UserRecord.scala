@@ -2,58 +2,76 @@ package cap.scalasmt
 
 import scala.collection.mutable.Map;
 
+import cap.scalasmt.JeevesLib._
+
 /* NOTE: We will not be using this with beans for now... */
-class UserRecord( uname : BigInt, name : List[BigInt], pwd : List[BigInt]
-                , username : List[BigInt], email : List[BigInt]
-                , network : List[BigInt]
-                , friends : List[BigInt]
-                , context : IntVar, levels : List[BigInt]) {
-  private var __realuname = uname;
-
-  private var __name = name;
-  private var __namep = mkSensitiveValue(__name)
-
-  private var __pwd = pwd;
-  private var __pwdp = mkSensitiveValue(__pwd);
-
-  private var __username = username;
-  private var __usernamep = mkSensitiveValue(__username);
-
-  private var __email = email;
-  private var __emailp = mkSensitiveValue(__email);
-
-  private var __network = network;
-  private var __networkp = mkSensitiveValue(__network)
-
-  private var __friends = friends;
-  private var __friendsp = mkSensitiveValue(__friends)
-
+class UserRecord( uname : Int
+                , name : IntExpr, namep : LevelTy
+                , pwd : IntExpr, pwdp : BigInt
+                , username : IntExpr, usernamep : BigInt
+                , email : IntExpr, emailp : BigInt
+                , network : IntExpr, networkp : BigInt
+                , friends : List[IntExpr], friendsp : BigInt
+                , context : IntVar
+                , levels : List[BigInt] ) {
   private val __context = context;
   private val __plevels = levels;
+
+  /* Invariant: The variables are always symbolic expressions kept up to date
+     with the permission. */
+  private var __realuname = uname;
+
+  private var __name = mkSensitive(name, namep);
+  private var __namep = namep;
+
+  private var __pwd = mkSensitive(pwd, pwdp);
+  private var __pwdp = pwdp;
+
+  private var __username = mkSensitive(username, usernamep);
+  private var __usernamep = usernamep;
+
+  private var __email = mkSensitive(email, emailp);
+  private var __emailp = emailp;
+
+  private var __network = mkSensitive(network, networkp);
+  private var __networkp = networkp;
+
+  private var __friends =
+    friends.map(friend => mkSensitive(friend, friendsp));
+  private var __friendsp = friendsp
  
+  private def mkSensitive (v : IntExpr, p : BigInt) =
+    mkSensitiveValue(__plevels, __context, v, p);
+
   /* Define getters and setters. */
+  def getUname () : Int = __realuname
+  def getName () : IntExpr = __name
+  def getPwd () : IntExpr = __pwd
+  def getUsername () : IntExpr = __username
+  def getEmail () : IntExpr = __email
+  def getNetwork () : IntExpr = __network
+  def getFriends () : List[IntExpr] = __friends
 
-  /* Getters need to have a policy. */
-  private def mkSensitiveValue (vals : List[BigInt]) : IntVar = {
-    JeevesLib.createSensitiveValue(context, (levels.zip(vals)).toMap)
+  def setName (n : BigInt) : Unit = __name = mkSensitive(n, namep)
+  def setNameP (np : LevelTy) : Unit = {
+    __namep = np;
+    __name = mkSensitive(__name, __namep)
   }
-
-  def getUname () : BigInt = __realuname
-  def getName () : IntVar = __namep
-  def getPwd () : IntVar = __pwdp
-  def getUsername () : IntVar = __usernamep;
-  def getEmail () : IntVar = __emailp;
-  def getNetwork () : IntVar = __networkp
-  def getFriends () : IntVar = __friendsp
+  def setPwd (pwd : BigInt) : Unit = __pwd = mkSensitive(pwd, pwdp)
+  // TODO: More here...
+  def addFriend (user : IntExpr) {
+    val newfriend = mkSensitive(user, friendsp);
+    __friends = newfriend :: __friends
+  }
 
   def getContext () : IntVar = __context
   def getLevels () : List[BigInt] = __plevels
 
   def equals (other : UserRecord) : Boolean = {
-    (__realuname == other.getUname) && (__namep == other.getName()) &&
-    (__pwdp == other.getPwd()) && (__usernamep == other.getUsername()) &&
-    (__emailp == other.getEmail()) && (__networkp == other.getNetwork()) &&
-    (__friendsp == other.getFriends()) &&
+    (__realuname == other.getUname) && (__name == other.getName()) &&
+    (__pwd == other.getPwd()) && (__username == other.getUsername()) &&
+    (__email == other.getEmail()) && (__network == other.getNetwork()) &&
+    (__friends == other.getFriends()) &&
     (__context == other.getContext()) && (__plevels == other.getLevels())
   }
 }
