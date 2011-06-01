@@ -3,7 +3,9 @@ package cap.scalasmt
 import scala.collection.mutable.HashMap;
 import scala.collection.mutable.Set;
 
-object SocialNetBackend extends Sceeves {
+import JeevesLib._
+
+object SocialNetBackend {
   private var __uid_count = 0;
 
   private var __init = false;
@@ -32,7 +34,7 @@ object SocialNetBackend extends Sceeves {
   val default = JeevesLib.default;
   val friends = JeevesLib.getLevel();
   val self = JeevesLib.getLevel()
-  private val levels = List(self, friends, JeevesLib.default);
+  private val levels = List(self, friends, default);
   def getLevel (contextVal : BigInt)  : BigInt =
     concretize(context, contextVal, level)
 

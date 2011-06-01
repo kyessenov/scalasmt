@@ -89,7 +89,7 @@ object SMT {
    */
 
   case class FootPrint(
-    objects: Set[AnyRef] = Set(), 
+    objects: Set[Atom] = Set(), 
      fields: Set[FieldDesc] = Set()) {
     def ++ (that: FootPrint) = 
       FootPrint(this.objects ++ that.objects, this.fields ++ that.fields)
@@ -109,7 +109,7 @@ object SMT {
   private def univ(e: RelExpr)(implicit env: Environment): FootPrint = e match {
     case f: BinaryRelExpr => univ(f.left) ++ univ(f.right)
     case Join(root, f) => univ(root) ++ FootPrint(fields = Set(f))
-    case Singleton(o : Object[_]) => FootPrint(objects = Set(o.eval))
+    case Singleton(o : Object) => FootPrint(objects = Set(o.eval))
     case Singleton(v : AtomVar) => FootPrint(objects = if (env.has(v)) Set(env(v)) else Set())
     case os: ObjectSet => FootPrint(objects = os.eval)
     case v: AtomSetVar => FootPrint(objects = if (env.has(v)) env(v) else Set())
@@ -171,7 +171,7 @@ object SMT {
    * Solves for an assignment to satisfy the formula.
    * Some variables might be left without assignment.
    */
-  def solve(f: Formula)(implicit env: Environment = EmptyEnv) = {
+  def solve(f: Formula)(implicit env: Environment = DefaultEnv) = {
     val fp @ FootPrint(objects, _) = closure(univ(f))
     val input = translate(f)(env, fp);
     

@@ -13,7 +13,7 @@ class UserRecord( uname : Int
                 , network : IntExpr, networkp : BigInt
                 , friends : List[IntExpr], friendsp : BigInt
                 , context : IntVar
-                , levels : List[BigInt] ) {
+                , levels : List[BigInt] ) extends Atom {
   private val __context = context;
   private val __plevels = levels;
 

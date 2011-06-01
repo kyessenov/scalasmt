@@ -5,7 +5,9 @@ import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
 import java.sql
 
-class ExampleUserRecord extends FunSuite with Sceeves {
+import JeevesLib._
+
+class ExampleUserRecord extends FunSuite {
   test ("equalsSelf") {
     val context = pick (_ => true);
     val u =
