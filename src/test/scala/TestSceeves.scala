@@ -53,7 +53,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
   }
 
   test ("bool var") {
-    val x = *;
+    val x = pickBool;
     assume (! x);
     expect (false) {concretize(x)};
   }

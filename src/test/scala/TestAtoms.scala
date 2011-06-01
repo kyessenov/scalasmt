@@ -7,7 +7,7 @@ import cap.scalasmt.RelExpr._
 
 class ExampleAtoms extends FunSuite {
 
-  case class Dummy(id: Int)
+  case class Dummy(id: Int) extends Atom
 
   def eval[T](expr: Expr[T]) = expr.eval
 
@@ -23,15 +23,17 @@ class ExampleAtoms extends FunSuite {
   }
 
   test ("singleton and conditional") {
-    val a = Dummy(1);
-    val b = Dummy(2);
-    expect(a) {eval(a)}
-    expect(Set(a)) {eval(a ++ a)}
-    expect(a) {eval((a === a) ? a ! b)}
-    expect(Set(a,b)) {eval((a === a) ? (a ++ b) ! a)}
+    val d1 = Dummy(1);
+    val d2 = Dummy(2);
+    val a = Object(d1);
+    val b = Object(d2);
+    expect(d1) {eval(a)}
+    expect(Set(d1)) {eval(a ++ a)}
+    expect(d1) {eval((a === a) ? a ! b)}
+    expect(Set(d1,d2)) {eval((a === a) ? (a ++ b) ! a)}
   }
 
-  class Node(var sub: Node = null)
+  class Node(var sub: Node = null) extends Atom
 
   test ("join expression") {
     val a = new Node;
