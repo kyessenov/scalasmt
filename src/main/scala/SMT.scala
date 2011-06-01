@@ -20,6 +20,10 @@ object SMT {
   }
   def Z3_COMMANDS ="-smt2" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
   
+  /**
+   * Expression translators.
+   */
+
   private def variable(v: Var[_])(implicit env: Environment) =
     if (env.has(v))
       env(v).toString
@@ -32,7 +36,7 @@ object SMT {
     case Not(a) => "(not " + formula(a) + ")"
     case TrueF => "true"
     case FalseF => "false"
-    case Eq(a,b) => "(= " + integer(a) + " " + integer(b) + ")"
+    case IntEq(a,b) => "(= " + integer(a) + " " + integer(b) + ")"
     case Leq(a,b) => "(<= " + integer(a) + " " + integer(b) + ")"
     case Geq(a,b) => "(>= " + integer(a) + " " + integer(b) + ")" 
     case LT(a,b) => "(< " + integer(a) + " " + integer(b) + ")"
@@ -59,20 +63,30 @@ object SMT {
     case Union(a,b) => "(or " + atom(a) + " " + atom(b) + ")"
     case Diff(a,b) => "(and " + atom(a) + " (not " + atom(b) + "))"
     case Intersect(a,b) => "(and " + atom(a) + " " + atom(b) + ")"
-    case Object(o) => "(= " + q + " " + uniq(o) + ")"
+    case Singleton(Object(o)) => "(= " + q + " " + uniq(o) + ")"
     case ObjectSet(os) => "(or " + os.map("(= " + q + " " + uniq(_) + ")") + ")"
     case Join(root, f) => 
       val r = q + "0";
       "(exists (" + r + " Object) (and (= " + q + 
         " (" + f.name + " " + r + ")) " + atom(root)(r, env) + "))"
-    case v: AtomVar => "(= " + q + " " + 
+    case Singleton(v : AtomVar) => "(= " + q + " " + 
       (if (env.has(v)) 
-        uniq(env(v).head)
+        uniq(env(v))
       else
         v.toString) + " )"
     case v: AtomSetVar => 
-      throw new RuntimeException("unimplemented")
+      if (env.has(v))
+        atom(ObjectSet(env(v)))
+      else
+        "(" + v + " " + q + ")"
+
   }
+
+  /** 
+   * Atom foot print of a formula.
+   * TODO: field decls make formulas depend on the heap implicitly.
+   * TODO: universe bounding might make certain disequalities unsatisfiable
+   */
 
   case class FootPrint(
     objects: Set[AnyRef] = Set(), 
@@ -81,25 +95,24 @@ object SMT {
       FootPrint(this.objects ++ that.objects, this.fields ++ that.fields)
   }
 
-  private def univ(f: Formula): FootPrint = f match {
+  private def univ(f: Formula)(implicit env: Environment): FootPrint = f match {
     case f: BinaryFormula => univ(f.left) ++ univ(f.right)
-    case _: IntFormula => FootPrint()
+    case f: IntFormula => FootPrint()
     case f: RelFormula => univ(f.left) ++ univ(f.right)
-    case BoolConditional(cond, thn, els) => 
-      univ(cond) ++ univ(thn) ++ univ(els)
+    case BoolConditional(cond, thn, els) => univ(cond) ++ univ(thn) ++ univ(els)
     case FalseF => FootPrint()
     case TrueF => FootPrint()
     case Not(f) => univ(f)
     case _: BoolVar => FootPrint()
   }
 
-  private def univ(e: RelExpr): FootPrint = e match {
+  private def univ(e: RelExpr)(implicit env: Environment): FootPrint = e match {
     case f: BinaryRelExpr => univ(f.left) ++ univ(f.right)
     case Join(root, f) => univ(root) ++ FootPrint(fields = Set(f))
-    case _: AtomVar => FootPrint()
-    case _: AtomSetVar => FootPrint()
-    case o: Object => FootPrint(objects = o.eval)
+    case Singleton(o : Object[_]) => FootPrint(objects = Set(o.eval))
+    case Singleton(v : AtomVar) => FootPrint(objects = if (env.has(v)) Set(env(v)) else Set())
     case os: ObjectSet => FootPrint(objects = os.eval)
+    case v: AtomSetVar => FootPrint(objects = if (env.has(v)) env(v) else Set())
   }
 
   @annotation.tailrec 
@@ -116,21 +129,19 @@ object SMT {
         fp
   }
 
-  // TODO: global for objects to id mapping
-  private var UNIVERSE: List[AnyRef] = Nil
-  private def uniq(o: AnyRef) = "o" + UNIVERSE.indexOf(o)
+  private def uniq(o: AnyRef) = "o" + (if (o == null) "0" else o.toString.hashCode)
 
-  /** Follow SMT-LIB 2 format */
-  private def translate(f: Formula, env: Environment): List[String] = {
+  /**
+   * SMT-LIB 2 translation.
+   */
+
+  private def translate(f: Formula)(implicit env: Environment, fp: FootPrint): List[String] = {
     "(set-logic QF_NIA)" ::
     """(set-option set-param "ELIM_QUANTIFIERS" "true")""" :: 
     {
-      val FootPrint(objects, fields) = closure(univ(f));
-      UNIVERSE = objects.toList;
-      if (UNIVERSE.size > 1) 
-        println("Universe size: " + UNIVERSE.size)
+      val FootPrint(objects, fields) = fp;
       "(declare-datatypes ((Object " + 
-         UNIVERSE.map("(" + uniq(_) + ")").mkString(" ") + ")))" :: 
+         objects.map("(" + uniq(_) + ")").mkString(" ") + ")))" :: 
       {for (f <- fields) yield 
         "(declare-fun " + f.name + " (Object) Object)"}.toList :::
       {for (o <- objects; 
@@ -149,7 +160,7 @@ object SMT {
       })
     } :::
     "))" ::
-    {for (clause <- f.clauses) yield "(assert " + formula(clause)(env) + ")"} ::: 
+    {for (clause <- f.clauses) yield "(assert " + formula(clause) + ")"} ::: 
     "(check-sat)" ::
     "(get-info model)" ::
     "(next-sat)" ::
@@ -160,8 +171,9 @@ object SMT {
    * Solves for an assignment to satisfy the formula.
    * Some variables might be left without assignment.
    */
-  def solve(f: Formula, env: Environment = EmptyEnv) = {
-    val input = translate(f, env);
+  def solve(f: Formula)(implicit env: Environment = EmptyEnv) = {
+    val fp @ FootPrint(objects, _) = closure(univ(f))
+    val input = translate(f)(env, fp);
     
     // call Z3
     import java.io._
@@ -218,7 +230,10 @@ object SMT {
           case v: IntVar => result = result + (v -> BigInt(value))
           case v: BoolVar => result = result + (v -> value.toBoolean)
           case v: AtomVar => result = result + 
-            (v -> new Set1(UNIVERSE(value.substring(1).toInt)))
+            (v -> objects.find(o => uniq(o) == value).get)
+          case v: AtomSetVar => 
+            // TODO: better S-expression parsing
+            throw new RuntimeException("not implemented")
         }
     }
     result;
