@@ -12,11 +12,11 @@ class ExampleDatabase extends FunSuite {
   private val context = pick(_ => true);
   private val uRecord =
     new UserRecord( 0
-                  , Constant(0), 0  // name, namep
-                  , Constant(0), 0  // pwd, pwdp
-                  , Constant(0), 0  // username, usernamep
-                  , Constant(0), 0  // email, emailp
-                  , Constant(0), 0  // network, networkp
+                  , 0, 0  // name, namep
+                  , 0, 0  // pwd, pwdp
+                  , 0, 0  // username, usernamep
+                  , 0, 0  // email, emailp
+                  , 0, 0  // network, networkp
                   , List(), 0  // friends, friendsp
                   , context, List(0))
 
@@ -28,7 +28,7 @@ class ExampleDatabase extends FunSuite {
 
   test ("put and get") {
     val db = mkTestDB();
-    val entry = db.getEntry(uRecord.getUname()).asInstanceOf[UserRecord];
+    val entry = concretize(db.getEntry(uRecord.getUname()));
     expect(true) { uRecord.equals(entry) };
   }
 
@@ -36,6 +36,6 @@ class ExampleDatabase extends FunSuite {
     val db = mkTestDB();
     val idx = pick(x => x === uRecord.getUname());
     val entry = db.getEntry(idx);
-    expect(Set(uRecord)) { concretize(entry) }
+    expect(uRecord) { concretize(entry) }
   }
 }
