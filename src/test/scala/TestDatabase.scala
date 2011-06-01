@@ -6,7 +6,9 @@ import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
 import java.sql
 
-class ExampleDatabase extends FunSuite with Sceeves {
+import JeevesLib._
+
+class ExampleDatabase extends FunSuite {
   private val context = pick(_ => true);
   private val uRecord =
     new UserRecord( 0

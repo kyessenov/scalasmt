@@ -9,7 +9,7 @@ object Inconsistent extends RuntimeException("cannot build a model")
 trait Sceeves {
   private var CONSTRAINTS: List[Formula] = Nil
   private var DEFAULTS: Map[IntVar, IntExpr] = Map()
-  private var ENV: Environment = EmptyEnv
+  private var ENV: Environment = DefaultEnv
 
   private def solve(fs: List[Formula], env: Environment) = 
     try {
@@ -49,8 +49,8 @@ trait Sceeves {
   }
 
   def pick: IntVar = Var.makeInt;
-  def * = Var.makeBool;
-  def pickAtom : AtomVar = Var.makeAtom;
+  def pickBool = Var.makeBool;
+  def pickAtom = Var.makeAtom;
   def pick(spec: IntVar => Formula): IntVar = {val x = pick; assume(spec(x)); x}
   def pick(default: IntExpr, spec: IntVar => Formula): IntVar = {
     val x = pick(spec);
