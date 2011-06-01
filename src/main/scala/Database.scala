@@ -2,6 +2,7 @@ package cap.scalasmt
 
 import cap.scalasmt.JeevesLib._
 import scala.collection.mutable.{Map => MMap}
+import RelExpr._
 
 class Database {
   object KeyException extends RuntimeException("key not in db")
@@ -22,6 +23,9 @@ class Database {
         }
       case IntVar(k) =>
         val r : AtomVar = pickAtom;
+        elements foreach {
+          case (curkey, v) => assume((key === curkey) ==> (r === v))
+        }
         r
     }
 }
