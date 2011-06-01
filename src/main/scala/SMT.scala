@@ -36,7 +36,7 @@ object SMT {
     case Not(a) => "(not " + formula(a) + ")"
     case TrueF => "true"
     case FalseF => "false"
-    case Eq(a,b) => "(= " + integer(a) + " " + integer(b) + ")"
+    case IntEq(a,b) => "(= " + integer(a) + " " + integer(b) + ")"
     case Leq(a,b) => "(<= " + integer(a) + " " + integer(b) + ")"
     case Geq(a,b) => "(>= " + integer(a) + " " + integer(b) + ")" 
     case LT(a,b) => "(< " + integer(a) + " " + integer(b) + ")"
@@ -63,15 +63,15 @@ object SMT {
     case Union(a,b) => "(or " + atom(a) + " " + atom(b) + ")"
     case Diff(a,b) => "(and " + atom(a) + " (not " + atom(b) + "))"
     case Intersect(a,b) => "(and " + atom(a) + " " + atom(b) + ")"
-    case Object(o) => "(= " + q + " " + uniq(o) + ")"
+    case Singleton(Object(o)) => "(= " + q + " " + uniq(o) + ")"
     case ObjectSet(os) => "(or " + os.map("(= " + q + " " + uniq(_) + ")") + ")"
     case Join(root, f) => 
       val r = q + "0";
       "(exists (" + r + " Object) (and (= " + q + 
         " (" + f.name + " " + r + ")) " + atom(root)(r, env) + "))"
-    case v: AtomVar => "(= " + q + " " + 
+    case Singleton(v : AtomVar) => "(= " + q + " " + 
       (if (env.has(v)) 
-        uniq(env(v).head)
+        uniq(env(v))
       else
         v.toString) + " )"
     case v: AtomSetVar => 
@@ -109,9 +109,9 @@ object SMT {
   private def univ(e: RelExpr)(implicit env: Environment): FootPrint = e match {
     case f: BinaryRelExpr => univ(f.left) ++ univ(f.right)
     case Join(root, f) => univ(root) ++ FootPrint(fields = Set(f))
-    case o: Object => FootPrint(objects = o.eval)
+    case Singleton(o : Object[_]) => FootPrint(objects = Set(o.eval))
+    case Singleton(v : AtomVar) => FootPrint(objects = if (env.has(v)) Set(env(v)) else Set())
     case os: ObjectSet => FootPrint(objects = os.eval)
-    case v: AtomVar => FootPrint(objects = if (env.has(v)) env(v) else Set())
     case v: AtomSetVar => FootPrint(objects = if (env.has(v)) env(v) else Set())
   }
 
@@ -230,7 +230,7 @@ object SMT {
           case v: IntVar => result = result + (v -> BigInt(value))
           case v: BoolVar => result = result + (v -> value.toBoolean)
           case v: AtomVar => result = result + 
-            (v -> new Set1(objects.find(o => uniq(o) == value).get))
+            (v -> objects.find(o => uniq(o) == value).get)
           case v: AtomSetVar => 
             // TODO: better S-expression parsing
             throw new RuntimeException("not implemented")
