@@ -104,6 +104,7 @@ case class BoolVar(id: String) extends Formula with Var[Boolean] {
   def default = true
   override def toString = "b" + id
 }
+case class ObjectEq(left: ObjectExpr, right: ObjectExpr) extends Formula with Eq[ObjectExpr]
 sealed abstract class RelFormula extends Formula with BinaryExpr[RelExpr]
 case class RelEq(left: RelExpr, right: RelExpr) extends RelFormula with Eq[RelExpr]
 case class RelSub(left: RelExpr, right: RelExpr) extends RelFormula {
@@ -154,7 +155,7 @@ trait Atom extends AnyRef
 sealed abstract class AtomExpr[T <: AnyRef] extends Expr[T] 
 case class AtomConditional[T <: AnyRef](cond: Formula, thn: AtomExpr[T], els: AtomExpr[T]) extends AtomExpr[T] with Ite[T]
 sealed abstract class ObjectExpr extends AtomExpr[Atom] {
-  def ===(that: ObjectExpr) = RelEq(Singleton(this), Singleton(that))
+  def ===(that: ObjectExpr) = ObjectEq(this, that)
 }
 case class Object(o: Atom) extends ObjectExpr {
   def vars = Set()
