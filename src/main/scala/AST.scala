@@ -55,7 +55,7 @@ sealed abstract class Formula extends Expr[Boolean] {
   def unary_! = Not(this)
   def ?(thn: Formula) = new {def !(els: Formula) = BoolConditional(Formula.this, thn, els)}
   def ?(thn: IntExpr) = new {def !(els: IntExpr) = IntConditional(Formula.this, thn, els)}
-  def ?[T <: AnyRef](thn: AtomExpr[T]) = new {def !(els: AtomExpr[T]) = AtomConditional[T](Formula.this, thn, els)}
+  def ?(thn: ObjectExpr) = new {def !(els: ObjectExpr) = AtomConditional(Formula.this, thn, els)}
 
   def clauses: List[Formula] = this match {
     case And(a,b) => a.clauses ++ b.clauses
@@ -147,16 +147,15 @@ case class IntVar(id: String) extends IntExpr with Var[BigInt] {
   override def toString = "i" + id
 }
 
-
 /**
- * Relational algebra.
+ * Atom equality theory.
  */
 trait Atom extends AnyRef
-sealed abstract class AtomExpr[T <: AnyRef] extends Expr[T] 
-case class AtomConditional[T <: AnyRef](cond: Formula, thn: AtomExpr[T], els: AtomExpr[T]) extends AtomExpr[T] with Ite[T]
-sealed abstract class ObjectExpr extends AtomExpr[Atom] {
+sealed abstract class ObjectExpr extends Expr[Atom] { 
   def ===(that: ObjectExpr) = ObjectEq(this, that)
+  def ++(that: ObjectExpr) = Union(Singleton(this), Singleton(that))
 }
+case class AtomConditional(cond: Formula, thn: ObjectExpr, els: ObjectExpr) extends ObjectExpr with Ite[Atom]
 case class Object(o: Atom) extends ObjectExpr {
   def vars = Set()
   def eval(implicit env: Environment) = o
@@ -165,13 +164,17 @@ case class AtomVar(id: String) extends ObjectExpr with Var[Atom] {
   def default = null
   override def toString = "a" + id
 }
-sealed abstract class RelExpr extends AtomExpr[Set[Atom]] {
+
+/**
+ * Relational algebra.
+ */
+sealed abstract class RelExpr extends Expr[Set[Atom]] {
   def ===(that: RelExpr) = RelEq(this, that)
   def in(that: RelExpr) = RelSub(this, that)
   def &(that: RelExpr) = Intersect(this, that)
   def ++(that: RelExpr) = Union(this, that)
   def --(that: RelExpr) = Diff(this, that)
-  def apply(name: Symbol) = Join(this, FieldDesc(name.name)) 
+  def ~(name: Symbol) = Join(this, FieldDesc(name.name)) 
 }
 case class Singleton(sub: ObjectExpr) extends RelExpr {
   def vars = sub.vars

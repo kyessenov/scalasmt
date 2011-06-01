@@ -3,7 +3,6 @@ package test.cap.scalasmt
 import org.scalatest.FunSuite
 import org.scalatest.Assertions
 import cap.scalasmt._
-import cap.scalasmt.RelExpr._
 
 class ExampleAtoms extends FunSuite {
 
@@ -12,43 +11,44 @@ class ExampleAtoms extends FunSuite {
   def eval[T](expr: Expr[T]) = expr.eval
 
   test ("set operations") {
+    import RelExpr._
     val List(a,b,c,d,e,f) = (1 to 6).toList.map(Dummy(_))
     expect(Set(a,b,c)) {eval(((a ++ b ++ c ++ d ++ e) -- d) & (a ++ b ++ c))}
   }
 
   test ("object set") {
+    import RelExpr._
     val s @ List(a,b,c) = (1 to 3).toList.map(Dummy(_))
     expect(true) {eval(a in s)}
     expect(true) {eval(a ++ b in s)}
   }
 
   test ("singleton and conditional") {
-    val d1 = Dummy(1);
-    val d2 = Dummy(2);
-    val a = Object(d1);
-    val b = Object(d2);
-    expect(d1) {eval(a)}
-    expect(Set(d1)) {eval(a ++ a)}
-    expect(d1) {eval((a === a) ? a ! b)}
-    expect(Set(d1,d2)) {eval((a === a) ? (a ++ b) ! a)}
+    import ObjectExpr._
+    val a = Dummy(1);
+    val b = Dummy(2);
+    expect(a) {eval(a)}
+    expect(Set(a)) {eval(a ++ a)}
+    expect(a) {eval((a === a) ? a ! b)}
   }
 
-  class Node(var sub: Node = null) extends Atom
+  case class Node(sub: Dummy) extends Atom
 
-  test ("join expression") {
-    val a = new Node;
-    expect(Set(null)) {eval(a('sub))}
+  test ("relational join expression") {
+    import RelExpr._
 
-    a.sub = a;
-    expect(Set(a)) {eval(a('sub))}
-    expect(Set()) {eval(Dummy(0)('sub))}
-
-    val b = new Node;
-    b.sub = b;
-    expect(Set(a,b)) {eval((a ++ b)('sub))}
+    val a = Node(null)
+    expect(Set(null)) {eval(a ~ 'sub)}
+    expect(Set()) {eval(NULL ~ 'sub)}
+    
+    val b = Dummy(1)
+    val c = Node(b)
+    expect(Set(null,b)) {eval((a ++ c) ~ 'sub)}
   }
 
   test ("SMT translation") {
+    import RelExpr._
+
     val List(a,b,c) = (1 to 3).toList.map(Dummy(_))
     SMT.solve(a in ((a ++ b) -- ((b ++ c) & b))) 
     SMT.solve(a in a)
@@ -56,20 +56,18 @@ class ExampleAtoms extends FunSuite {
   }  
 
   test ("SMT fields") {
-    val x = new Node;
-    val y = new Node;
-    SMT.solve(x('sub) === NULL)
-    SMT.solve(x('sub) === y('sub))
-    x.sub = y;
-    SMT.solve(x('sub) === y)
+    import RelExpr._
+
+    val x = Dummy(1);
+    val y = Node(x);
+    SMT.solve(y ~ 'sub === x)
+    SMT.solve(! (x ~ 'sub == y ~ 'sub))
+    SMT.solve(y ~ 'sub ~ 'sub === NULL)
   }
 
   test ("SMT variables") {
     val a = Var.makeAtom;
-    val x = new Node;
-    x.sub = x;
-    expect(null) {val env = SMT.solve(a === NULL); env(a)}
-    expect(x) {val env = SMT.solve(x('sub) === a); env(a)} 
-    expect(x) {val env = SMT.solve(a('sub) === x); env(a)}
+    val b = Dummy(1);
+    expect(b) {val env = SMT.solve( a === ((a === a) ? b ! NULL)); env(a)}
   }
 }
