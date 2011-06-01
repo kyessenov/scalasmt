@@ -150,34 +150,37 @@ case class IntVar(id: String) extends IntExpr with Var[BigInt] {
 /**
  * Relational algebra.
  */
-sealed abstract class AtomExpr[+T <: AnyRef] extends Expr[T] 
+trait Atom extends AnyRef
+sealed abstract class AtomExpr[T <: AnyRef] extends Expr[T] 
 case class AtomConditional[T <: AnyRef](cond: Formula, thn: AtomExpr[T], els: AtomExpr[T]) extends AtomExpr[T] with Ite[T]
-sealed abstract class SingletonExpr[+T <: AnyRef] extends AtomExpr[T]
-case class Object[+T <: AnyRef](o: T) extends SingletonExpr[T] {
+sealed abstract class ObjectExpr extends AtomExpr[Atom] {
+  def ===(that: ObjectExpr) = RelEq(Singleton(this), Singleton(that))
+}
+case class Object(o: Atom) extends ObjectExpr {
   def vars = Set()
   def eval(implicit env: Environment) = o
 }
-case class AtomVar(id: String) extends SingletonExpr[AnyRef] with Var[AnyRef] {
+case class AtomVar(id: String) extends ObjectExpr with Var[Atom] {
   def default = null
   override def toString = "a" + id
 }
-sealed abstract class RelExpr extends AtomExpr[Set[AnyRef]] {
-  def ===(that: RelExpr) = RelEq(this, that) // TODO: might be ambiguous for AtomExpr[Set[Object[BigInt]]]
+sealed abstract class RelExpr extends AtomExpr[Set[Atom]] {
+  def ===(that: RelExpr) = RelEq(this, that)
   def in(that: RelExpr) = RelSub(this, that)
   def &(that: RelExpr) = Intersect(this, that)
   def ++(that: RelExpr) = Union(this, that)
   def --(that: RelExpr) = Diff(this, that)
   def apply(name: Symbol) = Join(this, FieldDesc(name.name)) 
 }
-case class Singleton(sub: SingletonExpr[AnyRef]) extends RelExpr {
+case class Singleton(sub: ObjectExpr) extends RelExpr {
   def vars = sub.vars
   def eval(implicit env: Environment) = Set(sub.eval)
 }
-case class ObjectSet(elts: Traversable[_ <: AnyRef]) extends RelExpr {
+case class ObjectSet(elts: Traversable[_ <: Atom]) extends RelExpr {
   def vars = Set()
-  def eval(implicit env: Environment) = elts.toSet[AnyRef]
+  def eval(implicit env: Environment) = elts.toSet[Atom]
 }
-case class AtomSetVar(id: String) extends RelExpr with Var[Set[AnyRef]] {
+case class AtomSetVar(id: String) extends RelExpr with Var[Set[Atom]] {
   def default = Set()
   override def toString = "s" + id
 }
@@ -187,7 +190,11 @@ case class Join(root: RelExpr, f: FieldDesc) extends RelExpr {
   def eval(implicit env: Environment) = 
     (for (o <- root.eval; if o != null) yield {
       try {
-        Some(o.getClass.getDeclaredMethod(f.name).invoke(o))
+        o.getClass.getDeclaredMethod(f.name).invoke(o) match {
+          case null => Some(null)
+          case o: Atom => Some(o)
+          case _ => None
+        }
       } catch {
         case _: NoSuchMethodException => None
       }
@@ -216,7 +223,11 @@ case class Intersect(left: RelExpr, right: RelExpr) extends BinaryRelExpr {
 object EmptyEnv extends Environment {
   def vars = Set()
   def has[T](i: Var[T]) = false
-  // Variables outside the environment evaluate to default value.
+  def apply[T](i: Var[T]) = throw new RuntimeException("no binding")
+}
+object DefaultEnv extends Environment {
+  def vars = Set()
+  def has[T](i: Var[T]) = false
   def apply[T](i: Var[T]) = i.default
 }
 case class Binding[U](bi: Var[U], bv: U, parent: Environment) extends Environment {
@@ -237,14 +248,13 @@ object Formula {
   implicit def fromFormulaList(l: Traversable[Formula]) = 
     l.foldLeft(TrueF: Formula)((l, f) => l && f)
 }
-// prioritizing conversions: most specific one wins
-trait LowRelExpr { 
-  implicit def fromRefLow(o: AnyRef) = Singleton(Object(o))
+object ObjectExpr {
+  implicit def fromRef(o: Atom) = Object(o)
 }
-object RelExpr extends LowRelExpr {
-  implicit def fromRef(o: AnyRef) = Object(o)
-  implicit def fromSingleton(o: SingletonExpr[AnyRef]) = Singleton(o)
-  implicit def fromRefSet(s: Traversable[_ <: AnyRef]) = ObjectSet(s)
+object RelExpr {
+  implicit def fromRef(o: Atom) = Singleton(Object(o))
+  implicit def fromSingleton(o: ObjectExpr) = Singleton(o)
+  implicit def fromRefSet(s: Traversable[_ <: Atom]) = ObjectSet(s)
 }
 object `package` {
   def IF(cond: Formula)(thn: IntExpr) = new {def ELSE(els: IntExpr) = cond ? thn ! els}
