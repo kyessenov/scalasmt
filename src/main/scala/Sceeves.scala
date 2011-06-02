@@ -48,7 +48,7 @@ trait Sceeves {
     that;
   }
 
-  def pick: IntVar = Var.makeInt;
+  def pick = Var.makeInt;
   def pickBool = Var.makeBool;
   def pickAtom = Var.makeAtom;
   def pick(spec: IntVar => Formula): IntVar = {val x = pick; assume(spec(x)); x}
@@ -59,9 +59,12 @@ trait Sceeves {
   }  
   def assume(f: Formula) = CONSTRAINTS = f :: CONSTRAINTS
   def concretize[T](e: Expr[T]): T = {resolve; e.eval(ENV)}
-  def concretize[T,U](i: IntVar, v: IntExpr, e: Expr[T]): T = {
+  def concretize[T](f: Formula, e: Expr[T]): T = {
     val that = duplicate;
-    that.assume(i === v);
+    that.assume(f);
     that.concretize(e);
   }
+  def concretize[T](v: AtomVar, i: ObjectExpr, e: Expr[T]): T = concretize(v === i, e)
+  def concretize[T](v: BoolVar, i: Formula, e: Expr[T]): T = concretize(v === i, e)
+  def concretize[T](v: IntVar, i: IntExpr, e: Expr[T]): T = concretize(v === i, e)
 }
