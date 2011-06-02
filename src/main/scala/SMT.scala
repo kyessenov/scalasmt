@@ -76,7 +76,7 @@ object SMT {
     case Intersect(a,b) => "(and " + atom(a) + " " + atom(b) + ")"
     case Singleton(o) => "(= " + q + " " + atom(o) + ")"
     case ObjectSet(os) => "(or " + os.map("(= " + q + " " + uniq(_) + ")") + ")"
-    case Join(root, f) => 
+    case RelJoin(root, f) => 
       val r = q + "0";
       "(exists (" + r + " Object) (and (= " + q + 
         " (" + f.name + " " + r + ")) " + atom(root)(r, env) + "))"
@@ -120,7 +120,7 @@ object SMT {
 
   private def univ(e: RelExpr)(implicit env: Environment): FootPrint = e match {
     case f: BinaryRelExpr => univ(f.left) ++ univ(f.right)
-    case Join(root, f) => univ(root) ++ FootPrint(fields = Set(f))
+    case RelJoin(root, f) => univ(root) ++ FootPrint(fields = Set(f))
     case Singleton(a) => univ(a)
     case os: ObjectSet => FootPrint(objects = os.eval)
     case v: AtomSetVar => FootPrint(objects = if (env.has(v)) env(v) else Set())
@@ -131,7 +131,7 @@ object SMT {
     case FootPrint(objects, fields) =>
       val grow = objects ++ 
         (for (o <- objects; f <- fields) yield 
-          Join(Object(o), f).eval).flatten ++
+          RelJoin(Object(o), f).eval).flatten ++
         Set(null) 
 
       if (grow.size > objects.size)
@@ -140,7 +140,7 @@ object SMT {
         fp
   }
 
-  private def uniq(o: Atom) = "o" + (if (o == null) "0" else o.toString.hashCode)
+  private def uniq(o: Atom) = "o" + (if (o == null) "0" else o.uniq)
 
   /**
    * SMT-LIB 2 translation.
@@ -155,7 +155,7 @@ object SMT {
         "(declare-fun " + f.name + " (Object) Object)"}.toList :::
       {for (o <- objects; 
         f <- fields;
-        v = Join(Object(o), f).eval) yield 
+        v = RelJoin(Object(o), f).eval) yield 
         "(assert (= (" + f.name + " " + uniq(o) + ") " + (if (v.size == 0) uniq(null) else uniq(v.head)) + "))"}.toList
     } :::
     "(declare-funs (" ::
