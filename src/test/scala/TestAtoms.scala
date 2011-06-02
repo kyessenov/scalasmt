@@ -23,12 +23,22 @@ class ExampleAtoms extends FunSuite {
     expect(true) {eval(a ++ b in s)}
   }
 
+  test ("large object set") {
+    import RelExpr._
+    val k = 20
+    val a = (1 to k).toList.map(Dummy(_))
+    val b = (k + 1 to 2*k).toList.map(Dummy(_))
+    SMT.solve(a in (a ++ b))
+    SMT.solve((a & b) === Set())
+  }
+
   test ("singleton and conditional") {
     import ObjectExpr._
     val a = Dummy(1);
     val b = Dummy(2);
     expect(a) {eval(a)}
     expect(Set(a)) {eval(a ++ a)}
+    expect(Set(a, null)) {eval(a ++ NULL)}
     expect(a) {eval((a === a) ? a ! b)}
   }
 
