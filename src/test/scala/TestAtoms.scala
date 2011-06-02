@@ -32,7 +32,7 @@ class ExampleAtoms extends FunSuite {
     expect(a) {eval((a === a) ? a ! b)}
   }
 
-  case class Node(sub: Dummy) extends Atom
+  case class Node(val sub: Dummy) extends Atom
 
   test ("relational join expression") {
     import RelExpr._

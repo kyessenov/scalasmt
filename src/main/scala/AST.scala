@@ -150,7 +150,10 @@ case class IntVar(id: String) extends IntExpr with Var[BigInt] {
 /**
  * Atom equality theory.
  */
-trait Atom extends AnyRef
+trait Atom extends AnyRef {
+  // Must respect equality but uniquely identify the object
+  def uniq = toString.hashCode
+}
 sealed abstract class ObjectExpr extends Expr[Atom] { 
   def ===(that: ObjectExpr) = ObjectEq(this, that)
   def ++(that: ObjectExpr) = Union(Singleton(this), Singleton(that))
@@ -174,7 +177,7 @@ sealed abstract class RelExpr extends Expr[Set[Atom]] {
   def &(that: RelExpr) = Intersect(this, that)
   def ++(that: RelExpr) = Union(this, that)
   def --(that: RelExpr) = Diff(this, that)
-  def ~(name: Symbol) = Join(this, FieldDesc(name.name)) 
+  def ~(name: Symbol) = RelJoin(this, FieldDesc(name.name)) 
 }
 case class Singleton(sub: ObjectExpr) extends RelExpr {
   def vars = sub.vars
@@ -189,18 +192,22 @@ case class AtomSetVar(id: String) extends RelExpr with Var[Set[Atom]] {
   override def toString = "s" + id
 }
 case class FieldDesc(name: String)
-case class Join(root: RelExpr, f: FieldDesc) extends RelExpr {
+case class RelJoin(root: RelExpr, f: FieldDesc) extends RelExpr {
   def vars = root.vars
   def eval(implicit env: Environment) = 
     (for (o <- root.eval; if o != null) yield {
       try {
-        o.getClass.getDeclaredMethod(f.name).invoke(o) match {
+        val fid = o.getClass.getDeclaredField(f.name);
+        fid.setAccessible(true);
+        if ((fid.getModifiers | java.lang.reflect.Modifier.FINAL) == 0)
+          throw new RuntimeException("join on non-final field is not allowed")
+        fid.get(o) match {
           case null => Some(null)
           case o: Atom => Some(o)
           case _ => None
         }
       } catch {
-        case _: NoSuchMethodException => None
+        case _: NoSuchFieldException => None
       }
     }).flatten 
 }
