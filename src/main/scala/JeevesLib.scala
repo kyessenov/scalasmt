@@ -1,5 +1,11 @@
 package cap.scalasmt
 
+/*
+ * A library for using ScalaSMT for privacy, using symbolic varaibles to
+ * represent sensitive values.
+ * @author jeanyang
+ */
+
 import scala.collection.immutable.Map;
 import scala.collection.mutable.{Map => MMap};
 
@@ -13,7 +19,7 @@ object JeevesLib extends Sceeves {
   private var plevel_count : LevelTy = 1;
   
   val default : LevelTy = 0;
-  def getLevel () : LevelTy = {
+  def getNewLevel () : LevelTy = {
     val plevel_old = plevel_count
     plevel_count = plevel_count + 1;
     plevel_old
@@ -37,12 +43,30 @@ object JeevesLib extends Sceeves {
         )
   }
 
-  def mkSensitiveValue (levels : List[LevelTy], context : IntVar, v : IntExpr, minLevel : BigInt) : IntVar = {
+  def mkSensitiveValue (levels : List[LevelTy], context : AtomVar, v : IntExpr, minLevel : BigInt) : IntVar = {
     val map = addCoarsePolicy(levels, v, minLevel);
     JeevesLib.createSensitiveValue(context, map)
   }
 
   // Associates a constraint with a field.
+  def createSensitiveValue (context : AtomVar, vals : SensitiveMap) : IntVar = {
+    var x = pick;
+
+    // See if there is a default.
+    val defaultVal =  vals.get(default);
+    defaultVal match {
+      case Some(v) => { x = pick(v, _ => true); }
+      case None => { } // Do nothing for now.
+    }
+
+    // Go through keys and values.
+    vals foreach {
+      case (keyval, valConstraint) =>
+        assume((context ~ '__username === keyval) ==> (x === valConstraint))
+    }
+    x
+  }
+
   def createSensitiveValue (context : IntVar, vals : SensitiveMap) : IntVar = {
     var x = pick;
 
@@ -56,10 +80,11 @@ object JeevesLib extends Sceeves {
     }
 
     // Go through keys and values.
-    vals foreach {
+    vals.foreach {
       case (keyval, valConstraint) =>
         assume((context === keyval) ==> (x === valConstraint))
     }
     x
   }
+
 }

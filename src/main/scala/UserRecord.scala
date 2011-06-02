@@ -1,7 +1,11 @@
 package cap.scalasmt
 
-import scala.collection.mutable.Map;
+/*
+ * User records for jeeves social net case study.
+ * @author jeanyang
+ */
 
+import scala.collection.mutable.Map;
 import cap.scalasmt.JeevesLib._
 
 /* NOTE: We will not be using this with beans for now... */
@@ -12,34 +16,44 @@ class UserRecord( uname : Int
                 , email : IntExpr, emailp : BigInt
                 , network : IntExpr, networkp : BigInt
                 , friends : List[IntExpr], friendsp : BigInt
-                , context : IntVar
-                , levels : List[BigInt] ) extends Atom {
-  private val __context = context;
+                , context : AtomVar ) extends Atom {
+  private val __level : IntVar = pick(_ => true);
+  val defaultL = JeevesLib.default;
+  val friendsL = JeevesLib.getNewLevel();
+  val selfL = JeevesLib.getNewLevel()
+  private val levels = List(selfL, friendsL, defaultL);
+
+  private val __context : AtomVar = context;
   private val __plevels = levels;
 
   /* Invariant: The variables are always symbolic expressions kept up to date
      with the permission. */
-  private var __realuname = uname;
+  private val __realuname = uname;
 
-  private var __name = mkSensitive(name, namep);
-  private var __namep = namep;
+  private val __name : IntVar = mkSensitive(name, namep);
+  private val __namep = namep;
 
-  private var __pwd = mkSensitive(pwd, pwdp);
-  private var __pwdp = pwdp;
+  private val __pwd = mkSensitive(pwd, pwdp);
+  private val __pwdp = pwdp;
 
-  private var __username = mkSensitive(username, usernamep);
-  private var __usernamep = usernamep;
+  private val __username = mkSensitive(username, usernamep);
+  private val __usernamep = usernamep;
 
-  private var __email = mkSensitive(email, emailp);
-  private var __emailp = emailp;
+  private val __email = mkSensitive(email, emailp);
+  private val __emailp = emailp;
 
-  private var __network = mkSensitive(network, networkp);
-  private var __networkp = networkp;
+  private val __network = mkSensitive(network, networkp);
+  private val __networkp = networkp;
 
   private var __friends =
     friends.map(friend => mkSensitive(friend, friendsp));
-  private var __friendsp = friendsp
+  private val __friendsp = friendsp
  
+  /* Set privacy levels. */
+  assume((__username === __context ~ '__username) ==> (__level === selfL));
+  assume((!(__level === selfL) && this.isFriends(__context ~ '__username)) ==>
+          (__level === friendsL));
+
   private def mkSensitive (v : IntExpr, p : BigInt) =
     mkSensitiveValue(__plevels, __context, v, p);
 
@@ -51,20 +65,26 @@ class UserRecord( uname : Int
   def getEmail () : IntExpr = __email
   def getNetwork () : IntExpr = __network
   def getFriends () : List[IntExpr] = __friends
-
-  def setName (n : BigInt) : Unit = __name = mkSensitive(n, namep)
-  def setNameP (np : LevelTy) : Unit = {
-    __namep = np;
-    __name = mkSensitive(__name, __namep)
+  def isFriends(u : IntExpr) : Formula = { 
+    u match {
+      case Constant(c) => __friends.contains(c)
+      case other =>
+      val isFriends = pickBool;
+      __friends.foreach {
+        case friend =>
+          assume (__context ~ '__username === friend ==> isFriends === true);
+      }
+      isFriends
+    }
   }
-  def setPwd (pwd : BigInt) : Unit = __pwd = mkSensitive(pwd, pwdp)
-  // TODO: More here...
+
   def addFriend (user : IntExpr) {
     val newfriend = mkSensitive(user, friendsp);
     __friends = newfriend :: __friends
   }
 
-  def getContext () : IntVar = __context
+  def getContext () : AtomVar = __context
+  def getLevel () : IntVar = __level
   def getLevels () : List[BigInt] = __plevels
 
   def equals (other : UserRecord) : Boolean = {

@@ -8,7 +8,6 @@ import JeevesLib._
 object SocialNetBackend {
   private var __uid_count = 0;
 
-  private var __init = false;
   private val __db = new Database();
 
   /* HashMap for String <-> BigInt */
@@ -26,30 +25,7 @@ object SocialNetBackend {
       case None => throw Undefined
     }
 
-  private val context : IntVar = pick(_ => true);
-
-  /* Privacy levels--introduce delegated variable for levels and then define
-     variables for each level. */
-  private val level : IntVar = pick(_ => true);
-  val default = JeevesLib.default;
-  val friends = JeevesLib.getLevel();
-  val self = JeevesLib.getLevel()
-  private val levels = List(self, friends, default);
-  def getLevel (contextVal : BigInt)  : BigInt =
-    concretize(context, contextVal, level)
-
-  /* Define relationship between privacy levels. */
-  private def setPrivacyLevels () : Unit = {
-    assume((context === (1 : BigInt)) ==> (level === friends));
-  }
-
-  /* Initialization function. */
-  def initialize () : Unit = {
-    if (!__init) {
-      setPrivacyLevels();
-      __init = false;
-    }
-  }
+  private val context : AtomVar = pickAtom;
 
   /* Database functions. */
   def addUser ( name      : String      , namep     : BigInt
@@ -77,7 +53,7 @@ object SocialNetBackend {
                     , iEmail, emailp
                     , iNetwork, networkp
                     , iFriends, friendsp
-                    , context, levels );
+                    , context );
     __db.putEntry(uname, user);
   }
   def getUser (uname : BigInt) : UserRecord = {
@@ -94,26 +70,31 @@ object SocialNetBackend {
     record2.addFriend(record2.getName());
   }
 
+  /******************************************/
   /* Define functions the backend supports. */
+  /******************************************/
+  /* This function demonstrates how we can get fields of objects without
+   * worrying about permissions. */
   def getFriends (user : Int) : List[IntExpr] = {
     val curRecord = __db.getEntry(user).asInstanceOf[UserRecord];
     curRecord.getFriends();
   }
 
+  /* This function demonstrates how we can work with symbolic objects and do
+   * additional operations on them without worrying about permissions. */
   def getFriendNetworks (user : Int) : List[IntExpr] = {
     val friends = getFriends(user);
-    /* The problem is we need to concretize the networks in the output
-     * context... */
-/*    val networks = friends.foldLeft (Set.empty[IntExpr]) (
+    val networks = friends.foldLeft (Set.empty[IntExpr]) (
         (set : Set[IntExpr], friend : IntExpr) =>
-        set + __db.getEntry(friend))
-    networks.toList */
-    throw Undefined
+        set + (__db.getEntry(friend)) ~ '__network)
+    networks.toList
   }
 
-  /* Functions that show things. */
-  def printList (ctxt : IntVar, lst : List[IntExpr]) = {
-    val elts = lst.map(x => concretize(context, ctxt, x));
-    elts.foreach(x => println(x));
+  /*************************************************/
+  /* Functions that use concretize to show things. */
+  /*************************************************/
+  def printList (ctxt : AtomVar, lst : List[IntExpr]) = {
+    // val elts = lst.map(x => concretize(context, ctxt, x));
+    // elts.foreach(x => println(x));
   }
 }
