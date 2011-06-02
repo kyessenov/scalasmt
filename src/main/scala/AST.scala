@@ -8,7 +8,7 @@ package cap.scalasmt
 /**
  * Expressions.
  */
-@serializable sealed trait Expr[+T] {
+@serializable sealed trait Expr[T] {
   def vars: Set[Var[_]]
   def eval(implicit env: Environment = EmptyEnv): T
 }
@@ -53,10 +53,10 @@ sealed trait Eq[T <: Expr[_]] extends Expr[Boolean] with BinaryExpr[T] {
  * Boolean expressions and algebra.
  */
 sealed abstract class Formula extends Expr[Boolean] {
+  def ===(that: Formula) = (this && that) || (! this && ! that)
   def &&(that: Formula) = And(this, that)
   def ||(that: Formula) = Or(this, that)
   def ==> (that: Formula) = Or(Not(this), that)
-  def ===(that: Formula) = (this && that) || (! this && ! that);
   def unary_! = Not(this)
   def ?(thn: Formula) = new {def !(els: Formula) = BoolConditional(Formula.this, thn, els)}
   def ?(thn: IntExpr) = new {def !(els: IntExpr) = IntConditional(Formula.this, thn, els)}
