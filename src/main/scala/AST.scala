@@ -154,7 +154,7 @@ case class ObjectIntField(root: ObjectExpr, f: IntFieldDesc) extends IntExpr {
   def vars = root.vars
   def eval(implicit env: Environment) = f(root.eval) match {
     case Some(e: IntExpr) => e.eval
-    case _ => throw new RuntimeException("dynamic typing error")
+    case x => throw new RuntimeException("dynamic typing error: " + f.name + " has value " + x)
   }
 }
 
