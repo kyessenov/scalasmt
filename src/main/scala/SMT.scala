@@ -44,7 +44,7 @@ object SMT {
     case BoolConditional(c,a,b) => "(if " + formula(c) + " " + 
       formula(a) + " " + formula(b) + ")" 
     case ObjectEq(a,b) => "(= " +  atom(a) + " " + atom(b) + ")"
-    case RelEq(a,b) => "(forall (x Object) (= " + 
+    case RelEq(a,b) => "(forall (x Object) (iff " + 
       atom(a)("x", env) + " " + atom(b)("x", env) + "))"
     case RelSub(a,b) => "(forall (x Object) (=> " + 
       atom(a)("x", env) + " " + atom(b)("x", env) + "))"
@@ -75,7 +75,7 @@ object SMT {
     case Diff(a,b) => "(and " + atom(a) + " (not " + atom(b) + "))"
     case Intersect(a,b) => "(and " + atom(a) + " " + atom(b) + ")"
     case Singleton(o) => "(= " + q + " " + atom(o) + ")"
-    case ObjectSet(os) => "(or " + os.map("(= " + q + " " + uniq(_) + ")") + ")"
+    case ObjectSet(os) => if (os.size == 0) "false" else "(or " + os.map("(= " + q + " " + uniq(_) + ")").mkString(" ") + ")"
     case RelJoin(root, f) => 
       val r = q + "0";
       "(exists (" + r + " Object) (and (= " + q + 
