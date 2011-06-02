@@ -7,7 +7,7 @@ import org.scalatest.Assertions.{expect}
 import scala.collection.immutable.Map
 
 class ExampleJeevesLib extends FunSuite {
-  private val context = pick
+  private val context : IntVar = pick
 
   test ("sensitive") {
     val map =
@@ -26,4 +26,27 @@ class ExampleJeevesLib extends FunSuite {
     val x = JeevesLib.createSensitiveValue(context, map);
     expect(1) {concretize(x)};
   }
+
+  test("default with other values") {
+    val map =
+      Map( JeevesLib.default -> Constant(1)
+         , (1 : BigInt) -> Constant(2) );
+//    val x = JeevesLib.createSensitiveValue(context, map);
+//    expect(1) { concretize(x) };
+
+    val y = JeevesLib.createSensitiveValue(context, map);
+    expect(2) { concretize(context, 1, y) };
+  }
+
+/*
+  test ("mkSensitiveValue") {
+    val x =
+      JeevesLib.mkSensitiveValue(
+          List(2 : BigInt, 1 : BigInt, 0 : BigInt)
+        , context, Constant(42), 1 : BigInt);
+    expect(-1) { concretize(context, 0, x) };
+    expect(42) { concretize(context, 1, x) };
+    expect(42) { concretize(context, 1, x) };
+  }
+*/
 }

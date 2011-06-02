@@ -31,10 +31,10 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(0), 0  // username, usernamep
                   , Constant(0), 0  // email, emailp
                   , Constant(0), 0  // network, networkp
-                  , List(), 0  // friends, friendsp
+                  , List(), UserLevels.friendsL  // friends, friendsp
                   , context );
-    u.addFriend(1);
-    expect(true) { u.isFriends(1) };
+    u.addFriend(Constant(1));
+    expect(true) { concretize(context, u, u.isFriends(1)) };
   }
 
   // NOTE[JY]: This is probably going to fail...
