@@ -9,7 +9,7 @@ import java.sql
 import JeevesLib._
 
 class ExampleDatabase extends FunSuite {
-  private val context = pick(_ => true);
+  private val context = pickAtom;
   private val uRecord =
     new UserRecord( 0
                   , Constant(0), 0  // name, namep
@@ -18,7 +18,7 @@ class ExampleDatabase extends FunSuite {
                   , Constant(0), 0  // email, emailp
                   , Constant(0), 0  // network, networkp
                   , List(), 0  // friends, friendsp
-                  , context, List(0))
+                  , context )
 
   private def mkTestDB() : Database = {
     val db = new Database();
@@ -37,5 +37,21 @@ class ExampleDatabase extends FunSuite {
     val idx = pick(x => x === uRecord.getUname());
     val entry = db.getEntry(idx);
     expect(uRecord) { concretize(entry) }
+  }
+
+  test ("symbolic record field") {
+    val db = mkTestDB();
+    val idx = pick(x => x === uRecord.getUname());
+    val entry = db.getEntry(idx);
+    val x = pick(x => (entry ~ '__pwd === 0) ==> (x === 42));
+    expect(42) { concretize(context, uRecord, x) }
+  }
+
+  test ("symbolic record getter") {
+    val db = mkTestDB();
+    val idx = pick(x => x === uRecord.getUname());
+    val entry = db.getEntry(idx);
+    val x = pick(x => (entry ~ 'getPwd === 0) ==> (x === 42));
+    expect(42) { concretize(context, uRecord, x) }
   }
 }
