@@ -1,5 +1,10 @@
 package cap.scalasmt
 
+/*
+ * A library for accessing a database of records that could be symbolic.
+ * @author jeanyang
+ */
+
 import cap.scalasmt.JeevesLib._
 import scala.collection.mutable.{Map => MMap}
 
