@@ -29,14 +29,14 @@ class ExampleDatabase extends FunSuite {
   test ("put and get") {
     val db = mkTestDB();
     val entry = db.getEntry(uRecord.getUname());
-    expect(true) { uRecord.equals(concretize(entry)) };
+    expect(true) { uRecord.equals(concretize(context, uRecord, entry)) };
   }
 
   test ("get record symbolic key") {
     val db = mkTestDB();
     val idx = pick(x => x === uRecord.getUname());
     val entry = db.getEntry(idx);
-    expect(uRecord) { concretize(entry) }
+    expect(uRecord) { concretize(context, uRecord, entry) }
   }
 
   test ("symbolic record field") {
@@ -47,6 +47,7 @@ class ExampleDatabase extends FunSuite {
     expect(42) { concretize(context, uRecord, x) }
   }
 
+  /*
   test ("symbolic record getter") {
     val db = mkTestDB();
     val idx = pick(x => x === uRecord.getUname());
@@ -54,4 +55,5 @@ class ExampleDatabase extends FunSuite {
     val x = pick(x => (entry ~ 'getPwd === 0) ==> (x === 42));
     expect(42) { concretize(context, uRecord, x) }
   }
+  */
 }
