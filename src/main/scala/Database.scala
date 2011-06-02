@@ -20,7 +20,7 @@ class Database {
           case Some(record) => record
           case None => throw KeyException
         }
-      case IntVar(k) =>
+      case _ =>
         val r : AtomVar = pickAtom;
         elements foreach {
           case (curkey, v) => assume((key === curkey) ==> (r === v))
