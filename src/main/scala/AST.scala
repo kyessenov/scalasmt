@@ -40,6 +40,11 @@ sealed trait BinaryExpr[T <: Expr[_]] {
   def right: T
   def vars = left.vars ++ right.vars
 }
+sealed trait UnaryExpr[T <: Expr[_]] {
+  assert (sub != null)
+  def sub: T
+  def vars = sub.vars
+}
 sealed trait Eq[T <: Expr[_]] extends Expr[Boolean] with BinaryExpr[T] {
   def eval(implicit env: Environment) = left.eval == right.eval 
 }
@@ -70,8 +75,7 @@ case class Or(left: Formula, right: Formula = FalseF) extends BinaryFormula {
   def eval(implicit env: Environment) = left.eval || right.eval
 }
 case class BoolConditional(cond: Formula, thn: Formula, els: Formula) extends Formula with Ite[Boolean]
-case class Not(sub: Formula) extends Formula {
-  def vars = sub.vars
+case class Not(sub: Formula) extends Formula with UnaryExpr[Formula] {
   def eval(implicit env: Environment) = ! sub.eval
 }
 
@@ -146,6 +150,13 @@ case class IntVar(id: String) extends IntExpr with Var[BigInt] {
   def default = 0
   override def toString = "i" + id
 }
+case class ObjectIntField(root: ObjectExpr, f: IntFieldDesc) extends IntExpr {
+  def vars = root.vars
+  def eval(implicit env: Environment) = f(root.eval) match {
+    case Some(e: IntExpr) => e.eval
+    case _ => throw new RuntimeException("dynamic typing error")
+  }
+}
 
 /**
  * Atom equality theory.
@@ -157,6 +168,7 @@ trait Atom extends AnyRef {
 sealed abstract class ObjectExpr extends Expr[Atom] { 
   def ===(that: ObjectExpr) = ObjectEq(this, that)
   def ++(that: ObjectExpr) = Union(Singleton(this), Singleton(that))
+  def ~(f: Symbol) = ObjectIntField(this, IntFieldDesc(f.name))
 }
 case class AtomConditional(cond: Formula, thn: ObjectExpr, els: ObjectExpr) extends ObjectExpr with Ite[Atom]
 case class Object(o: Atom) extends ObjectExpr {
@@ -169,6 +181,41 @@ case class AtomVar(id: String) extends ObjectExpr with Var[Atom] {
 }
 
 /**
+ * Atom fields.
+ */
+sealed trait FieldDesc[T <: Expr[_]] {
+  def name: String
+  def apply(o: Atom): Option[T]
+  protected def read(o: Atom)  = if (o == null) None else
+    try {
+      val fid = o.getClass.getDeclaredField(name);
+      fid.setAccessible(true);
+      // only final fields are considered
+      if ((fid.getModifiers | java.lang.reflect.Modifier.FINAL) != 0)
+        Some(fid.get(o))
+      else 
+        None
+    } catch {
+      case _: NoSuchFieldException => None
+    }
+}
+case class IntFieldDesc(name: String) extends FieldDesc[IntExpr] {
+  override def apply(o: Atom): Option[IntExpr] = read(o) match {
+    case Some(e: IntExpr) => Some(e)
+    case Some(e: BigInt) => Some(Constant(e))
+    case _ => None
+  }
+}
+case class AtomFieldDesc(name: String) extends FieldDesc[ObjectExpr] {
+  override def apply(o: Atom): Option[ObjectExpr] = read(o) match {
+    case Some(null) => Some(Object(null))
+    case Some(o: Atom) => Some(Object(o))
+    case Some(o: ObjectExpr) => Some(o)
+    case _ => None
+  }
+}
+
+/**
  * Relational algebra.
  */
 sealed abstract class RelExpr extends Expr[Set[Atom]] {
@@ -177,10 +224,9 @@ sealed abstract class RelExpr extends Expr[Set[Atom]] {
   def &(that: RelExpr) = Intersect(this, that)
   def ++(that: RelExpr) = Union(this, that)
   def --(that: RelExpr) = Diff(this, that)
-  def ~(name: Symbol) = RelJoin(this, FieldDesc(name.name)) 
+  def ><(f: Symbol) = RelJoin(this, AtomFieldDesc(f.name)) 
 }
-case class Singleton(sub: ObjectExpr) extends RelExpr {
-  def vars = sub.vars
+case class Singleton(sub: ObjectExpr) extends RelExpr with UnaryExpr[ObjectExpr] {
   def eval(implicit env: Environment) = Set(sub.eval)
 }
 case class ObjectSet(elts: Traversable[_ <: Atom]) extends RelExpr {
@@ -191,25 +237,9 @@ case class AtomSetVar(id: String) extends RelExpr with Var[Set[Atom]] {
   def default = Set()
   override def toString = "s" + id
 }
-case class FieldDesc(name: String)
-case class RelJoin(root: RelExpr, f: FieldDesc) extends RelExpr {
+case class RelJoin(root: RelExpr, f: AtomFieldDesc) extends RelExpr {
   def vars = root.vars
-  def eval(implicit env: Environment) = 
-    (for (o <- root.eval; if o != null) yield {
-      try {
-        val fid = o.getClass.getDeclaredField(f.name);
-        fid.setAccessible(true);
-        if ((fid.getModifiers | java.lang.reflect.Modifier.FINAL) == 0)
-          throw new RuntimeException("join on non-final field is not allowed")
-        fid.get(o) match {
-          case null => Some(null)
-          case o: Atom => Some(o)
-          case _ => None
-        }
-      } catch {
-        case _: NoSuchFieldException => None
-      }
-    }).flatten 
+  def eval(implicit env: Environment) = (for (o <- root.eval) yield f(o)).flatten.map(_.eval)
 }
 sealed abstract class BinaryRelExpr extends RelExpr with BinaryExpr[RelExpr]
 case class Union(left: RelExpr, right: RelExpr) extends BinaryRelExpr {
@@ -225,7 +255,7 @@ case class Intersect(left: RelExpr, right: RelExpr) extends BinaryRelExpr {
 /** 
  * Environment.
  */
-@serializable trait Environment {
+@serializable sealed trait Environment {
   def vars: Set[Var[_]]
   def +[T](b: (Var[T], T)): Environment = Binding(b._1, b._2, this)
   def has[T](i: Var[T]): Boolean
