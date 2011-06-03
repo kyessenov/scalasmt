@@ -89,6 +89,7 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(0), 0  // network, networkp
                   , List(), 0  // friends, friendsp
                   , context );
+
   }
 
   test ("equals symbolic self") {
