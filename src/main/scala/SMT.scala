@@ -171,7 +171,7 @@ object SMT {
       }
       case f: IntFieldDesc => f(o) match {
         case Some(i) => integer(i)
-        case None => /* function is total */ "0"
+        case None => /* function is total */ 0
       }
     }} + "))"}.toList :::
     // assert formula
