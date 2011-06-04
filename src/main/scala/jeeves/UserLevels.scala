@@ -1,4 +1,4 @@
-package cap.scalasmt
+package cap.jeeves
 
 object UserLevels {
   val defaultL = JeevesLib.default;

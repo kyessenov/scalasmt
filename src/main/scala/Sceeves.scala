@@ -20,7 +20,8 @@ trait Sceeves {
 
   private def WITH_DEFAULTS = 
     ( CONSTRAINTS ++
-      DEFAULTS.filter(t => ! ENV.has(t._1)).map{case (iv, ie) => iv === ie}
+      DEFAULTS.filter(t => ! ENV.has(t._1)).map{
+        case (iv, ie) => iv === ie}
     , ENV )
   
   private def resolve {
@@ -48,9 +49,9 @@ trait Sceeves {
     that;
   }
 
-  def pick = Var.makeInt;
-  def pickBool = Var.makeBool;
-  def pickAtom = Var.makeAtom;
+  def pick      = Var.makeInt;
+  def pickBool  = Var.makeBool;
+  def pickAtom  = Var.makeAtom;
   def pick(spec: IntVar => Formula): IntVar = {val x = pick; assume(spec(x)); x}
   def pick(default: IntExpr, spec: IntVar => Formula): IntVar = {
     val x = pick(spec);
@@ -64,7 +65,10 @@ trait Sceeves {
     that.assume(f);
     that.concretize(e);
   }
-  def concretize[T](v: AtomVar, i: ObjectExpr, e: Expr[T]): T = concretize(v === i, e)
-  def concretize[T](v: BoolVar, i: Formula, e: Expr[T]): T = concretize(v === i, e)
-  def concretize[T](v: IntVar, i: IntExpr, e: Expr[T]): T = concretize(v === i, e)
+  def concretize[T](v: AtomVar, i: ObjectExpr, e: Expr[T]): T = 
+    concretize(v === i, e)
+  def concretize[T](v: BoolVar, i: Formula, e: Expr[T]): T = 
+    concretize(v === i, e)
+  def concretize[T](v: IntVar, i: IntExpr, e: Expr[T]): T = 
+    concretize(v === i, e)
 }

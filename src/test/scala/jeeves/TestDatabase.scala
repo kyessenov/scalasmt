@@ -1,4 +1,4 @@
-package test.cap.scalasmt
+package test.cap.jeeves
 
 import cap.scalasmt._
 import cap.scalasmt.RelExpr._
@@ -6,6 +6,7 @@ import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
 import java.sql
 
+import cap.jeeves._
 import JeevesLib._
 
 class ExampleDatabase extends FunSuite {

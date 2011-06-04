@@ -1,19 +1,18 @@
-package test.cap.scalasmt
+package test.cap.jeeves
 
 import cap.scalasmt._
-import cap.scalasmt.JeevesLib._
+import cap.jeeves._
+import JeevesLib._
 import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
 import scala.collection.immutable.Map
 
 class ExampleJeevesLib extends FunSuite {
-  private val context : IntVar = pick
+  private val context = pick
 
   test ("sensitive") {
-    val map =
-      Map( (1 : BigInt) -> (Constant(1))
-         , (2 : BigInt) -> (Constant(2))
-         , (3 : BigInt) -> (Constant(3)) );
+    val map: SensitiveMap =
+      Map((1, 1), (2, 2), (3, 3));
     val x = JeevesLib.createSensitiveValue(context, map);
     expect(1) {concretize(context, 1, x)};
     expect(1) {concretize(context, 1, x)};
@@ -22,15 +21,15 @@ class ExampleJeevesLib extends FunSuite {
   }
 
   test ("default") {
-    val map = Map(JeevesLib.default -> (Constant(1)));
+    val map: SensitiveMap = 
+      Map((JeevesLib.default, 1));
     val x = JeevesLib.createSensitiveValue(context, map);
     expect(1) {concretize(x)};
   }
 
   test("default with other values") {
-    val map =
-      Map( JeevesLib.default -> Constant(1)
-         , (1 : BigInt) -> Constant(2) );
+    val map: SensitiveMap =
+      Map((JeevesLib.default, 1), (1, 2));
 //    val x = JeevesLib.createSensitiveValue(context, map);
 //    expect(1) { concretize(x) };
 
