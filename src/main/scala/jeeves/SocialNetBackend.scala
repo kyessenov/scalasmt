@@ -1,8 +1,9 @@
-package cap.scalasmt
+package cap.jeeves
 
 import scala.collection.mutable.HashMap;
 import scala.collection.mutable.Set;
 
+import cap.scalasmt._
 import JeevesLib._
 
 object SocialNetBackend {
