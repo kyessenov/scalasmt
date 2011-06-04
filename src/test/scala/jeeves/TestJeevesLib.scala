@@ -24,14 +24,14 @@ class ExampleJeevesLib extends FunSuite {
     val map: SensitiveMap = 
       Map((JeevesLib.default, 1));
     val x = JeevesLib.createSensitiveValue(context, map);
-    expect(1) {concretize(x)};
+    expect(1) {concretize(context, 0, x)};
   }
 
   test("default with other values") {
     val map: SensitiveMap =
       Map((JeevesLib.default, 1), (1, 2));
-//    val x = JeevesLib.createSensitiveValue(context, map);
-//    expect(1) { concretize(x) };
+    val x = JeevesLib.createSensitiveValue(context, map);
+    expect(1) { concretize(context, 0, x) };
 
     val y = JeevesLib.createSensitiveValue(context, map);
     expect(2) { concretize(context, 1, y) };
