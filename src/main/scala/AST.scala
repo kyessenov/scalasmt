@@ -154,7 +154,7 @@ case class ObjectIntField(root: ObjectExpr, f: IntFieldDesc) extends IntExpr {
   def vars = root.vars
   def eval(implicit env: Environment) = f(root.eval) match {
     case Some(e: IntExpr) => e.eval
-    case x => throw new RuntimeException("dynamic typing error: " + f.name + " has value " + x)
+    case None => 0
   }
 }
 
@@ -190,18 +190,16 @@ sealed trait FieldDesc[T <: Expr[_]] {
     try {
       val fid = o.getClass.getDeclaredField(name);
       fid.setAccessible(true);
-      // only final fields are considered
-      if ((fid.getModifiers | java.lang.reflect.Modifier.FINAL) != 0)
-        Some(fid.get(o))
-      else 
-        None
+      if ((fid.getModifiers | java.lang.reflect.Modifier.FINAL) == 0)
+        throw new RuntimeException("non-final fields are disallowed")
+      Some(fid.get(o))
     } catch {
-      case _: NoSuchFieldException => None
+      case _: NoSuchFieldException => None 
     }
 }
 case class IntFieldDesc(name: String) extends FieldDesc[IntExpr] {
   override def apply(o: Atom): Option[IntExpr] = read(o) match {
-    case Some(e: IntExpr) => Some(e)
+    case Some(e: IntExpr) => Some(e)    
     case Some(e: BigInt) => Some(Constant(e))
     case _ => None
   }

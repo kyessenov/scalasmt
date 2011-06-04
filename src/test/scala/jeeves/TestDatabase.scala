@@ -13,12 +13,12 @@ class ExampleDatabase extends FunSuite {
   private val context = pickAtom;
   private val uRecord =
     new UserRecord( 0
-                  , Constant(0), 0  // name, namep
-                  , Constant(0), 0  // pwd, pwdp
-                  , Constant(0), 0  // username, usernamep
-                  , Constant(0), 0  // email, emailp
-                  , Constant(0), 0  // network, networkp
-                  , List(), 0  // friends, friendsp
+                  , 0, 0  // name, namep
+                  , 1337, 0  // pwd, pwdp
+                  , 0, 0  // username, usernamep
+                  , 0, 0  // email, emailp
+                  , 0, 0  // network, networkp
+                  , Nil, 0  // friends, friendsp
                   , context )
 
   private def mkTestDB() : Database = {
@@ -42,10 +42,12 @@ class ExampleDatabase extends FunSuite {
 
   test ("symbolic record field") {
     val db = mkTestDB();
-    val idx = pick(x => x === uRecord.getUname());
+    val idx = pick(_ === uRecord.getUname());
     val entry = db.getEntry(idx);
-    val x = pick(x => (entry ~ '__pwd === 0) ==> (x === 42));
-    expect(42) { concretize(context, uRecord, x) }
+    val x = pick(x => (entry ~ '__pwd === 1337) ==> (x === 42));
+    SMT.PRINT_INPUT = true;
+    try expect(42) { concretize(context, uRecord, x) }
+    finally SMT.PRINT_INPUT = false;
   }
 
   /*
