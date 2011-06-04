@@ -1,4 +1,4 @@
-package cap.scalasmt
+package cap.jeeves
 
 /*
  * A library for using ScalaSMT for privacy, using symbolic varaibles to
@@ -6,6 +6,7 @@ package cap.scalasmt
  * @author jeanyang
  */
 
+import cap.scalasmt._
 import scala.collection.immutable.Map;
 import scala.collection.mutable.{Map => MMap};
 
@@ -29,7 +30,7 @@ object JeevesLib extends Sceeves {
   def addCoarsePolicy (levels : List[LevelTy], v : IntExpr, minLevel : LevelTy)
     : Map[BigInt, IntExpr] = {
     levels.foldLeft (Map.empty[BigInt, IntExpr]) (
-        (map : Map[BigInt, IntExpr], level : LevelTy) =>
+        (map : SensitiveMap, level : LevelTy) =>
           if (level < minLevel)
             map + (level -> Constant(-1))
           else map + (level -> v)
@@ -56,7 +57,7 @@ object JeevesLib extends Sceeves {
     // See if there is a default.
     val defaultVal =  vals.get(default);
     defaultVal match {
-      case Some(v) => { x = pick(v, _ => true); }
+      case Some(v) => { x = pick; }
       case None => { } // Do nothing for now.
     }
 

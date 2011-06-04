@@ -1,7 +1,5 @@
 package cap.scalasmt
 
-import scala.collection.immutable.Set.Set1
-
 /* 
  * Translator to SMT-LIB2.
  * TODO: use dynamic linking library (as soon as x64 JNI issue is resolved)

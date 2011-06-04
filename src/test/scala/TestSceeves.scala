@@ -181,7 +181,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
   test ("defaults with context") {
     val context = pick;
     val x = pick(1, x => (context === 1) ==> (x === 42));
-    expect(1) {concretize(x)}
+    expect(1) {concretize(context, 2, x)}
 
     val y = pick(1, x => (context === 1) ==> (x === 42));
     expect(42) {concretize(context, 1, y)};
