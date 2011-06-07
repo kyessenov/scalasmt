@@ -41,17 +41,22 @@ class UserRecord( uname : Int
   private val __network = mkSensitive(network, networkp);
   private val __networkp = networkp;
 
+  // TODO: No longer permit default friends
   private var __friends =
     friends.map(friend => mkSensitive(friend, friendsp));
+  private var __actualFriends : List[BigInt]= List()
   private val __friendsp = friendsp
  
   /* Set privacy levels. */
-  assume((__username === (__context ~ '__username)) ==> (__level === selfL));
-  assume((!(__level === selfL) && this.isFriends(__context ~ '__username)) ==>
+  assume((__username === (__context ~ '__realuname)) <==> (__level === selfL));
+  assume(((!(__username === (__context ~ '__realuname))) &&
+          (isActualFriends(__context ~ '__realuname))) <==>
           (__level === friendsL));
+  assume((!((__level === selfL) || (__level === friendsL))) <==>
+          (__level === defaultL))
 
   private def mkSensitive (v : IntExpr, p : BigInt) =
-    mkSensitiveValue(UserLevels.levels, __context, v, p);
+    mkSensitiveValue(UserLevels.levels, __level, v, p);
 
   /* Define getters and setters. */
   def getUname () : Int = __realuname
@@ -61,22 +66,41 @@ class UserRecord( uname : Int
   def getEmail () : IntExpr = __email
   def getNetwork () : IntExpr = __network
   def getFriends () : List[IntExpr] = __friends
-  def isFriends(u : IntExpr) : Formula = { 
-    u match {
-      case Constant(c) => __friends.contains(c)
-      case other =>
-      val isFriends = pickBool;
-      __friends.foreach {
-        case friend =>
-          assume (__context ~ '__username === friend ==> isFriends === true);
-      }
-      isFriends
+  def getActualFriends() : List[BigInt] = __actualFriends
+  def isActualFriends(u : IntExpr) : Formula = {
+    val isFriends = pickBool;
+    // How do we have (isFriends === true) <==> (user is part of list)?
+    if (__actualFriends.length < 1) {
+      assume (isFriends === false);
     }
+    else if (__actualFriends.length == 1) {
+      assume (isFriends <==> (Constant(__actualFriends.head) === u));
+    }
+    else {
+    val c = __actualFriends.foldLeft (false : Formula) {
+      (f : Formula, friend : BigInt) =>
+        assume ((u === Constant(friend)) ==> (isFriends === true));
+        (f || (u === Constant(friend)))
+    };
+    assume ((isFriends === true) ==> c);
+    }
+    isFriends
   }
 
-  def addFriend (user : IntExpr) {
-    val newfriend = pick(x => x === user); //mkSensitive(user, friendsp);
+  def isFriends(u : IntExpr) : Formula = { 
+    val isFriends = pickBool;
+    __friends.foreach {
+      case friend =>
+      assume (u === friend ==> isFriends === true);
+    }
+    isFriends
+  }
+
+  def addFriend (user : IntExpr, actualUser : BigInt) {
+    val newfriend = mkSensitive(user, friendsp);
     __friends = newfriend :: __friends
+
+    __actualFriends = actualUser :: __actualFriends
   }
 
   def getContext () : AtomVar = __context
