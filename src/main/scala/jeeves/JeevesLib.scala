@@ -31,63 +31,42 @@ object JeevesLib extends Sceeves {
     : Map[BigInt, IntExpr] = {
     levels.foldLeft (Map.empty[BigInt, IntExpr]) (
         (map : SensitiveMap, level : LevelTy) =>
-          if (level < minLevel)
+          if (level < minLevel) {
             map + (level -> Constant(-1))
-          else map + (level -> v)
+          }
+          else {
+            map + (level -> v)
+          }
         )
   }
 
   def mkSensitiveValue (
-    levels : List[LevelTy], context : AtomVar, v : IntExpr, minLevel : BigInt)
+      levels : List[LevelTy], level : IntVar, v : IntExpr
+    , minLevel : BigInt)
   : IntVar = {
     val map = addCoarsePolicy(levels, v, minLevel);
-    JeevesLib.createSensitiveValue(context, map)
-  }
-  def mkSensitiveValue (
-    levels : List[LevelTy], context : IntVar, v : IntExpr, minLevel : BigInt)
-  : IntVar = {
-    val map = addCoarsePolicy(levels, v, minLevel);
-    JeevesLib.createSensitiveValue(context, map)
+    createSensitiveValue(level, map)
   }
 
   // Associates a constraint with a field.
-  def createSensitiveValue (context : AtomVar, vals : SensitiveMap) : IntVar = {
+  def createSensitiveValue
+    (level : IntVar, vals : SensitiveMap) : IntVar = {
     var x = pick;
 
     // See if there is a default.
+    /*
     val defaultVal =  vals.get(default);
     defaultVal match {
       case Some(v) => { x = pick; }
       case None => { } // Do nothing for now.
     }
+    */
 
     // Go through keys and values.
     vals foreach {
       case (keyval, valConstraint) =>
-        assume((context ~ '__username === keyval) ==> (x === valConstraint))
+        assume((level === keyval) ==> (x === valConstraint))
     }
     x
   }
-
-  def createSensitiveValue (context : IntVar, vals : SensitiveMap) : IntVar = {
-    var x = pick;
-
-    // See if there is a default.
-    val defaultVal =  vals.get(default);
-    defaultVal match {
-      case Some(v) => {
-        x = pick(v, _ => true);
-      }
-      case None => { } // Do nothing for now.
-    }
-    
-    // Go through keys and values.
-    vals.foreach {
-      case (keyval, valConstraint) =>
-        println("context case: " + keyval);
-        assume((context === keyval) ==> (x === valConstraint))
-    }
-    x
-  }
-
 }
