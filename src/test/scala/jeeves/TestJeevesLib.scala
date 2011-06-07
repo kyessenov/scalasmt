@@ -37,7 +37,6 @@ class ExampleJeevesLib extends FunSuite {
     expect(2) { concretize(context, 1, y) };
   }
 
-/*
   test ("mkSensitiveValue") {
     val x =
       JeevesLib.mkSensitiveValue(
@@ -47,5 +46,4 @@ class ExampleJeevesLib extends FunSuite {
     expect(42) { concretize(context, 1, x) };
     expect(42) { concretize(context, 1, x) };
   }
-*/
 }

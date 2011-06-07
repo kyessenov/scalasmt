@@ -12,6 +12,15 @@ class ExampleSceeves extends FunSuite with Sceeves {
     expect(1) {concretize(x)};
   }
 
+  test ("concretize constant") {
+    expect(42) {concretize(42)};
+
+    val x = pick(_ === 42);
+    val y = concretize(x);
+    expect(42) {y};
+    expect(42) {concretize(y)};
+  }
+
   test ("unsatisfiable") {
     new Sceeves {
       val x = pick (_ => false);
@@ -176,15 +185,6 @@ class ExampleSceeves extends FunSuite with Sceeves {
 
     val z = pick(y, _ > 0);
     expect(2) {concretize(z)}
-  }
-
-  test ("defaults with context") {
-    val context = pick;
-    val x = pick(1, x => (context === 1) ==> (x === 42));
-    expect(1) {concretize(context, 2, x)}
-
-    val y = pick(1, x => (context === 1) ==> (x === 42));
-    expect(42) {concretize(context, 1, y)};
   }
 
   test ("euler") {

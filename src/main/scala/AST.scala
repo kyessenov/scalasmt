@@ -57,6 +57,7 @@ sealed abstract class Formula extends Expr[Boolean] {
   def &&(that: Formula) = And(this, that)
   def ||(that: Formula) = Or(this, that)
   def ==> (that: Formula) = Or(Not(this), that)
+  def <==> (that: Formula) = And(Or(Not(this), that), Or(Not(that), this))
   def unary_! = Not(this)
   def ?(thn: Formula) = new {def !(els: Formula) = BoolConditional(Formula.this, thn, els)}
   def ?(thn: IntExpr) = new {def !(els: IntExpr) = IntConditional(Formula.this, thn, els)}
