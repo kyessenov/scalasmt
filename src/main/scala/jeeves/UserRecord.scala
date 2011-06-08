@@ -11,7 +11,7 @@ import UserLevels._
 import JeevesLib._
 
 /* NOTE: We will not be using this with beans for now... */
-class UserRecord( uname : Int
+class UserRecord( uname : BigInt
                 , name : IntExpr, namep : LevelTy
                 , pwd : IntExpr, pwdp : BigInt
                 , username : IntExpr, usernamep : BigInt
@@ -19,7 +19,7 @@ class UserRecord( uname : Int
                 , network : IntExpr, networkp : BigInt
                 , friends : List[IntExpr], friendsp : BigInt
                 , context : AtomVar ) extends Atom {
-  private val __level : IntVar = pick;
+  val level : IntVar = pick;
   private val __context : AtomVar = context;
 
   /* Invariant: The variables are always symbolic expressions kept up to date
@@ -48,18 +48,17 @@ class UserRecord( uname : Int
   private val __friendsp = friendsp
  
   /* Set privacy levels. */
-  assume((__username === (__context ~ '__realuname)) <==> (__level === selfL));
-  assume(((!(__username === (__context ~ '__realuname))) &&
-          (isActualFriends(__context ~ '__realuname))) <==>
-          (__level === friendsL));
-  assume((!((__level === selfL) || (__level === friendsL))) <==>
-          (__level === defaultL))
+  assume((__username === (__context ~ '__realuname)) === (level === selfL));
+  assume(isActualFriends(__context ~ '__realuname) ===
+          (level === friendsL));
+  assume((!((level === selfL) || (level === friendsL))) ===
+          (level === defaultL))
 
   private def mkSensitive (v : IntExpr, p : BigInt) =
-    mkSensitiveValue(UserLevels.levels, __level, v, p);
+    mkSensitiveValue(UserLevels.levels, level, v, p);
 
   /* Define getters and setters. */
-  def getUname () : Int = __realuname
+  def getUname () : BigInt = __realuname
   def getName () : IntExpr = __name
   def getPwd () : IntExpr = __pwd
   def getUsername () : IntExpr = __username
@@ -74,15 +73,16 @@ class UserRecord( uname : Int
       assume (isFriends === false);
     }
     else if (__actualFriends.length == 1) {
-      assume (isFriends <==> (Constant(__actualFriends.head) === u));
+      assume (isFriends === (Constant(__actualFriends.head) === u));
     }
     else {
-    val c = __actualFriends.foldLeft (false : Formula) {
-      (f : Formula, friend : BigInt) =>
+      println("here");
+      val c = __actualFriends.foldLeft (false : Formula) {
+        (f : Formula, friend : BigInt) =>
         assume ((u === Constant(friend)) ==> (isFriends === true));
         (f || (u === Constant(friend)))
-    };
-    assume ((isFriends === true) ==> c);
+      };
+      assume ((isFriends === true) ==> c);
     }
     isFriends
   }
@@ -104,7 +104,6 @@ class UserRecord( uname : Int
   }
 
   def getContext () : AtomVar = __context
-  def getLevel () : IntVar = __level
 
   def equals (other : UserRecord) : Boolean = {
     (__realuname == other.getUname) && (__name == other.getName()) &&
