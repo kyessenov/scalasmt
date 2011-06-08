@@ -112,7 +112,7 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(0), 0  // network, networkp
                   , List(), 0  // friends, friendsp
                   , context );
-    expect (UserLevels.selfL) { concretize(context, u, u.getLevel()) };
+    expect (UserLevels.selfL) { concretize(context, u, u.level) };
   }
 
   test ("privacy level: friends") {
@@ -137,9 +137,15 @@ class ExampleUserRecord extends FunSuite {
     u0.addFriend(u1.getUsername(), 6 : BigInt);
     u1.addFriend(u0.getUsername(), 5 : BigInt);
     expect (true) { concretize(context, u0, u0.isActualFriends(6)) };
+    expect (true) {
+      concretize(context, u1, u0.isActualFriends(context ~ '__username))
+    };
     expect (true) { concretize(context, u1, u1.isActualFriends(5)) };
-    expect (UserLevels.friendsL) { concretize(context, u1, u0.getLevel()); }
-    expect (UserLevels.friendsL) { concretize(context, u0, u1.getLevel()); }
+    expect (true) {
+      concretize(context, u0, u1.isActualFriends(context ~ '__username))
+    };
+    expect (UserLevels.friendsL) { concretize(context, u1, u0.level); }
+    expect (UserLevels.friendsL) { concretize(context, u0, u1.level); }
   }
 
   test ("privacy level: default") {
@@ -163,8 +169,8 @@ class ExampleUserRecord extends FunSuite {
                   , context );
     expect (false) { concretize(context, u3, u3.isActualFriends(4)) };
     expect (false) { concretize(context, u4, u4.isActualFriends(3)) };
-    expect (UserLevels.defaultL) { concretize(context, u4, u3.getLevel()); }
-    expect (UserLevels.defaultL) { concretize(context, u3, u4.getLevel()); }
+    expect (UserLevels.defaultL) { concretize(context, u4, u3.level); }
+    expect (UserLevels.defaultL) { concretize(context, u3, u4.level); }
   }
 
   /*
