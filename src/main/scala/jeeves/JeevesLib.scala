@@ -53,15 +53,6 @@ object JeevesLib extends Sceeves {
     (level : IntVar, vals : SensitiveMap) : IntVar = {
     var x = pick;
 
-    // See if there is a default.
-    /*
-    val defaultVal =  vals.get(default);
-    defaultVal match {
-      case Some(v) => { x = pick; }
-      case None => { } // Do nothing for now.
-    }
-    */
-
     // Go through keys and values.
     vals foreach {
       case (keyval, valConstraint) =>
