@@ -16,15 +16,7 @@ object JeevesLib extends Sceeves {
   type ValueTy = BigInt;
   type SensitiveMap = Map[BigInt, IntExpr];
 
-  // Keep map of privacy levels.
-  private var plevel_count : LevelTy = 1;
-  
   val default : LevelTy = 0;
-  def getNewLevel () : LevelTy = {
-    val plevel_old = plevel_count
-    plevel_count = plevel_count + 1;
-    plevel_old
-  }
 
   // Creates a sensitive map based on a value.
   def addCoarsePolicy (levels : List[LevelTy], v : IntExpr, minLevel : LevelTy)

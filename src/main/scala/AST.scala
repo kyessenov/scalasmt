@@ -155,7 +155,7 @@ case class ObjectIntField(root: ObjectExpr, f: IntFieldDesc) extends IntExpr {
   def vars = root.vars
   def eval(implicit env: Environment) = f(root.eval) match {
     case Some(e: IntExpr) => e.eval
-    case None => 0
+    case None => -1
   }
 }
 
