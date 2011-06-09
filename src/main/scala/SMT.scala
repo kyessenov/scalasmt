@@ -10,7 +10,7 @@ object SMT {
 
   var TIMEOUT = 10
   var PRINT_DEBUG = false;
-  var PRINT_INPUT = true;
+  var PRINT_INPUT = false;
   var PRINT_OUTPUT = false;  
 
   private var Z3_PATH = Option(System.getProperty("smt.home")) match {
@@ -171,7 +171,7 @@ object SMT {
       }
       case f: IntFieldDesc => f(o) match {
         case Some(i) => integer(i)
-        case None => /* function is total */ 0
+        case None => /* function is total */ -1
       }
     }} + "))"}.toList :::
     // assert formula

@@ -23,37 +23,35 @@ class ExampleDatabase extends FunSuite {
 
   private def mkTestDB() : Database = {
     val db = new Database();
-    db.putEntry(uRecord.getUname(), uRecord);
+    db.putEntry(uRecord.realuname, uRecord);
     db
   }
 
   test ("put and get") {
     val db = mkTestDB();
-    val entry = db.getEntry(uRecord.getUname());
+    val entry = db.getEntry(uRecord.realuname);
     expect(true) { uRecord.equals(concretize(context, uRecord, entry)) };
   }
 
   test ("get record symbolic key") {
     val db = mkTestDB();
-    val idx = pick(x => x === uRecord.getUname());
+    val idx = pick(x => x === uRecord.realuname);
     val entry = db.getEntry(idx);
     expect(uRecord) { concretize(context, uRecord, entry) }
   }
 
   test ("symbolic record field") {
     val db = mkTestDB();
-    val idx = pick(_ === uRecord.getUname());
+    val idx = pick(_ === uRecord.realuname);
     val entry = db.getEntry(idx);
-    val x = pick(x => (entry ~ '__pwd === 1337) ==> (x === 42));
-    SMT.PRINT_INPUT = true;
-    try expect(42) { concretize(context, uRecord, x) }
-    finally SMT.PRINT_INPUT = false;
+    val x = pick(x => (entry~'pwd === 1337) ==> (x === 42));
+    expect(42) { concretize(context, uRecord, x) }
   }
 
   /*
   test ("symbolic record getter") {
     val db = mkTestDB();
-    val idx = pick(x => x === uRecord.getUname());
+    val idx = pick(x => x === uRecord.realuname);
     val entry = db.getEntry(idx);
     val x = pick(x => (entry ~ 'getPwd === 0) ==> (x === 42));
     expect(42) { concretize(context, uRecord, x) }
