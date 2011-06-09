@@ -1,8 +1,11 @@
 package cap.jeeves
 
+import JeevesLib._
+
 object UserLevels {
-  val defaultL = JeevesLib.default;
-  val friendsL = JeevesLib.getNewLevel();
-  val selfL = JeevesLib.getNewLevel()
-  val levels = List(selfL, friendsL, defaultL);
+  val defaultL: LevelTy = default;
+  assert (default == 0)
+  val friendsL: LevelTy = 1;
+  val selfL: LevelTy    = 2;
+  val levels = selfL :: friendsL :: defaultL :: Nil;
 }

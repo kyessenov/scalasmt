@@ -11,85 +11,40 @@ import UserLevels._
 import JeevesLib._
 
 /* NOTE: We will not be using this with beans for now... */
-class UserRecord( uname : BigInt
-                , name : IntExpr, namep : LevelTy
-                , pwd : IntExpr, pwdp : BigInt
-                , username : IntExpr, usernamep : BigInt
-                , email : IntExpr, emailp : BigInt
-                , network : IntExpr, networkp : BigInt
-                , friends : List[IntExpr], friendsp : BigInt
-                , context : AtomVar ) extends Atom {
-  val level : IntVar = pick;
-  private val __context : AtomVar = context;
+class UserRecord(val realuname : BigInt
+                , _name : IntExpr, val namep : LevelTy
+                , _pwd : IntExpr, val pwdp : BigInt
+                , _username : IntExpr, val usernamep : BigInt
+                , _email : IntExpr, val emailp : BigInt
+                , _network : IntExpr, val networkp : BigInt
+                , _friends : List[IntExpr], val friendsp : BigInt
+                , val context : AtomVar ) extends Atom {
+  val level : IntVar = pick(defaultL);
 
-  /* Invariant: The variables are always symbolic expressions kept up to date
-     with the permission. */
-  private val __realuname = uname;
-
-  private val __name : IntVar = mkSensitive(name, namep);
-  private val __namep = namep;
-
-  private val __pwd = mkSensitive(pwd, pwdp);
-  private val __pwdp = pwdp;
-
-  private val __username = mkSensitive(username, usernamep);
-  private val __usernamep = usernamep;
-
-  private val __email = mkSensitive(email, emailp);
-  private val __emailp = emailp;
-
-  private val __network = mkSensitive(network, networkp);
-  private val __networkp = networkp;
+  /* Invariant: The variables are always symbolic expressions kept up to date with the permission. */
+  val name = mkSensitive(_name, namep);
+  val pwd = mkSensitive(_pwd, pwdp);
+  val username = mkSensitive(_username, usernamep);
+  val email = mkSensitive(_email, emailp);
+  val network = mkSensitive(_network, networkp);
 
   // TODO: No longer permit default friends
-  private var __friends =
-    friends.map(friend => mkSensitive(friend, friendsp));
-  private var __actualFriends : List[BigInt]= List()
-  private val __friendsp = friendsp
+  private var friends = _friends.map(mkSensitive(_, friendsp));
+  private var actualFriends : List[BigInt]= Nil
  
   /* Set privacy levels. */
-  assume((__username === (__context ~ '__realuname)) === (level === selfL));
-  assume(isActualFriends(__context ~ '__realuname) ===
-          (level === friendsL));
-  assume((!((level === selfL) || (level === friendsL))) ===
-          (level === defaultL))
+  assume((context~'realuname === realuname) <==> (level === selfL))
+  assume(level === selfL || level === friendsL || level === defaultL)
 
   private def mkSensitive (v : IntExpr, p : BigInt) =
     mkSensitiveValue(UserLevels.levels, level, v, p);
 
   /* Define getters and setters. */
-  def getUname () : BigInt = __realuname
-  def getName () : IntExpr = __name
-  def getPwd () : IntExpr = __pwd
-  def getUsername () : IntExpr = __username
-  def getEmail () : IntExpr = __email
-  def getNetwork () : IntExpr = __network
-  def getFriends () : List[IntExpr] = __friends
-  def getActualFriends() : List[BigInt] = __actualFriends
-  def isActualFriends(u : IntExpr) : Formula = {
-    val isFriends = pickBool;
-    // How do we have (isFriends === true) <==> (user is part of list)?
-    if (__actualFriends.length < 1) {
-      assume (isFriends === false);
-    }
-    else if (__actualFriends.length == 1) {
-      assume (isFriends === (Constant(__actualFriends.head) === u));
-    }
-    else {
-      println("here");
-      val c = __actualFriends.foldLeft (false : Formula) {
-        (f : Formula, friend : BigInt) =>
-        assume ((u === Constant(friend)) ==> (isFriends === true));
-        (f || (u === Constant(friend)))
-      };
-      assume ((isFriends === true) ==> c);
-    }
-    isFriends
-  }
-
+  def getFriends () : List[IntExpr] = friends
+  def getActualFriends() : List[BigInt] = actualFriends
   def isFriends(u : IntExpr) : Formula = { 
     val isFriends = pickBool;
-    __friends.foreach {
+    friends.foreach {
       case friend =>
       assume (u === friend ==> isFriends === true);
     }
@@ -98,18 +53,15 @@ class UserRecord( uname : BigInt
 
   def addFriend (user : IntExpr, actualUser : BigInt) {
     val newfriend = mkSensitive(user, friendsp);
-    __friends = newfriend :: __friends
-
-    __actualFriends = actualUser :: __actualFriends
+    friends = newfriend :: friends
+    assume((context~'realuname === user) ==> (level === friendsL))
+    actualFriends = actualUser :: actualFriends
   }
 
-  def getContext () : AtomVar = __context
-
-  def equals (other : UserRecord) : Boolean = {
-    (__realuname == other.getUname) && (__name == other.getName()) &&
-    (__pwd == other.getPwd()) && (__username == other.getUsername()) &&
-    (__email == other.getEmail()) && (__network == other.getNetwork()) &&
-    (__friends == other.getFriends()) &&
-    (__context == other.getContext())
-  }
+  override def hashCode = realuname.toInt
+  override def equals(that: Any) =
+    if (that.isInstanceOf[UserRecord])
+      (realuname == that.asInstanceOf[UserRecord].realuname) 
+    else 
+      false
 }
