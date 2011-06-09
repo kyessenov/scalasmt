@@ -67,8 +67,8 @@ object SocialNetBackend {
     val record1 = __db.getEntry(user1).asInstanceOf[UserRecord];
     val record2 = __db.getEntry(user2).asInstanceOf[UserRecord];
 
-    record1.addFriend(record1.getName(), user1);
-    record2.addFriend(record2.getName(), user2);
+    record1.addFriend(record1.name, user1);
+    record2.addFriend(record2.name, user2);
   }
 
   /******************************************/
