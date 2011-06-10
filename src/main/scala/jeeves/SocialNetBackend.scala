@@ -26,7 +26,7 @@ object SocialNetBackend {
       case None => throw Undefined
     }
 
-  private val context : AtomVar = pickAtom;
+  private val context : AtomVar = pickAtom();
 
   /* Database functions. */
   def addUser ( name      : String      , namep     : BigInt
@@ -67,8 +67,8 @@ object SocialNetBackend {
     val record1 = __db.getEntry(user1).asInstanceOf[UserRecord];
     val record2 = __db.getEntry(user2).asInstanceOf[UserRecord];
 
-    record1.addFriend(record1.name, user1);
-    record2.addFriend(record2.name, user2);
+    record1.addFriend(record1.name);
+    record2.addFriend(record2.name);
   }
 
   /******************************************/

@@ -10,7 +10,7 @@ import cap.jeeves._
 import JeevesLib._
 
 class ExampleDatabase extends FunSuite {
-  private val context = pickAtom;
+  private val context = pickAtom();
   private val uRecord =
     new UserRecord( 0
                   , 0, 0  // name, namep
@@ -23,26 +23,26 @@ class ExampleDatabase extends FunSuite {
 
   private def mkTestDB() : Database = {
     val db = new Database();
-    db.putEntry(uRecord.realuname, uRecord);
+    db.putEntry(uRecord.id, uRecord);
     db
   }
 
   test ("put and get") {
     val db = mkTestDB();
-    val entry = db.getEntry(uRecord.realuname);
+    val entry = db.getEntry(uRecord.id);
     expect(true) { uRecord.equals(concretize(context, uRecord, entry)) };
   }
 
   test ("get record symbolic key") {
     val db = mkTestDB();
-    val idx = pick(x => x === uRecord.realuname);
+    val idx = pick(x => x === uRecord.id);
     val entry = db.getEntry(idx);
     expect(uRecord) { concretize(context, uRecord, entry) }
   }
 
   test ("symbolic record field") {
     val db = mkTestDB();
-    val idx = pick(_ === uRecord.realuname);
+    val idx = pick(_ === uRecord.id);
     val entry = db.getEntry(idx);
     val x = pick(x => (entry~'pwd === 1337) ==> (x === 42));
     expect(42) { concretize(context, uRecord, x) }
@@ -51,7 +51,7 @@ class ExampleDatabase extends FunSuite {
   /*
   test ("symbolic record getter") {
     val db = mkTestDB();
-    val idx = pick(x => x === uRecord.realuname);
+    val idx = pick(x => x === uRecord.id);
     val entry = db.getEntry(idx);
     val x = pick(x => (entry ~ 'getPwd === 0) ==> (x === 42));
     expect(42) { concretize(context, uRecord, x) }

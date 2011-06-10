@@ -62,7 +62,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
   }
 
   test ("bool var") {
-    val x = pickBool;
+    val x = pickBool();
     assume (! x);
     expect (false) {concretize(x)};
   }
@@ -176,14 +176,14 @@ class ExampleSceeves extends FunSuite with Sceeves {
   }
 
   test ("defaults") {
-    val x = pick(1, _ > 0);
+    val x = pick(_ > 0, 1);
     expect(1) {concretize(x)}
 
-    val y = pick(1, _ > 0);
+    val y = pick(_ > 0, 1);
     assume(y === 2);
     expect(2) {concretize(y)}
 
-    val z = pick(y, _ > 0);
+    val z = pick(_ > 0, y);
     expect(2) {concretize(z)}
   }
 
@@ -254,7 +254,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
   }
 
   test ("coefficient synthesis") {
-    val c = pick;
+    val c = pick();
     
     def linear(x: Int) = (c*x === x + x);
 
@@ -263,8 +263,8 @@ class ExampleSceeves extends FunSuite with Sceeves {
 
     expect(2) {concretize(c)}
 
-    val a = pick;
-    val b = pick;
+    val a = pick();
+    val b = pick();
     
     def quadratic(x: Int) = (b + a*x + x*x === (x - 1)*(x - 1));
 

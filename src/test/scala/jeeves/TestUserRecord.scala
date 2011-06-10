@@ -9,7 +9,7 @@ import java.sql
 import JeevesLib._
 
 class ExampleUserRecord extends FunSuite {
-  val context = pickAtom;
+  val context = pickAtom();
 
   test ("equals self") {
     val u =
@@ -34,10 +34,10 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(0), 0  // network, networkp
                   , Nil, 0  // friends, friendsp
                   , context );
-    u.addFriend(Constant(1), 1 : BigInt);
-    val friends = u.getActualFriends();
+    u.addFriend(1);
+    val friends = u.getFriends();
     expect (1) { friends.length };
-    expect (1) { friends.head }
+    expect (1) { concretize(context, u, friends.head) }
   }
 
   test ("friend list") {
@@ -50,7 +50,7 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(0), 0  // network, networkp
                   , Nil, 0  // friends, friendsp
                   , context );
-    u.addFriend(Constant(1), 1 : BigInt);
+    u.addFriend(1);
     val friends = u.getFriends();
     expect (1) { friends.length };
     expect (1) { concretize(context, u, friends.head) }
@@ -66,7 +66,7 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(0), 0  // network, networkp
                   , Nil, UserLevels.friendsL  // friends, friendsp
                   , context );
-    u.addFriend(Constant(1), 1: BigInt);
+    u.addFriend(1);
     expect(true) { concretize(context, u, u.isFriends(1)) };
   }
 
@@ -82,7 +82,7 @@ class ExampleUserRecord extends FunSuite {
                   , Nil, 0  // friends, friendsp
                   , context );
     val friend1 = pick (x => x === 1)
-    u.addFriend(friend1, 1);
+    u.addFriend(friend1);
     // This one is kind of funny...
     expect(true) { concretize(context, u, u.isFriends(1)) };
   }
@@ -98,7 +98,7 @@ class ExampleUserRecord extends FunSuite {
                   , Nil, 0  // friends, friendsp
                   , context );
     val friend1 = pick (x => x === 1)
-    u.addFriend(1, 1 : BigInt);
+    u.addFriend(1)
     expect(true) { concretize(context, u, u.isFriends(friend1)) };
   }
 
@@ -134,8 +134,8 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(0), 0  // network, networkp
                   , Nil, 0  // friends, friendsp
                   , context );
-    u0.addFriend(u1.username, 6);
-    u1.addFriend(u0.username, 5);
+    u0.addFriend(u1.username)
+    u1.addFriend(u0.username)
     expect (UserLevels.friendsL) { concretize(context, u1, u0.level); } 
     expect (UserLevels.friendsL) { concretize(context, u0, u1.level); }
   }
