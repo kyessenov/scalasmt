@@ -8,7 +8,7 @@ package cap.scalasmt
 /**
  * Expressions.
  */
-@serializable sealed trait Expr[T] {
+sealed trait Expr[T] extends Serializable {
   def vars: Set[Var[_]]
   def eval(implicit env: Environment = EmptyEnv): T
 }
@@ -256,7 +256,7 @@ case class Intersect(left: RelExpr, right: RelExpr) extends BinaryRelExpr {
 /** 
  * Environment.
  */
-@serializable sealed trait Environment {
+sealed trait Environment {
   def vars: Set[Var[_]]
   def +[T](b: (Var[T], T)): Environment = Binding(b._1, b._2, this)
   def has[T](i: Var[T]): Boolean

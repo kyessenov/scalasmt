@@ -7,18 +7,71 @@ package cap.scalasmt
  */
 object UnsatException extends RuntimeException("model is not satisfiable")
 
-object SMT {
-  var TIMEOUT = 10
-  var PRINT_DEBUG = false;
-  var PRINT_INPUT = false;
-  var PRINT_OUTPUT = false;  
+trait Solver {
+  def command(s: String)
+  def push = command("(push)")
+  def pop = command("(pop)")
+  def check: Boolean
+  def next: Boolean
+  def model: String
+  def close
 
-  private var Z3_PATH = Option(System.getProperty("smt.home")) match {
+  protected def >(s: String)
+  protected def <(): String
+}
+
+trait Logging extends Solver {
+  abstract override def >(s: String) {println("> " + s); super.>(s)}
+  abstract override def <() = {val s = super.<(); println("< " + s); s}
+}
+
+class Z3 extends Solver {
+  import java.io._
+  import scala.collection.mutable
+
+  var TIMEOUT = 10;
+  
+  def PATH = Option(System.getProperty("smt.home")) match {
     case Some(path) => path
     case None => System.getProperty("user.home") + "/opt/z3/bin/z3"
   }
-  def Z3_COMMANDS ="-smt2" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
+
+  def COMMANDS ="-smt2" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
   
+  private var process = {
+    val pb = new ProcessBuilder((PATH :: COMMANDS).toArray: _*);
+    pb.redirectErrorStream(true);
+    pb.start;
+  }
+  
+  private var input = new BufferedWriter(new OutputStreamWriter(process.getOutputStream));
+  private var output = new BufferedReader(new InputStreamReader(process.getInputStream));
+  
+  protected def >(s: String) = {input.write(s); input.newLine; input.flush}
+  protected def <() = output.readLine 
+
+  protected def <<() = {
+    val out = new mutable.ListBuffer[String]
+    var line = <;
+    while (line != null) {
+      out += line;
+      if (output.ready) line = < else line = null;
+    }
+    out.toList;
+  }
+
+  command("""(set-logic QF_NIA)""")
+  command("""(set-option set-param "ELIM_QUANTIFIERS" "true")""")
+
+  override def command(s: String) = {>(s); assert (< == "success")} 
+  override def check = {>("(check-sat)"); < == "sat"}
+  override def next  = {>("(next-sat)"); < == "sat"}
+  override def model = {>("(get-info model)"); <<.mkString}
+  override def close {input.close; output.close; process.destroy;}
+}
+ 
+
+object SMT {
   /**
    * Expression translators.
    */
@@ -143,8 +196,6 @@ object SMT {
   private def translate(f: Formula)(implicit env: Environment, fp: Scope): List[String] = {
     val Scope(objects, fields, vars) = fp;
     assert (f.vars subsetOf vars)
-    if (PRINT_DEBUG) 
-      println(fp)
 
     // declare all objects
     "(declare-datatypes ((Object " + objects.map("(" + uniq(_) + ")").mkString(" ") + ")))" :: 
@@ -154,15 +205,13 @@ object SMT {
       case _: IntFieldDesc => " (Object) Int)"
     }}}.toList :::
     // declare all variables
-    "(declare-funs (" ::
     {for (v <- vars.toList; if ! env.has(v))
-      yield "  " + (v match {
-        case _: IntVar => "(" + v + " Int) "
-        case _: BoolVar => "(" + v + " Bool)"
-        case _: AtomVar => "(" + v + " Object)"
-        case _: AtomSetVar => "(" + v + " Object Bool)"
-      })
-    } ::: "))" ::
+      yield "(declare-fun " + v + {v match {
+        case _: IntVar =>  " () Int) "
+        case _: BoolVar => " () Bool)"
+        case _: AtomVar => " () Object)"
+        case _: AtomSetVar => " (Object) Bool)"
+    }}}.toList :::
     // assert field values
     {for (o <- objects; f <- fields) yield "(assert (= (" + f.name + " " + uniq(o) + ") " + {f match {
       case f: AtomFieldDesc => f(o) match {
@@ -176,13 +225,6 @@ object SMT {
     }} + "))"}.toList :::
     // assert formula
     {for (clause <- f.clauses) yield "(assert " + formula(clause) + ")"} ::: 
-    """ 
-    |(set-logic QF_NIA)
-    |(set-option set-param "ELIM_QUANTIFIERS" "true") 
-    |(check-sat)
-    |(get-info model)
-    |(next-sat)
-    """.stripMargin ::
     Nil
   }
 
@@ -194,59 +236,18 @@ object SMT {
     val scope = closure(univ(f))
     val input = translate(f)(env, scope);
     
-    // call Z3
-    import java.io._
-    import scala.Console.err
-    val pb = new ProcessBuilder((Z3_PATH :: Z3_COMMANDS).toArray: _*);
-    pb.redirectErrorStream(true);
-    val p = pb.start;
+    val solver = new Z3// with Logging
+    
+    for (s <- input) solver.command(s)
   
-    // print input
-    val os = new BufferedWriter(new OutputStreamWriter(p.getOutputStream));
-    for (l <- input) {
-      os.write(l);
-      if (PRINT_INPUT) println(l);
-    }
-    os.close;
-    
-    // read output
-    val is = new BufferedReader(new InputStreamReader(p.getInputStream));
-    var line: String = is.readLine;
-    var output:List[String] = Nil;
-    while (line != null) {
-      if (PRINT_OUTPUT) println(line);
-      output = line :: output;
-      line = is.readLine;
-    }
-    is.close;
+    if (! solver.check) throw UnsatException
 
-    p.destroy;
-
-    // parse output
-    if (output.size < 2) {
-      err.println("unexpected output: " + output.reverse.mkString("\n"));
-      err.println("on input: " + input.mkString("\n"));
-      throw new RuntimeException("unexpected output from SMT");
-    }
-    val sat :: rest = output.reverse;
-    val nextsat :: middle = rest.reverse;
-    val model = middle.reverse.mkString("","","");
-
-    if (sat != "sat") { 
-      if (PRINT_DEBUG)
-        for (l <- input) println(l)
-      throw UnsatException
-    }
-    
-    if (nextsat == "sat") 
-      err.println("Warning: there are more than one possible assignments")    
-    
     // parse model
     var result = env;
+    val model = solver.model;
     val PREFIX = "((\"model\" \"";
     val SUFFIX = "\"))";
     val defines = model.substring(PREFIX.size, model.size - SUFFIX.size);
-    
     val defs = defines.split("\\(define ");
     for (d <- defs; if d.size > 0 && ! d.startsWith("(")) {
       val List(name, value) = d.split("\\)|\\s").toList;
@@ -261,6 +262,12 @@ object SMT {
             throw new RuntimeException("not implemented")
         }
     }
+
+    if (solver.next) 
+      println("Warning: multiple assignments") 
+
+    solver.close;   
+ 
     result;
   }
 }
