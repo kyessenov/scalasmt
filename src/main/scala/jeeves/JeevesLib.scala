@@ -43,7 +43,7 @@ object JeevesLib extends Sceeves {
   // Associates a constraint with a field.
   def createSensitiveValue
     (level : IntVar, vals : SensitiveMap) : IntVar = {
-    var x = pick;
+    var x = pick();
 
     // Go through keys and values.
     vals foreach {

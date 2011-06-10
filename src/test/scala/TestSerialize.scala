@@ -14,7 +14,7 @@ class ExampleSerialize extends FunSuite with Sceeves {
   }
 
   test ("conditional pick") {
-    val y = pick;
+    val y = pick ();
     val x = pick (_ === y);
     val x0 = deserialize[IntVar](serialize(x));
     assume (y === 1);

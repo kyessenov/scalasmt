@@ -9,8 +9,9 @@ import cap.scalasmt._
 import JeevesLib._
 import scala.collection.mutable.{Map => MMap}
 
+object KeyException extends RuntimeException("key not in db")
+
 class Database {
-  object KeyException extends RuntimeException("key not in db")
   private var elements = MMap.empty[BigInt, Atom];
   
   /* Setting this up. */
@@ -27,7 +28,7 @@ class Database {
           case None => throw KeyException
         }
       case _ =>
-        val r : AtomVar = pickAtom;
+        val r : AtomVar = pickAtom();
         elements foreach {
           case (curkey, v) => assume((key === curkey) ==> (r === v))
         }
