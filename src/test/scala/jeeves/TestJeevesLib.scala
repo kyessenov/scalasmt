@@ -8,7 +8,7 @@ import org.scalatest.Assertions.{expect}
 import scala.collection.immutable.Map
 
 class ExampleJeevesLib extends FunSuite {
-  private val context = pick
+  private val context = pick()
 
   test ("sensitive") {
     val map: SensitiveMap =

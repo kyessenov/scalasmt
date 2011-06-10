@@ -53,11 +53,10 @@ sealed trait Eq[T <: Expr[_]] extends Expr[Boolean] with BinaryExpr[T] {
  * Boolean expressions and algebra.
  */
 sealed abstract class Formula extends Expr[Boolean] {
-  def ===(that: Formula) = (this && that) || (! this && ! that)
+  def <==>(that: Formula) = (this && that) || (! this && ! that)
   def &&(that: Formula) = And(this, that)
   def ||(that: Formula) = Or(this, that)
   def ==> (that: Formula) = Or(Not(this), that)
-  def <==> (that: Formula) = And(Or(Not(this), that), Or(Not(that), this))
   def unary_! = Not(this)
   def ?(thn: Formula) = new {def !(els: Formula) = BoolConditional(Formula.this, thn, els)}
   def ?(thn: IntExpr) = new {def !(els: IntExpr) = IntConditional(Formula.this, thn, els)}
@@ -155,8 +154,11 @@ case class ObjectIntField(root: ObjectExpr, f: IntFieldDesc) extends IntExpr {
   def vars = root.vars
   def eval(implicit env: Environment) = f(root.eval) match {
     case Some(e: IntExpr) => e.eval
-    case None => -1
+    case None => ObjectIntField.default
   }
+}
+object ObjectIntField {
+  def default = 0
 }
 
 /**
@@ -260,10 +262,11 @@ case class Intersect(left: RelExpr, right: RelExpr) extends BinaryRelExpr {
   def has[T](i: Var[T]): Boolean
   def apply[T](i: Var[T]): T
 }
+class UnboundVarException(i: Var[_]) extends RuntimeException("unbound variable: " + i) 
 object EmptyEnv extends Environment {
   def vars = Set()
   def has[T](i: Var[T]) = false
-  def apply[T](i: Var[T]) = throw new RuntimeException("no binding")
+  def apply[T](i: Var[T]) = throw new UnboundVarException(i)
 }
 object DefaultEnv extends Environment {
   def vars = Set()
@@ -299,8 +302,13 @@ object RelExpr {
 object `package` {
   def IF(cond: Formula)(thn: IntExpr) = new {def ELSE(els: IntExpr) = cond ? thn ! els}
   def IF(cond: Formula)(thn: Formula) = new {def ELSE(els: Formula) = cond ? thn ! els}
-  def DISTINCT(vs: Traversable[IntExpr]) = 
+  def DISTINCT[T <% IntExpr](vs: Traversable[T]) = 
     for (vs1 <- vs; vs2 <- vs; if (vs1 != vs2)) yield ( ! (vs1 === vs2))
   def NULL = Object(null)
+  def OR(vs: Traversable[Formula]) = 
+    vs.foldLeft(false: Formula)(_ || _)
+  def CONTAINS[T <% IntExpr](vs: Traversable[T], i: IntExpr) = 
+    OR(for (v <- vs) yield v === i)
+
 }
 
