@@ -110,8 +110,8 @@ class ExampleSceeves extends FunSuite with Sceeves {
       println(s(i).map(concretize(_)).toList.mkString("["," ","]"))   
   }
 
-  ignore ("sudoku performance") {
-    val PROBLEMS = 10;
+  test ("sudoku performance") {
+    val PROBLEMS = 1;
 
     // measure average time
     import scala.io.Source
@@ -185,6 +185,14 @@ class ExampleSceeves extends FunSuite with Sceeves {
 
     val z = pick(_ > 0, y);
     expect(2) {concretize(z)}
+  }
+
+  test ("multiple defaults") {
+    val x = pick(_ > 0, 1);
+    val y = pick(_ > 0, 1337);
+    assume(x === 2);
+    expect(1337) {concretize(y)};
+    expect(2) {concretize(x)};
   }
 
   test ("euler") {
