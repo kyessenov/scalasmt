@@ -30,6 +30,7 @@ trait Sceeves {
     case v: IntVar => v === a.e.asInstanceOf[IntExpr]
     case v: BoolVar => v <==> a.e.asInstanceOf[Formula]
     case v: AtomVar => v === a.e.asInstanceOf[ObjectExpr]
+    case v: AtomSetVar => v === a.e.asInstanceOf[RelExpr]
   }
 
   private def solve(fs: List[Formula], defs: Defaults, env: Env): Env =
