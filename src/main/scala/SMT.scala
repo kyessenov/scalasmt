@@ -5,9 +5,9 @@ package cap.scalasmt
  * TODO: use dynamic linking library (as soon as x64 JNI issue is resolved)
  * TODO: avoid the cost of the process creation
  */
-object SMT {
-  object UnsatException extends RuntimeException("model is not satisfiable")
+object UnsatException extends RuntimeException("model is not satisfiable")
 
+object SMT {
   var TIMEOUT = 10
   var PRINT_DEBUG = false;
   var PRINT_INPUT = false;
@@ -171,7 +171,7 @@ object SMT {
       }
       case f: IntFieldDesc => f(o) match {
         case Some(i) => integer(i)
-        case None => /* function is total */ -1
+        case None => /* function is total */ ObjectIntField.default
       }
     }} + "))"}.toList :::
     // assert formula
