@@ -47,6 +47,7 @@ class UserRecord(val id : BigInt
     assume((context~'id === friend) ==> (level === friendsL))
   }
 
+  override def toString = "u" + id
   override def hashCode = id.toInt
   override def equals(that: Any) =
     if (that.isInstanceOf[UserRecord])
