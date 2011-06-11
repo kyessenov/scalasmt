@@ -2,20 +2,27 @@ package cap.scalasmt
 
 /* 
  * Translator to SMT-LIB2.
- * TODO: use dynamic linking library (as soon as x64 JNI issue is resolved)
- * TODO: avoid the cost of the process creation
  */
-object UnsatException extends RuntimeException("model is not satisfiable")
+object UnsatException extends RuntimeException("inconsistent model")
 
 trait Solver {
+  /** Issue a command and expect success. */
   def command(s: String)
-  def push = command("(push)")
-  def pop = command("(pop)")
-  def check: Boolean
-  def next: Boolean
-  def model: String
-  def close
-
+ /** Check satisfiability. */
+  def check(): Boolean
+  /** Check for another model. */
+  def next(): Boolean
+  /** Retrieve the model. */
+  def model(): String
+  /** Terminate the solver. */
+  def close()
+  /** Assert a boolean condition. */
+  def swear(s: String) = command("(assert " + s + ")")
+  /** Push a context */
+  def push() = command("(push)")
+  /** Pop a context */
+  def pop() = command("(pop)")
+ 
   protected def >(s: String)
   protected def <(): String
 }
@@ -70,12 +77,10 @@ class Z3 extends Solver {
   override def close {input.close; output.close; process.destroy;}
 }
  
-
+/**
+ * Expression translators.
+ */ 
 object SMT {
-  /**
-   * Expression translators.
-   */
-
   private def variable(v: Var[_])(implicit env: Environment) =
     if (env.has(v))
       env(v).toString
@@ -193,9 +198,8 @@ object SMT {
    * SMT-LIB 2 translation.
    */
 
-  private def translate(f: Formula)(implicit env: Environment, fp: Scope): List[String] = {
+  private def prelude(implicit env: Environment, fp: Scope): List[String] = {
     val Scope(objects, fields, vars) = fp;
-    assert (f.vars subsetOf vars)
 
     // declare all objects
     "(declare-datatypes ((Object " + objects.map("(" + uniq(_) + ")").mkString(" ") + ")))" :: 
@@ -212,7 +216,7 @@ object SMT {
         case _: AtomVar => " () Object)"
         case _: AtomSetVar => " (Object) Bool)"
     }}}.toList :::
-    // assert field values
+    // declare field values
     {for (o <- objects; f <- fields) yield "(assert (= (" + f.name + " " + uniq(o) + ") " + {f match {
       case f: AtomFieldDesc => f(o) match {
         case Some(a) => atom(a)
@@ -223,28 +227,47 @@ object SMT {
         case None => /* function is total */ ObjectIntField.default
       }
     }} + "))"}.toList :::
-    // assert formula
-    {for (clause <- f.clauses) yield "(assert " + formula(clause) + ")"} ::: 
     Nil
   }
 
   /**
    * Solves for an assignment to satisfy the formula.
    * Some variables might be left without assignment.
+   * 
+   * Super-normal default logic is decided to saturating context in the order
+   * the judgements are supplied.
    */
-  def solve(f: Formula)(implicit env: Environment = DefaultEnv) = {
-    val scope = closure(univ(f))
-    val input = translate(f)(env, scope);
-    
-    val solver = new Z3// with Logging
-    
-    for (s <- input) solver.command(s)
-  
-    if (! solver.check) throw UnsatException
+  def solve(f: Formula, defaults: List[Formula] = Nil, checkNext: Boolean = true)
+    (implicit env: Environment = DefaultEnv) = {
+    implicit val scope = closure(univ(f :: defaults))
+    assert (f.vars subsetOf scope.vars);
 
+    val solver = new Z3// with Logging
+  
+    for (s <- prelude) solver.command(s)  
+    for (clause <- f.clauses) solver.swear(formula(clause))
+
+    // invariant: the model is consistent 
+    if (! solver.check) throw UnsatException
+    for (d <- defaults) {
+      solver.push;
+      solver.swear(formula(d));
+      if (! solver.check) solver.pop;
+    }
+    assert (solver.check)
+    val result = model(solver.model, env, scope)
+    
+    if (checkNext && solver.next) 
+      println("Warning: multiple assignments") 
+
+    solver.close;   
+ 
+    result;
+  }
+
+  private def model(model: String, env: Environment, scope: Scope) = {
     // parse model
     var result = env;
-    val model = solver.model;
     val PREFIX = "((\"model\" \"";
     val SUFFIX = "\"))";
     val defines = model.substring(PREFIX.size, model.size - SUFFIX.size);
@@ -262,13 +285,7 @@ object SMT {
             throw new RuntimeException("not implemented")
         }
     }
-
-    if (solver.next) 
-      println("Warning: multiple assignments") 
-
-    solver.close;   
- 
-    result;
+    result
   }
 }
 
