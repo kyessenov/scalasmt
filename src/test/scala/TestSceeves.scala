@@ -24,7 +24,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
   test ("unsatisfiable") {
     new Sceeves {
       val x = pick (_ => false);
-      intercept[Inconsistent.type] {
+      intercept[UnsatException.type] {
         println(concretize(x));
       }
     }
@@ -110,8 +110,8 @@ class ExampleSceeves extends FunSuite with Sceeves {
       println(s(i).map(concretize(_)).toList.mkString("["," ","]"))   
   }
 
-  test ("sudoku performance") {
-    val PROBLEMS = 1;
+  ignore ("sudoku performance") {
+    val PROBLEMS = 10;
 
     // measure average time
     import scala.io.Source
@@ -176,15 +176,15 @@ class ExampleSceeves extends FunSuite with Sceeves {
   }
 
   test ("defaults") {
-    val x = pick(_ > 0, 1);
-    expect(1) {concretize(x)}
+    val x = pick(_ > 0, 1337);
+    expect(1337) {concretize(x)}
 
     val y = pick(_ > 0, 1);
-    assume(y === 2);
-    expect(2) {concretize(y)}
+    assume(y === 42);
+    expect(42) {concretize(y)}
 
     val z = pick(_ > 0, y);
-    expect(2) {concretize(z)}
+    expect(42) {concretize(z)}
   }
 
   test ("multiple defaults") {
@@ -193,6 +193,12 @@ class ExampleSceeves extends FunSuite with Sceeves {
     assume(x === 2);
     expect(1337) {concretize(y)};
     expect(2) {concretize(x)};
+
+    val u = pick(_ > 0, 1337);
+    val t = pick(_ > 0, 1);
+    assume(t === 2);
+    expect(1337) {concretize(u)}
+    expect(2) {concretize(t)}
   }
 
   test ("euler") {
@@ -216,7 +222,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
     val hidden = (key === 1) ? 1 ! 0;
     expect(1) {concretize(key, 1, hidden)}
     expect(0) {concretize(key, 2, hidden)}
-    intercept[Inconsistent.type] {concretize(key, 0, hidden)}
+    intercept[UnsatException.type] {concretize(key, 0, hidden)}
   }
 
   test("symbolic context") {
@@ -226,7 +232,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
     val y = pick(_ === 2);
     expect(1) {concretize(key, x, hidden)}
     expect(0) {concretize(key, y, hidden)}
-    intercept[Inconsistent.type] { concretize(key, 0, hidden) }
+    intercept[UnsatException.type] { concretize(key, 0, hidden) }
   }
 
   test ("n queens") {
