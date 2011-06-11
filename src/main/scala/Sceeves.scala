@@ -7,8 +7,6 @@ import cap.scalasmt.{Environment => Env}
  * Note change to terminology: pick = defer, assume = assert (since overriding assert is a bad idea given the implicits.)
  * Variable bindings are disassociated from AST and kept here. Note that this prevents them from being garbage collected.
  */
-object Inconsistent extends RuntimeException("cannot build a model")
-
 case class Assign[T](v: Var[T], e: Expr[T]) 
 
 trait Sceeves {
@@ -17,13 +15,6 @@ trait Sceeves {
   private var CONSTRAINTS: List[Formula] = Nil
   private var DEFAULTS: Defaults = Nil
   private var ENV: Env = DefaultEnv
-
-  private def solve(fs: List[Formula], env: Env): Option[Env] = 
-    try {
-      Some(SMT.solve(fs)(env))
-    } catch {
-      case UnsatException => None
-    }
 
   private def assign[T](a: Assign[T]) = a.v match {
     // type erasure makes it impossible to be type safe here
@@ -37,16 +28,8 @@ trait Sceeves {
     fs match {
       case Nil => env
       case _ => 
-        // default logic decision procedure    
         val defaults = defs.map(assign(_));
-        solve(fs ++ defaults, env) match {
-          case Some(env) => env
-          case None => 
-            solve(fs, env) match {
-              case Some(env) => env
-              case None => throw Inconsistent          
-            }
-        }
+        SMT.solve(fs, defaults)(env)
     }
 
   def pick(spec: IntVar => Formula = _ => true, default: IntExpr = null) = {
