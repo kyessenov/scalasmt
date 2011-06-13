@@ -11,10 +11,9 @@ import UserLevels._
 import JeevesLib._
 
 /* NOTE: We will not be using this with beans for now... */
-class UserRecord(val id : BigInt
-                , _name : IntExpr, val namep : LevelTy
+class UserRecord( _name : IntExpr, val namep : LevelTy
                 , _pwd : IntExpr, val pwdp : LevelTy
-                , _username : IntExpr, val usernamep : LevelTy
+                , val id : BigInt, val usernamep : LevelTy
                 , _email : IntExpr, val emailp : LevelTy
                 , _network : IntExpr, val networkp : LevelTy
                 , val friendsp : LevelTy
@@ -24,12 +23,12 @@ class UserRecord(val id : BigInt
   /* Invariant: The variables are always symbolic expressions kept up to date with the permission. */
   val name = mkSensitive(_name, namep);
   val pwd = mkSensitive(_pwd, pwdp);
-  val username = mkSensitive(_username, usernamep);
+  val username = mkSensitive(id, usernamep);
   val email = mkSensitive(_email, emailp);
   val network = mkSensitive(_network, networkp);
   var friends : List[IntExpr] = Nil
  
-  /* Set privacy levels. */
+  /* Set initial privacy levels. */
   assume((context~'id === id) <==> (level === selfL))
   assume(CONTAINS(levels, level))
 
