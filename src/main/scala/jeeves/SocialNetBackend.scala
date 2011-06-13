@@ -7,9 +7,8 @@ import cap.scalasmt._
 import JeevesLib._
 
 object SocialNetBackend {
-  private var __uid_count = 0;
-
   private val __db = new Database();
+  private val context : AtomVar = pickAtom();
 
   /* HashMap for String <-> BigInt */
   private val __strs = new HashMap[BigInt, String]();
@@ -20,13 +19,16 @@ object SocialNetBackend {
     __strCount = __strCount + 1;
     idx
   }
-  private def asString (v : BigInt) : String =
-    __strs.get(v) match {
-      case Some(str) => str
-      case None => throw Undefined
+  private def asString (v : BigInt) : String = {
+    if (v == -1) {
+      "[default]"
+    } else {
+      __strs.get(v) match {
+        case Some(str) => str
+        case None => println(v); throw Undefined
+      }
     }
-
-  private val context : AtomVar = pickAtom();
+  }
 
   /* Database functions. */
   def addUser ( name      : String      , namep     : BigInt
@@ -35,10 +37,7 @@ object SocialNetBackend {
               , email     : String      , emailp    : BigInt
               , network   : String      , networkp  : BigInt
               , friendsp  : BigInt )
-            : Unit = {
-    val uname = __uid_count;
-    __uid_count = __uid_count + 1;
-    
+            : UserRecord = {
     val iName = storeString(name);
     val iPwd = storeString(pwd);
     val iUsername = storeString(username);
@@ -46,28 +45,30 @@ object SocialNetBackend {
     val iNetwork = storeString(network);
 
     val user =
-      new UserRecord( uname
-                    , iName, namep
+      new UserRecord( iName, namep
                     , iPwd, pwdp
                     , iUsername, usernamep
                     , iEmail, emailp
                     , iNetwork, networkp
                     , friendsp
                     , context );
-    __db.putEntry(uname, user);
+    __db.putEntry(iUsername, user);
+    return user
   }
   def getUser (uname : BigInt) : UserRecord = {
-    __db.getEntry(uname).asInstanceOf[UserRecord];
+    // We know that this is going to be concrete.
+    val result = (__db.getEntry(uname)).eval
+    result.asInstanceOf[UserRecord];
   }
 
   /* What about the integrity of this data?  Is user1 allowed to become user2's
    * friend? */
-  def addFriend ( user1 : BigInt, user2 : Int) : Unit = {
-    val record1 = __db.getEntry(user1).asInstanceOf[UserRecord];
-    val record2 = __db.getEntry(user2).asInstanceOf[UserRecord];
+  def addFriend ( user1 : BigInt, user2 : BigInt) : Unit = {
+    val record1 = getUser(user1)
+    val record2 = getUser(user2)
 
-    record1.addFriend(record1.name);
-    record2.addFriend(record2.name);
+    record1.addFriend(record2.username);
+    record2.addFriend(record1.username);
   }
 
   /******************************************/
@@ -75,26 +76,35 @@ object SocialNetBackend {
   /******************************************/
   /* This function demonstrates how we can get fields of objects without
    * worrying about permissions. */
-  def getFriends (user : Int) : List[IntExpr] = {
-    val curRecord = __db.getEntry(user).asInstanceOf[UserRecord];
+  def getFriends (user : BigInt) : List[IntExpr] = {
+    val curRecord = getUser(user);
     curRecord.getFriends();
+  }
+  def isFriends(user1 : BigInt, user2 : BigInt) : Formula = {
+    val u1 = getUser(user1);
+    return u1.isFriends(user2)
   }
 
   /* This function demonstrates how we can work with symbolic objects and do
    * additional operations on them without worrying about permissions. */
-  def getFriendNetworks (user : Int) : List[IntExpr] = {
+  def getFriendNetworks (user : BigInt) : List[IntExpr] = {
     val friends = getFriends(user);
     val networks = friends.foldLeft (Set.empty[IntExpr]) (
         (set : Set[IntExpr], friend : IntExpr) =>
-        set + (__db.getEntry(friend)) ~ '__network)
+        set + (__db.getEntry(friend)) ~ 'network)
     networks.toList
   }
 
   /*************************************************/
   /* Functions that use concretize to show things. */
   /*************************************************/
-  def printList (ctxt : AtomVar, lst : List[IntExpr]) = {
-    // val elts = lst.map(x => concretize(context, ctxt, x));
-    // elts.foreach(x => println(x));
+  def getBool(ctxtUser : BigInt, b : Formula) : Boolean = {
+    val ctxt = getUser(ctxtUser);
+    concretize(context, ctxt, b)
+  }
+
+  def printStringList (ctxtUser : BigInt, lst : List[IntExpr]) : List[String]= {
+    val ctxt = getUser(ctxtUser);
+    lst.map(x => asString(concretize(context, ctxt, x)));
   }
 }
