@@ -19,7 +19,7 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(0), 0  // username, usernamep
                   , Constant(0), 0  // email, emailp
                   , Constant(0), 0  // network, networkp
-                  , Nil, 0  // friends, friendsp
+                  , 0  // friends, friendsp
                   , context );
     expect(true) { u.equals(u)  };
   }
@@ -32,7 +32,7 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(0), 0  // username, usernamep
                   , Constant(0), 0  // email, emailp
                   , Constant(0), 0  // network, networkp
-                  , Nil, 0  // friends, friendsp
+                  , 0  // friends, friendsp
                   , context );
     u.addFriend(1);
     val friends = u.getFriends();
@@ -48,7 +48,7 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(0), 0  // username, usernamep
                   , Constant(0), 0  // email, emailp
                   , Constant(0), 0  // network, networkp
-                  , Nil, 0  // friends, friendsp
+                  , 0  // friends, friendsp
                   , context );
     u.addFriend(1);
     val friends = u.getFriends();
@@ -64,7 +64,7 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(0), 0  // username, usernamep
                   , Constant(0), 0  // email, emailp
                   , Constant(0), 0  // network, networkp
-                  , Nil, UserLevels.friendsL  // friends, friendsp
+                  , UserLevels.friendsL  // friends, friendsp
                   , context );
     u.addFriend(1);
     expect(true) { concretize(context, u, u.isFriends(1)) };
@@ -79,7 +79,7 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(0), 0  // username, usernamep
                   , Constant(0), 0  // email, emailp
                   , Constant(0), 0  // network, networkp
-                  , Nil, 0  // friends, friendsp
+                  , 0  // friends, friendsp
                   , context );
     val friend1 = pick (x => x === 1)
     u.addFriend(friend1);
@@ -95,7 +95,7 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(0), 0  // username, usernamep
                   , Constant(0), 0  // email, emailp
                   , Constant(0), 0  // network, networkp
-                  , Nil, 0  // friends, friendsp
+                  , 0  // friends, friendsp
                   , context );
     val friend1 = pick (x => x === 1)
     u.addFriend(1)
@@ -110,7 +110,7 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(0), 0  // username, usernamep
                   , Constant(0), 0  // email, emailp
                   , Constant(0), 0  // network, networkp
-                  , Nil, 0  // friends, friendsp
+                  , 0  // friends, friendsp
                   , context );
     expect (UserLevels.selfL) { concretize(context, u, u.level) };
   }
@@ -123,7 +123,7 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(5), 0  // username, usernamep
                   , Constant(0), 0  // email, emailp
                   , Constant(0), 0  // network, networkp
-                  , Nil, 0  // friends, friendsp
+                  , 0  // friends, friendsp
                   , context );
     val u1 = 
       new UserRecord(6
@@ -132,7 +132,7 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(6), 0  // username, usernamep
                   , Constant(0), 0  // email, emailp
                   , Constant(0), 0  // network, networkp
-                  , Nil, 0  // friends, friendsp
+                  , 0  // friends, friendsp
                   , context );
     u0.addFriend(u1.username)
     u1.addFriend(u0.username)
@@ -148,7 +148,7 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(3), 0  // username, usernamep
                   , Constant(0), 0  // email, emailp
                   , Constant(0), 0  // network, networkp
-                  , Nil, 0  // friends, friendsp
+                  , 0  // friends, friendsp
                   , context );
     val u4 =
       new UserRecord(4
@@ -157,26 +157,9 @@ class ExampleUserRecord extends FunSuite {
                   , Constant(4), 0  // username, usernamep
                   , Constant(0), 0  // email, emailp
                   , Constant(0), 0  // network, networkp
-                  , Nil, 0  // friends, friendsp
+                  , 0  // friends, friendsp
                   , context );
     expect (UserLevels.defaultL) { concretize(context, u4, u3.level); }
     expect (UserLevels.defaultL) { concretize(context, u3, u4.level); }
   }
-
-  /*
-  test ("equals symbolic self") {
-    val u =
-      new UserRecord(0
-                  , Constant(0), 0  // name, namep
-                  , Constant(0), 0  // pwd, pwdp
-                  , Constant(0), 0  // username, usernamep
-                  , Constant(0), 0  // email, emailp
-                  , Constant(0), 0  // network, networkp
-                  , Nil, UserLevels.friendsL  // friends, friendsp
-                  , context );
-    val v = pickAtom;
-    assume(v === u);  // TODO: Figure out what this === does.
-    expect (true) { concretize(context, u, v).equals(v) };
-  }
-  */
 }
