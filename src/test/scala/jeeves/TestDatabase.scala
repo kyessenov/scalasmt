@@ -12,8 +12,7 @@ import JeevesLib._
 class ExampleDatabase extends FunSuite {
   private val context = pickAtom();
   private val uRecord =
-    new UserRecord( 0
-                  , 0, 0  // name, namep
+    new UserRecord( 0, 0  // name, namep
                   , 1337, 0  // pwd, pwdp
                   , 0, 0  // username, usernamep
                   , 0, 0  // email, emailp
