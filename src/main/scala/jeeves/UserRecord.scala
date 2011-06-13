@@ -17,7 +17,7 @@ class UserRecord(val id : BigInt
                 , _username : IntExpr, val usernamep : LevelTy
                 , _email : IntExpr, val emailp : LevelTy
                 , _network : IntExpr, val networkp : LevelTy
-                , _friends : List[IntExpr], val friendsp : LevelTy
+                , val friendsp : LevelTy
                 , val context : AtomVar ) extends Atom {
   val level : IntVar = pick(default = defaultL);
 
@@ -27,9 +27,7 @@ class UserRecord(val id : BigInt
   val username = mkSensitive(_username, usernamep);
   val email = mkSensitive(_email, emailp);
   val network = mkSensitive(_network, networkp);
-
-  // TODO: No longer permit default friends
-  var friends = _friends.map(mkSensitive(_, friendsp));
+  var friends : List[IntExpr] = Nil
  
   /* Set privacy levels. */
   assume((context~'id === id) <==> (level === selfL))
