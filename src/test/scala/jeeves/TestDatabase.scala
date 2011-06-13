@@ -18,7 +18,7 @@ class ExampleDatabase extends FunSuite {
                   , 0, 0  // username, usernamep
                   , 0, 0  // email, emailp
                   , 0, 0  // network, networkp
-                  , Nil, 0  // friends, friendsp
+                  , 0 // friendsp
                   , context )
 
   private def mkTestDB() : Database = {

@@ -34,7 +34,7 @@ object SocialNetBackend {
               , username  : String      , usernamep : BigInt
               , email     : String      , emailp    : BigInt
               , network   : String      , networkp  : BigInt
-              , friends   : List[IntVar], friendsp  : BigInt )
+              , friendsp  : BigInt )
             : Unit = {
     val uname = __uid_count;
     __uid_count = __uid_count + 1;
@@ -44,7 +44,6 @@ object SocialNetBackend {
     val iUsername = storeString(username);
     val iEmail = storeString(email);
     val iNetwork = storeString(network);
-    val iFriends = friends;
 
     val user =
       new UserRecord( uname
@@ -53,7 +52,7 @@ object SocialNetBackend {
                     , iUsername, usernamep
                     , iEmail, emailp
                     , iNetwork, networkp
-                    , iFriends, friendsp
+                    , friendsp
                     , context );
     __db.putEntry(uname, user);
   }
