@@ -52,4 +52,12 @@ object JeevesLib extends Sceeves {
     }
     x
   }
+
+  def concretizeList[T] (
+    ctxtVar : AtomVar, context : ObjectExpr, lst : List[ObjectExpr])
+  : List[T] = {
+    val objLst : List[T] =
+      lst.map(x => concretize(ctxtVar, context, x).asInstanceOf[T]);
+    objLst.filter(x => !(x == null))
+  }
 }
