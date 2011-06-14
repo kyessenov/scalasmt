@@ -47,6 +47,17 @@ class ExampleDatabase extends FunSuite {
     expect(42) { concretize(context, uRecord, x) }
   }
 
+  test ("findEntry") {
+    val db = mkTestDB();
+    val f = (x : ObjectExpr) => (x~'pwd === 1337);
+    val result = db.findEntry(f);
+    val concreteList : List[UserRecord] =
+      concretizeList(context, uRecord, result);
+    expect(1) { concreteList.length };
+    expect(0) { (concreteList.head).username };
+    expect(0) { (concreteList.head).email };
+  }
+
   /*
   test ("symbolic record getter") {
     val db = mkTestDB();
