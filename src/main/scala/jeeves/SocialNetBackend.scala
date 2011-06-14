@@ -89,12 +89,12 @@ object SocialNetBackend {
     val friends = getFriends(user);
     val networks = friends.foldLeft (Set.empty[IntExpr]) (
         (set : Set[IntExpr], friend : IntExpr) =>
-        set + (__db.getEntry(friend)) ~ 'network)
+        set + (__db.getEntry(friend))~'network)
     networks.toList
   }
 
   def getUsersByNetwork (network : String) : List[ObjectExpr] = {
-    val f = (x : ObjectExpr) => (x ~ 'network === storeString(network));
+    val f = (x : ObjectExpr) => (x~'network === storeString(network));
     __db.findEntry(f);
   }
 
