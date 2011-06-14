@@ -93,10 +93,9 @@ object SocialNetBackend {
     networks.toList
   }
 
-  def getUsersByNetwork (network : String) : List[IntExpr] = {
+  def getUsersByNetwork (network : String) : List[ObjectExpr] = {
     val f = (x : ObjectExpr) => (x ~ 'network === storeString(network));
-    val users = __db.findEntry(f);
-    throw Undefined
+    __db.findEntry(f);
   }
 
   /* What if we wanted to have a series of operations on the friends of
