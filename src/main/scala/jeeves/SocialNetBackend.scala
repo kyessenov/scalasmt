@@ -8,11 +8,11 @@ import JeevesLib._
 
 object SocialNetBackend {
   private val __db = new Database();
-  private val context : AtomVar = pickAtom();
+  val context : AtomVar = pickAtom();
 
   /* HashMap for String <-> BigInt */
   private val __strs = new HashMap[BigInt, String]();
-  private def storeString (str : String) : BigInt = {
+  def fromString (str : String) : BigInt = {
     val idx : BigInt = str.hashCode();
     __strs += (idx -> str);
     idx
@@ -36,11 +36,11 @@ object SocialNetBackend {
               , network   : String      , networkp  : BigInt
               , friendsp  : BigInt )
             : UserRecord = {
-    val iName = storeString(name);
-    val iPwd = storeString(pwd);
-    val iUsername = storeString(username);
-    val iEmail = storeString(email);
-    val iNetwork = storeString(network);
+    val iName = fromString(name);
+    val iPwd = fromString(pwd);
+    val iUsername = fromString(username);
+    val iEmail = fromString(email);
+    val iNetwork = fromString(network);
 
     val user =
       new UserRecord( iName, namep
@@ -94,7 +94,7 @@ object SocialNetBackend {
   }
 
   def getUsersByNetwork (network : String) : List[ObjectExpr] = {
-    val f = (x : ObjectExpr) => (x~'network === storeString(network));
+    val f = (x : ObjectExpr) => (x ~ 'network === fromString(network));
     __db.findEntry(f);
   }
 
@@ -115,6 +115,12 @@ object SocialNetBackend {
   def getBool(ctxtUser : BigInt, b : Formula) : Boolean = {
     val ctxt = getUser(ctxtUser);
     concretize(context, ctxt, b)
+  }
+
+  def getConcreteRecordList (ctxtUser : BigInt, lst : List[ObjectExpr])
+    : List[UserRecord] = {
+    val ctxt = getUser(ctxtUser);
+    concretizeList(context, ctxt, lst);
   }
 
   def printStringList (ctxtUser : BigInt, lst : List[IntExpr]) : List[String]= {
