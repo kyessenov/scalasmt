@@ -46,4 +46,23 @@ class ExampleJeevesLib extends FunSuite {
     expect(42) { concretize(context, 1, x) };
     expect(42) { concretize(context, 1, x) };
   }
+
+  case class Node(v: Int) extends Atom
+  test ("concretizeList non-null") {
+    val x = pickAtom(x => x === Node(0));
+    val symList = List(x);
+    val context = pickAtom();
+    val cList : List[Node] = concretizeList(context, x, symList);
+    expect(1) { cList.length };
+    expect(0) { cList.head.v };
+  }
+
+  test ("concretizeList null") {
+    val x = pickAtom();
+    val symList = List(x);
+    val context = pickAtom();
+    val cList : List[Node] = concretizeList(context, x, symList);
+    cList.foreach(x => println(x));
+    expect(0) { cList.length };
+  }
 }

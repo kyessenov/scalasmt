@@ -12,11 +12,9 @@ object SocialNetBackend {
 
   /* HashMap for String <-> BigInt */
   private val __strs = new HashMap[BigInt, String]();
-  private var __strCount : BigInt = 0;
   private def storeString (str : String) : BigInt = {
-    val idx = __strCount;
+    val idx : BigInt = str.hashCode();
     __strs += (idx -> str);
-    __strCount = __strCount + 1;
     idx
   }
   private def asString (v : BigInt) : String = {
@@ -78,7 +76,7 @@ object SocialNetBackend {
    * worrying about permissions. */
   def getFriends (user : BigInt) : List[IntExpr] = {
     val curRecord = getUser(user);
-    curRecord.getFriends();
+    curRecord.friends
   }
   def isFriends(user1 : BigInt, user2 : BigInt) : Formula = {
     val u1 = getUser(user1);
@@ -94,6 +92,23 @@ object SocialNetBackend {
         set + (__db.getEntry(friend)) ~ 'network)
     networks.toList
   }
+
+  def getUsersByNetwork (network : String) : List[IntExpr] = {
+    val f = (x : ObjectExpr) => (x ~ 'network === storeString(network));
+    val users = __db.findEntry(f);
+    throw Undefined
+  }
+
+  /* What if we wanted to have a series of operations on the friends of
+   * symbolic friends? */
+  /*
+  def getFriendsOfFriends (user : BigInt) : List[IntExpr] = {
+    // This is still concrete.
+    val friends = getFriends(user);
+    val networks = friends.foldLeft (Set.empty[IntExpr]) 
+    friends
+  }
+  */
 
   /*************************************************/
   /* Functions that use concretize to show things. */
