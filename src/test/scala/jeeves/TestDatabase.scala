@@ -54,8 +54,8 @@ class ExampleDatabase extends FunSuite {
     val concreteList : List[UserRecord] =
       concretizeList(context, uRecord, result);
     expect(1) { concreteList.length };
-    expect(0) { (concreteList.head).username };
-    expect(0) { (concreteList.head).email };
+    expect(0) { concretize(context, uRecord, (concreteList.head).username) };
+    expect(0) { concretize(context, uRecord, (concreteList.head).email) };
   }
 
   /*
