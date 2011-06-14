@@ -33,7 +33,7 @@ class ExampleUserRecord extends FunSuite {
                     , 0  // friends, friendsp
                   , context );
     u.addFriend(1);
-    val friends = u.getFriends();
+    val friends = u.friends;
     expect (1) { friends.length };
     expect (1) { concretize(context, u, friends.head) }
   }
@@ -48,7 +48,7 @@ class ExampleUserRecord extends FunSuite {
                     , 0  // friends, friendsp
                   , context );
     u.addFriend(1);
-    val friends = u.getFriends();
+    val friends = u.friends;
     expect (1) { friends.length };
     expect (1) { concretize(context, u, friends.head) }
   }
@@ -176,7 +176,7 @@ class ExampleUserRecord extends FunSuite {
     expect (0) { concretize(context, u0, u0.pwd) };
     expect (-1) { concretize(context, u1, u0.pwd) };
 
-    expect (6) { concretize(context, u1, (u0.getFriends()).head) }
+    expect (6) { concretize(context, u1, (u0.friends).head) }
     expect (true) { concretize(context, u1, u0.isFriends(u1.username)) }
   }
 }

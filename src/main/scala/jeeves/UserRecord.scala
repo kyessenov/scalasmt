@@ -36,7 +36,6 @@ class UserRecord( _name : IntExpr, val namep : LevelTy
     mkSensitiveValue(UserLevels.levels, level, v, p);
 
   /* Define getters and setters. */
-  def getFriends () : List[IntExpr] = friends
   def isFriends(u : IntExpr) : Formula = CONTAINS(friends, u) 
   def addFriend (friend : IntExpr) {
     val newfriend = mkSensitive(friend, friendsp);
