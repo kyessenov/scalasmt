@@ -58,7 +58,7 @@ class ExampleJeevesLib extends FunSuite {
   }
 
   test ("concretizeList null") {
-    val x = pickAtom();
+    val x = pickAtom(default = NULL);
     val symList = List(x);
     val context = pickAtom();
     val cList : List[Node] = concretizeList(context, x, symList);
