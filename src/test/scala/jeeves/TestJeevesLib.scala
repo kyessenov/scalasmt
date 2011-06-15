@@ -13,7 +13,8 @@ class ExampleJeevesLib extends FunSuite {
   test ("sensitive") {
     val map: SensitiveMap =
       Map((1, 1), (2, 2), (3, 3));
-    val x = JeevesLib.createSensitiveValue(level, map);
+    val x = JeevesLib.createSensitiveValue(level, 0, map);
+    expect(0) {concretize(level, 0, x)};
     expect(1) {concretize(level, 1, x)};
     expect(1) {concretize(level, 1, x)};
     expect(2) {concretize(level, 2, x)};
@@ -21,19 +22,17 @@ class ExampleJeevesLib extends FunSuite {
   }
 
   test ("default") {
-    val map: SensitiveMap = 
-      Map((JeevesLib.default, 1));
-    val x = JeevesLib.createSensitiveValue(level, map);
+    val map: SensitiveMap = Map.empty;
+    val x = JeevesLib.createSensitiveValue(level, 1,  map);
     expect(1) {concretize(level, 0, x)};
   }
 
   test("default with other values") {
-    val map: SensitiveMap =
-      Map((JeevesLib.default, 1), (1, 2));
-    val x = JeevesLib.createSensitiveValue(level, map);
+    val map: SensitiveMap = Map((1, 2));
+    val x = JeevesLib.createSensitiveValue(level, 1, map);
     expect(1) { concretize(level, 0, x) };
 
-    val y = JeevesLib.createSensitiveValue(level, map);
+    val y = JeevesLib.createSensitiveValue(level, 1, map);
     expect(2) { concretize(level, 1, y) };
   }
 
@@ -60,7 +59,7 @@ class ExampleJeevesLib extends FunSuite {
   test ("concretizeList null") {
     val x = pickAtom(default = NULL);
     val symList = List(x);
-    val level = pickAtom();
+    val level = pickAtom(default = NULL);
     val cList : List[Node] = concretizeList(level, x, symList);
     cList.foreach(x => println(x));
     expect(0) { cList.length };

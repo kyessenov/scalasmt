@@ -20,8 +20,8 @@ class ExampleDatabase extends FunSuite {
                   , 0 // friendsp
                   , context )
 
-  private def mkTestDB() : Database = {
-    val db = new Database();
+  private def mkTestDB() : Database[UserRecord] = {
+    val db = new Database[UserRecord]();
     db.putEntry(uRecord.id, uRecord);
     db
   }
