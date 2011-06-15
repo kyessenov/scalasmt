@@ -8,7 +8,7 @@ import JeevesLib._
 
 object SocialNetBackend {
   private val __db = new Database();
-  val context : AtomVar = pickAtom();
+  val snbContext : AtomVar = pickAtom();
 
   /* HashMap for String <-> BigInt */
   private val __strs = new HashMap[BigInt, String]();
@@ -49,7 +49,7 @@ object SocialNetBackend {
                     , iEmail, emailp
                     , iNetwork, networkp
                     , friendsp
-                    , context );
+                    , snbContext );
     __db.putEntry(iUsername, user);
     return user
   }
@@ -114,17 +114,17 @@ object SocialNetBackend {
   /*************************************************/
   def getBool(ctxtUser : BigInt, b : Formula) : Boolean = {
     val ctxt = getUser(ctxtUser);
-    concretize(context, ctxt, b)
+    concretize(snbContext, ctxt, b)
   }
 
   def getConcreteRecordList (ctxtUser : BigInt, lst : List[ObjectExpr])
     : List[UserRecord] = {
     val ctxt = getUser(ctxtUser);
-    concretizeList(context, ctxt, lst);
+    concretizeList(snbContext, ctxt, lst);
   }
 
   def printStringList (ctxtUser : BigInt, lst : List[IntExpr]) : List[String]= {
     val ctxt = getUser(ctxtUser);
-    lst.map(x => asString(concretize(context, ctxt, x)));
+    lst.map(x => asString(concretize(snbContext, ctxt, x)));
   }
 }
