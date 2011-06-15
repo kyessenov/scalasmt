@@ -1,4 +1,4 @@
-package cap.jeeves
+package cap.jeeves.socialnet
 
 /*
  * User records for jeeves social net case study.
@@ -8,7 +8,7 @@ package cap.jeeves
 import cap.scalasmt._
 import scala.collection.mutable.Map;
 import UserLevels._
-import JeevesLib._
+import cap.jeeves.JeevesLib._
 
 /* NOTE: We will not be using this with beans for now... */
 class UserRecord( _name : IntExpr, val namep : LevelTy
