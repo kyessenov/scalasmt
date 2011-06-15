@@ -44,7 +44,7 @@ class Database {
           case TrueF => returnList = v :: returnList
           case FalseF => ()
           case _ =>
-            val r : AtomVar = pickAtom();
+            val r : AtomVar = pickAtom(default = NULL);
             assume (isEligible ==> (r === v))
             returnList = r :: returnList
         }
