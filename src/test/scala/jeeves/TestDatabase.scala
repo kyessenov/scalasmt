@@ -1,6 +1,6 @@
 package test.cap.jeeves
 
-import cap.jeeves.socialnet.UserRecord._
+import cap.jeeves.socialnet._
 import cap.scalasmt._
 import cap.scalasmt.RelExpr._
 import org.scalatest.FunSuite

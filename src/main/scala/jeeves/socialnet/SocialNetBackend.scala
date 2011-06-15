@@ -11,24 +11,6 @@ object SocialNetBackend {
   private val __db = new Database[UserRecord]();
   val snbContext : AtomVar = pickAtom();
 
-  /* HashMap for String <-> BigInt */
-  private val __strs = new HashMap[BigInt, String]();
-  def fromString (str : String) : BigInt = {
-    val idx : BigInt = str.hashCode();
-    __strs += (idx -> str);
-    idx
-  }
-  private def asString (v : BigInt) : String = {
-    if (v == -1) {
-      "[default]"
-    } else {
-      __strs.get(v) match {
-        case Some(str) => str
-        case None => println(v); throw Undefined
-      }
-    }
-  }
-
   /* Database functions. */
   def addUser ( name      : String      , namep     : BigInt
               , pwd       : String      , pwdp      : BigInt
