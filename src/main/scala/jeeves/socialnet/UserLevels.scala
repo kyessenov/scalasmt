@@ -1,6 +1,6 @@
-package cap.jeeves
+package cap.jeeves.socialnet
 
-import JeevesLib._
+import cap.jeeves.JeevesLib._
 
 object UserLevels {
   val defaultL: LevelTy = 0;
