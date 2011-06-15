@@ -9,12 +9,30 @@ package cap.jeeves
 import cap.scalasmt._
 import scala.collection.immutable.Map;
 import scala.collection.mutable.{Map => MMap};
+import scala.collection.mutable.HashMap;
 
 object Undefined extends RuntimeException("undefined")
 object JeevesLib extends Sceeves {
   type LevelTy = BigInt;
   type ValueTy = BigInt;
   type SensitiveMap = Map[BigInt, IntExpr];
+
+  private val __strs = new HashMap[BigInt, String]();
+  def fromString (str : String) : BigInt = {
+    val idx : BigInt = str.hashCode();
+    __strs += (idx -> str);
+    idx
+  }
+  def asString (v : BigInt) : String = {
+    if (v == -1) {
+      "[default]"
+    } else {
+      __strs.get(v) match {
+        case Some(str) => str
+        case None => println(v); throw Undefined
+      }
+    }
+  }
 
   // Creates a sensitive map based on a value.
   def addCoarsePolicy (levels : List[LevelTy], v : IntExpr, minLevel : LevelTy)
