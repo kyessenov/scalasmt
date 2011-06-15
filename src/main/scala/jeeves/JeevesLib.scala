@@ -16,8 +16,6 @@ object JeevesLib extends Sceeves {
   type ValueTy = BigInt;
   type SensitiveMap = Map[BigInt, IntExpr];
 
-  val default : LevelTy = 0;
-
   // Creates a sensitive map based on a value.
   def addCoarsePolicy (levels : List[LevelTy], v : IntExpr, minLevel : LevelTy)
     : Map[BigInt, IntExpr] = {
@@ -37,13 +35,13 @@ object JeevesLib extends Sceeves {
     , minLevel : BigInt)
   : IntVar = {
     val map = addCoarsePolicy(levels, v, minLevel);
-    createSensitiveValue(level, map)
+    createSensitiveValue(level, -1, map)
   }
 
   // Associates a constraint with a field.
   def createSensitiveValue
-    (level : IntVar, vals : SensitiveMap) : IntVar = {
-    var x = pick();
+    (level : IntVar, defaultV : BigInt, vals : SensitiveMap) : IntVar = {
+    var x = pick(default = defaultV);
 
     // Go through keys and values.
     vals foreach {
