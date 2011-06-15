@@ -11,15 +11,15 @@ import scala.collection.mutable.{Map => MMap}
 
 object KeyException extends RuntimeException("key not in db")
 
-class Database {
-  private var elements = MMap.empty[BigInt, UserRecord];
+class Database[T<:Atom] {
+  private var elements = MMap.empty[BigInt, T];
   
   /* Setting this up. */
   def initialize () : Unit =
     // TODO: Check for cache file of serialized database.
     throw Undefined
 
-  def putEntry (key : BigInt, item : UserRecord) : Unit = elements.put(key, item)
+  def putEntry (key : BigInt, item : T) : Unit = elements.put(key, item)
   def getEntry (key : IntExpr) : ObjectExpr =
     key match {
       case Constant(k) =>
@@ -28,7 +28,7 @@ class Database {
           case None => throw KeyException
         }
       case _ =>
-        val r : AtomVar = pickAtom();
+        val r : AtomVar = pickAtom(default = NULL);
         elements foreach {
           case (curkey, v) => assume((key === curkey) ==> (r === v))
         }
@@ -39,7 +39,7 @@ class Database {
     var returnList : List[ObjectExpr] = Nil;
     elements foreach {
       case (curkey, v) => {
-        val isEligible : Formula = ffun (v : UserRecord);
+        val isEligible : Formula = ffun (v : T);
         isEligible match {
           case TrueF => returnList = v :: returnList
           case FalseF => ()
