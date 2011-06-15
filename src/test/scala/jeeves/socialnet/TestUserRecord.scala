@@ -1,6 +1,7 @@
 package test.cap.jeeves
 
 import cap.jeeves._
+import cap.jeeves.socialnet._
 import cap.scalasmt._
 import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
