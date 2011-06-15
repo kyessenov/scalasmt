@@ -7,7 +7,7 @@ import cap.scalasmt._
 import JeevesLib._
 
 object SocialNetBackend {
-  private val __db = new Database();
+  private val __db = new Database[UserRecord]();
   val snbContext : AtomVar = pickAtom();
 
   /* HashMap for String <-> BigInt */
