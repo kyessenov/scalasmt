@@ -1,4 +1,4 @@
-package cap.jeeves.jconf
+package cap.jeeves.geoloc
 
 /*
  * User records for jconf case study.
@@ -9,30 +9,21 @@ import cap.scalasmt._
 import scala.collection.mutable.Map;
 import cap.jeeves.JeevesLib._
 
-object UserStatus {
-  val authorL  : BigInt = 0
-  val reviewerL : BigInt = 1
-  val pcL      : BigInt = 2
-  val levels = List (authorL, reviewerL, pcL)
-}
-
 object UserLevels {
   val userDefaultL : LevelTy = 0;
-  val pcL          : LevelTy = 1;
-  val selfL        : LevelTy = 2;
-  val levels = List(userDefaultL, pcL, selfL);
+  val selfL        : LevelTy = 1;
+  val levels = List(userDefaultL, selfL);
 }
 
-class ConfUser( _name : IntExpr, _pwd : IntExpr
-              , val id : BigInt, _email : IntExpr
-              , val status : BigInt, val context : AtomVar ) extends Atom {
+class GeoUser( val id : BigInt
+              , _name : IntExpr, _pwd : IntExpr
+              , _xCoord : BigInt, _yCoord : BigInt
+              , context : AtomVar ) extends Atom {
 
   val level = pick(default = UserLevels.userDefaultL)
 
-  val name = mkSensitive(_name, UserLevels.pcL);
+  val name = mkSensitive(_name, UserLevels.selfL);
   val pwd = mkSensitive(_pwd, UserLevels.selfL);
-  val username = mkSensitive(id, UserLevels.selfL);
-  val email = mkSensitive(_email, UserLevels.pcL);
  
   /* Set initial privacy levels. */
   assume((context~'id === id) <==> (level === UserLevels.selfL))
@@ -46,8 +37,8 @@ class ConfUser( _name : IntExpr, _pwd : IntExpr
   override def toString = "jcu" + id
   override def hashCode = id.toInt
   override def equals(that: Any) =
-    if (that.isInstanceOf[ConfUser])
-      (id == that.asInstanceOf[ConfUser].id) 
+    if (that.isInstanceOf[GeoUser])
+      (id == that.asInstanceOf[GeoUser].id) 
     else 
       false
 }
