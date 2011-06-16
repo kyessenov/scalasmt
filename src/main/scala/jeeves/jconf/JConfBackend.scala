@@ -14,11 +14,8 @@ object JConfBackend {
   val jcContext : AtomVar = pickAtom();
 
   /* Database functions. */
-  def addUser ( name      : String      , namep     : BigInt
-              , pwd       : String      , pwdp      : BigInt
-              , username  : String      , usernamep : BigInt
-              , email     : String      , emailp    : BigInt
-              , status    : BigInt )
+  def addUser ( name : String, pwd : String, username : String, email : String
+              , status : BigInt )
             : ConfUser = {
     val iName = fromString(name);
     val iPwd = fromString(pwd);
@@ -26,12 +23,7 @@ object JConfBackend {
     val iEmail = fromString(email);
 
     val user =
-      new ConfUser( iName, namep
-                    , iPwd, pwdp
-                    , iUsername, usernamep
-                    , iEmail, emailp
-                    , status
-                    , jcContext );
+      new ConfUser(iName, iPwd, iUsername, iEmail, status, jcContext);
     __userDB.putEntry(iUsername, user);
     return user
   }

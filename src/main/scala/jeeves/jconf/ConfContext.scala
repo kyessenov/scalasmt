@@ -10,9 +10,9 @@ import scala.collection.mutable.Map;
 import UserLevels._
 import cap.jeeves.JeevesLib._
 
-class ConfContext( val id : BigInt
+class ConfContext( val id : BigInt, val name : BigInt
                  , val status : BigInt
-                 , val confStage : BigInt ) extends Atom {
+                 , val stage : BigInt ) extends Atom {
 
   override def toString = "jcc" + id
   override def hashCode = id.toInt
