@@ -60,8 +60,16 @@ object JeevesLib extends Sceeves {
   def createSensitiveValue
     (level : IntVar, defaultV : BigInt, vals : SensitiveMap) : IntVar = {
     var x = pick(default = defaultV);
-
-    // Go through keys and values.
+    vals foreach {
+      case (keyval, valConstraint) =>
+        assume((level === keyval) ==> (x === valConstraint))
+    }
+    x
+  }
+  def createSensitiveValue
+    (level : IntVar, vals : Map[BigInt, ObjectExpr])
+    : AtomVar = {
+    var x = pickAtom(default = NULL);
     vals foreach {
       case (keyval, valConstraint) =>
         assume((level === keyval) ==> (x === valConstraint))
