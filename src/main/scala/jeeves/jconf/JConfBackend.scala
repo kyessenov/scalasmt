@@ -23,7 +23,7 @@ object JConfBackend {
     val iEmail = fromString(email);
 
     val user =
-      new ConfUser(iName, iPwd, iUsername, iEmail, status, jcContext);
+      new ConfUser(iUsername, iName, iPwd, iEmail, status, jcContext);
     __userDB.putEntry(iUsername, user);
     return user
   }
