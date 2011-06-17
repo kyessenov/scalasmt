@@ -7,8 +7,13 @@ package cap.jeeves.jconf
 
 import cap.scalasmt._
 import scala.collection.mutable.Map;
-import UserLevels._
 import cap.jeeves.JeevesLib._
+
+object Viewer {
+  val low   : LevelTy = 0
+  val high  : LevelTy = 1
+  val levels = List(low, high)
+}
 
 class ConfContext( val id : BigInt, val name : BigInt
                  , val status : BigInt
