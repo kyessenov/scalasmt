@@ -15,38 +15,34 @@ object UserStatus {
   val pcL      : BigInt = 2
 }
 
-object UserLevels {
-  val userDefaultL : LevelTy = 0;
-  val reviewerL    : LevelTy = 1;
-  val pcL          : LevelTy = 2;
-  val selfL        : LevelTy = 3;
-  val levels = List(userDefaultL, reviewerL, pcL, selfL);
-}
-
 /* Conference User */
 class ConfUser( val id : BigInt
               , _name : IntExpr, _pwd : IntExpr, _email : IntExpr
               , val status : BigInt, val context : AtomVar ) extends Atom {
 
-  val level = pick(default = UserLevels.userDefaultL)
+  // TODO: Who can see the names depends on what stage it is and what the role
+  // is.
+  val name = {
+    val level = pick(default = Viewer.low);
+    assume((context~'status >= UserStatus.reviewerL) ==>
+            (level === Viewer.high));
+    mkSensitive(level, _name);
+  }
+  val pwd = {
+    val level = pick(default = Viewer.low);
+    mkSensitive(level, _pwd);
+  }
+  val email = {
+    val level = pick(default = Viewer.low);
+    assume((context~'status === UserStatus.pcL) ==> (level === Viewer.high));
+    mkSensitive(level, _email);
+  }
 
-  val name = mkSensitive(_name, UserLevels.reviewerL);
-  val pwd = mkSensitive(_pwd, UserLevels.selfL);
-  val email = mkSensitive(_email, UserLevels.pcL);
- 
-  /* Set initial privacy levels. */
-  assume((context~'id === id) ==> (level === UserLevels.selfL))
-  assume(((!(context~'id === id)) &&
-          (context~'status === UserStatus.reviewerL)) ==>
-          (level === UserLevels.reviewerL))
-  assume(((!(context~'id === id)) && (context~'status === UserStatus.pcL)) ==>
-          (level === UserLevels.pcL))
-  assume(CONTAINS(UserLevels.levels, level))
-
-  private def mkSensitive (v : IntExpr, p : LevelTy) =
-    if (p > UserLevels.userDefaultL)
-      mkSensitiveValue(UserLevels.levels, level, v, p);
-    else v
+  private def mkSensitive(levelVar : IntVar, v : IntExpr) : IntExpr = {
+    assume(CONTAINS(Viewer.levels, levelVar));
+    assume((context~'id === id) ==> (levelVar === Viewer.high));
+    mkSensitiveValue(Viewer.levels, levelVar, v, Viewer.high)
+  }
 
   override def toString = "jcu" + id
   override def hashCode = id.toInt
