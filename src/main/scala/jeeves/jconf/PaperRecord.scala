@@ -10,12 +10,6 @@ import scala.collection.immutable.List;
 import UserStatus._
 import cap.jeeves.JeevesLib._
 
-object Viewer {
-  val low   : LevelTy = 0
-  val high  : LevelTy = 1
-  val levels = List(low, high)
-}
-
 object PaperStage {
   val submission    : LevelTy = 0;
   val review        : LevelTy = 1;
@@ -43,7 +37,7 @@ class PaperRecord( val id : BigInt
 
   private def mkSensitive(levelVar : IntVar, v : IntExpr) : IntExpr = {
     val isAuthor : Formula = CONTAINS(_authors, context~'name);
-    assume(CONTAINS(Viewer.levels, authorsLevel));
+    assume(CONTAINS(Viewer.levels, levelVar));
     assume(isAuthor ==> (levelVar === Viewer.high));
     mkSensitiveValue(Viewer.levels, levelVar, v, Viewer.high)
   }
