@@ -7,7 +7,6 @@ package cap.jeeves.jconf
 
 import cap.scalasmt._
 import scala.collection.immutable.List;
-import UserStatus._
 import cap.jeeves.JeevesLib._
 
 object PaperStage {
@@ -23,17 +22,22 @@ class PaperRecord( val id : BigInt
                 , _authors : List[IntExpr]
                 , val context : AtomVar ) extends Atom {
   // The name of the paper is always visible to the authors.
-  val nameLevel : IntVar = pick(default = Viewer.low)
-  assume((context~'status > UserStatus.reviewerL) ==> (name === Viewer.high));
-  val name : IntExpr = mkSensitive(nameLevel, _name)
+  val name : IntExpr = {
+    val nameLevel : IntVar = pick(default = Viewer.low)
+    assume((context~'status > UserStatus.reviewerL) ==>
+            (nameLevel === Viewer.high));
+    mkSensitive(nameLevel, _name)
+  }
 
   // The authors of the paper are visible to the authors themselves and during
   // the reveal stage.
-  val authorsLevel : IntVar = pick(default = Viewer.low)
-  assume(((context~'status === UserStatus.reviewerL) &&
-    (context~'stage > PaperStage.authorReveal)) ==>
-          (authorsLevel === Viewer.high))
-  val authors : List[IntExpr] = _authors.map(a => mkSensitive(authorsLevel, a))
+  val authors : List[IntExpr] = {
+    val authorsLevel : IntVar = pick(default = Viewer.low)
+    assume(((context~'status === UserStatus.reviewerL) &&
+            (context~'stage > PaperStage.authorReveal)) ==>
+              (authorsLevel === Viewer.high))
+    _authors.map(a => mkSensitive(authorsLevel, a))
+  }
 
   private def mkSensitive(levelVar : IntVar, v : IntExpr) : IntExpr = {
     val isAuthor : Formula = CONTAINS(_authors, context~'name);
