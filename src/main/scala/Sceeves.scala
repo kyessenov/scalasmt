@@ -34,19 +34,19 @@ trait Sceeves {
 
   def pick(spec: IntVar => Formula = _ => true, default: IntExpr = null) = {
     val x = Var.makeInt; 
-    assume(spec(x)); judgement(x, default);
+    assume(spec(x)); defaultAssign(x, default);
     x
   }
 
   def pickBool(spec: BoolVar => Formula = _ => true, default: Formula = null) = {
     val x = Var.makeBool;
-    assume(spec(x)); judgement(x, default)
+    assume(spec(x)); defaultAssign(x, default)
     x
   }
 
   def pickAtom(spec: AtomVar => Formula = _ => true, default: ObjectExpr = null) = {
     val x = Var.makeAtom;
-    assume(spec(x)); judgement(x, default)
+    assume(spec(x)); defaultAssign(x, default)
     x
   }
   
@@ -54,7 +54,7 @@ trait Sceeves {
     CONSTRAINTS = f :: CONSTRAINTS
   }
 
-  def judgement[T](v: Var[T], e: Expr[T]) {
+  def defaultAssign[T](v: Var[T], e: Expr[T]) {
     if (e != null) DEFAULTS = Assign(v, e) :: DEFAULTS
   }
 

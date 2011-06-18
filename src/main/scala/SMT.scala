@@ -255,7 +255,7 @@ object SMT {
       if (! solver.check) solver.pop;
     }
     assert (solver.check)
-    val result = model(solver.model, env, scope)
+    val result = model(solver.model, scope)
     
     if (checkNext && solver.next) 
       println("Warning: multiple assignments") 
@@ -265,7 +265,8 @@ object SMT {
     result;
   }
 
-  private def model(model: String, env: Environment, scope: Scope) = {
+  private def model(model: String, scope: Scope)
+    (implicit env: Environment) = {
     // parse model
     var result = env;
     val PREFIX = "((\"model\" \"";
