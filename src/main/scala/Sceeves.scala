@@ -15,6 +15,7 @@ trait Sceeves {
   private var CONSTRAINTS: List[Formula] = Nil
   private var DEFAULTS: Defaults = Nil
   private var ENV: Env = DefaultEnv
+  private var VARS: List[Var[_]] = Nil
 
   private def assign[T](a: Assign[T]) = a.v match {
     // type erasure makes it impossible to be type safe here
@@ -34,18 +35,21 @@ trait Sceeves {
 
   def pick(spec: IntVar => Formula = _ => true, default: IntExpr = null) = {
     val x = Var.makeInt; 
+    VARS = x :: VARS;
     assume(spec(x)); defaultAssign(x, default);
     x
   }
 
   def pickBool(spec: BoolVar => Formula = _ => true, default: Formula = null) = {
     val x = Var.makeBool;
+    VARS = x :: VARS;
     assume(spec(x)); defaultAssign(x, default)
     x
   }
 
   def pickAtom(spec: AtomVar => Formula = _ => true, default: ObjectExpr = null) = {
     val x = Var.makeAtom;
+    VARS = x :: VARS;
     assume(spec(x)); defaultAssign(x, default)
     x
   }
