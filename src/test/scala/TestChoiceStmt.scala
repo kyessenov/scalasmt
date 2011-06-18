@@ -29,4 +29,16 @@ class ExampleChoice extends FunSuite {
       choose ((x,y) => x*y === 2 && x + y === 3 && x < y)
     }
   }
+
+  test ("complete functional synthesis") {
+    import IntExpr._
+    val x = 3 * 3600 + 14 * 60 + 18
+    expect((3, 14, 18)) {
+      choose {(h,m,s) => h * 3600 + m * 60 + s === x &&
+        0 <= h && h < 24 &&
+        0 <= m && m < 60 &&
+        0 <= s && s < 60
+      }
+    }
+  } 
 }
