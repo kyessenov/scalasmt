@@ -151,14 +151,17 @@ case class IntVar(id: String) extends IntExpr with Var[BigInt] {
   override def toString = "i" + id
 }
 case class ObjectIntField(root: ObjectExpr, f: IntFieldDesc) extends IntExpr {
-  def vars = root.vars
+  def vars = root.vars + ObjectIntField.unknown
   def eval(implicit env: Environment) = f(root.eval) match {
     case Some(e: IntExpr) => e.eval
     case None => ObjectIntField.default
   }
 }
 object ObjectIntField {
+  // default value (e.g. if object does not have the field)
   def default = 0
+  // model symbolic field value
+  private def unknown = IntVar("unknown")
 }
 
 /**
