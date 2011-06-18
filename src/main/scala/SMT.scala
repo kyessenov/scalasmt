@@ -240,7 +240,6 @@ object SMT {
   def solve(f: Formula, defaults: List[Formula] = Nil, checkNext: Boolean = true)
     (implicit env: Environment = DefaultEnv) = {
     implicit val scope = closure(univ(f :: defaults))
-    assert (f.vars subsetOf scope.vars);
 
     val solver = new Z3// with Logging
   
