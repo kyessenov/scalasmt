@@ -13,10 +13,13 @@ class PaperRecord( val id : BigInt
                 , _name : IntExpr
                 , _authors : List[IntExpr]
                 , val context : AtomVar ) extends Atom {
+  private val isAuthor = CONTAINS(_authors, context~'id);
+
   // The name of the paper is always visible to the authors.
   val name : IntExpr = {
     val nameLevel : IntVar = pick(default = Viewer.low)
-    assume((context~'status > UserStatus.reviewerL) ==>
+    assume(isAuthor ==> (nameLevel === Viewer.high))
+    assume((context~'status >= UserStatus.reviewerL) ==>
             (nameLevel === Viewer.high));
     mkSensitive(nameLevel, _name)
   }
@@ -25,8 +28,9 @@ class PaperRecord( val id : BigInt
   // the reveal stage.
   val authors : List[IntExpr] = {
     val authorsLevel : IntVar = pick(default = Viewer.low)
-    assume(((context~'status === UserStatus.reviewerL) &&
-            (context~'stage > PaperStage.authorReveal)) ==>
+      assume(isAuthor ==> (authorsLevel === Viewer.high));
+      assume(((context~'status >= UserStatus.reviewerL) &&
+             (context~'stage >= PaperStage.authorReveal)) ==>
               (authorsLevel === Viewer.high))
     _authors.map(a => mkSensitive(authorsLevel, a))
   }
