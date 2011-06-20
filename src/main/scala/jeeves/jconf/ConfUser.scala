@@ -20,14 +20,15 @@ class ConfUser( val id : BigInt
               , _name : IntExpr, _pwd : IntExpr, _email : IntExpr
               , val status : BigInt, val context : AtomVar ) extends Atom {
 
-  // TODO: Who can see the names depends on what stage it is and what the role
-  // is.
   val name = {
     val level = pick(default = Viewer.low);
-    assume((context~'status >= UserStatus.reviewerL) ==>
+    // Reviewers can see names after authors are revealed 
+    assume(((context~'status >= UserStatus.reviewerL) &&
+            (context~'stage >= PaperStage.authorReveal))==>
             (level === Viewer.high));
     mkSensitive(level, _name);
   }
+  // Password is always sensitive
   val pwd = {
     val level = pick(default = Viewer.low);
     mkSensitive(level, _pwd);
