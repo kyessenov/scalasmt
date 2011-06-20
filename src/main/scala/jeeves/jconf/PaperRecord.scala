@@ -9,14 +9,6 @@ import cap.scalasmt._
 import scala.collection.immutable.List;
 import cap.jeeves.JeevesLib._
 
-object PaperStage {
-  val submission    : LevelTy = 0;
-  val review        : LevelTy = 1;
-  val authorReveal  : LevelTy = 2;
-  val publicReveal  : LevelTy = 3;
-}
-
-/* NOTE: We will not be using this with beans for now... */
 class PaperRecord( val id : BigInt
                 , _name : IntExpr
                 , _authors : List[IntExpr]
