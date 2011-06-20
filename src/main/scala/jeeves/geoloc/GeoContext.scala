@@ -16,8 +16,8 @@ object Viewer {
 }
 
 class GeoContext( val id : BigInt, val name : BigInt
-                 , val status : BigInt
-                 , val stage : BigInt ) extends Atom {
+                 , val xCoord : BigInt, val yCoord : BigInt
+                 , val loc : BigInt ) extends Atom {
 
   override def toString = "jcc" + id
   override def hashCode = id.toInt
