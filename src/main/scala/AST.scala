@@ -151,14 +151,17 @@ case class IntVar(id: String) extends IntExpr with Var[BigInt] {
   override def toString = "i" + id
 }
 case class ObjectIntField(root: ObjectExpr, f: IntFieldDesc) extends IntExpr {
-  def vars = root.vars
+  def vars = root.vars + ObjectIntField.unknown
   def eval(implicit env: Environment) = f(root.eval) match {
     case Some(e: IntExpr) => e.eval
     case None => ObjectIntField.default
   }
 }
 object ObjectIntField {
+  // default value (e.g. if object does not have the field)
   def default = 0
+  // model symbolic field value
+  private def unknown = IntVar("unknown")
 }
 
 /**
@@ -261,6 +264,7 @@ sealed trait Environment {
   def +[T](b: (Var[T], T)): Environment = Binding(b._1, b._2, this)
   def has[T](i: Var[T]): Boolean
   def apply[T](i: Var[T]): T
+  def hasAll(vs: Traversable[Var[_]]) = vs.forall(has(_))
 }
 class UnboundVarException(i: Var[_]) extends RuntimeException("unbound variable: " + i) 
 object EmptyEnv extends Environment {

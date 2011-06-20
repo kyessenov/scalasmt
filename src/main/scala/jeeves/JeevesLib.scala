@@ -79,4 +79,6 @@ object JeevesLib extends Sceeves {
       lst.map(x => concretize(ctxtVar, context, x).asInstanceOf[T]);
     objLst.filter(x => !(x == null))
   }
+
+  override def assume(f: Formula) = super.assume(Partial.eval(f)(EmptyEnv))
 }
