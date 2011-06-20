@@ -8,19 +8,19 @@ import org.scalatest.Assertions.{expect}
 
 import JeevesLib._
 
-class ExampleGeoUser extends FunSuite {
+class ExampleGeoLocation extends FunSuite {
   val context = pickAtom();
 
   /*
   val author0 =
     new PaperRecord( 0, Constant(0), Constant(123), Constant(0)
-                , UserStatus.authorL, context);
+                , LocationStatus.authorL, context);
   val reviewer0 =
     new PaperRecord( 1, Constant(1), Constant(456), Constant(0)
-                , UserStatus.reviewerL, context);
+                , LocationStatus.reviewerL, context);
   val pc0 =
     new PaperRecord( 1, Constant(1), Constant(789), Constant(0)
-                , UserStatus.pcL, context);
+                , LocationStatus.pcL, context);
 
   test ("name visibility") {
     expect (-1) { concretize(context, reviewer0, author0.pwd) };
