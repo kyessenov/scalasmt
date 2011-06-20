@@ -34,10 +34,12 @@ object JeevesLib extends Sceeves {
     }
   }
 
-  // Creates a sensitive map based on a value.
-  def addCoarsePolicy (levels : List[LevelTy], v : IntExpr, minLevel : LevelTy)
-    : Map[BigInt, IntExpr] = {
-    levels.foldLeft (Map.empty[BigInt, IntExpr]) (
+  def mkSensitiveValue (
+      levels : List[LevelTy], level : IntVar, v : IntExpr
+    , minLevel : BigInt)
+  : IntVar = {
+    val map =
+      levels.foldLeft (Map.empty[BigInt, IntExpr]) (
         (map : SensitiveMap, level : LevelTy) =>
           if (level < minLevel) {
             map + (level -> Constant(-1))
@@ -46,13 +48,6 @@ object JeevesLib extends Sceeves {
             map + (level -> v)
           }
         )
-  }
-
-  def mkSensitiveValue (
-      levels : List[LevelTy], level : IntVar, v : IntExpr
-    , minLevel : BigInt)
-  : IntVar = {
-    val map = addCoarsePolicy(levels, v, minLevel);
     createSensitiveValue(level, -1, map)
   }
 
