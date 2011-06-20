@@ -9,32 +9,29 @@ import cap.scalasmt._
 import scala.collection.mutable.Map;
 import cap.jeeves.JeevesLib._
 
-object UserLevels {
-  val userDefaultL : LevelTy = 0;
-  val selfL        : LevelTy = 1;
-  val levels = List(userDefaultL, selfL);
-}
-
 class GeoUser( val id : BigInt
-              , _name : IntExpr, _pwd : IntExpr
-              , _xCoord : BigInt, _yCoord : BigInt
-              , context : AtomVar ) extends Atom {
+             , _pwd : BigInt
+             , val context : AtomVar ) extends Atom {
+  val contextLevel = pick(default = Viewer.low);
+  assume((context~'id === id) ==> (contextLevel === Viewer.high));
 
-  val level = pick(default = UserLevels.userDefaultL)
+  val pwd = {
+    val level = pick(default = Viewer.low);
+    mkSensitive(level, _pwd);
+  }
 
-  val name = mkSensitive(_name, UserLevels.selfL);
-  val pwd = mkSensitive(_pwd, UserLevels.selfL);
- 
-  /* Set initial privacy levels. */
-  assume((context~'id === id) <==> (level === UserLevels.selfL))
-  assume(CONTAINS(UserLevels.levels, level))
+  private def mkSensitive(levelVar : IntVar, v : IntExpr) : IntExpr = {
+    assume(CONTAINS(Viewer.levels, levelVar));
+    assume((context~'id === id) ==> (levelVar === Viewer.high));
+    mkSensitiveValue(Viewer.levels, levelVar, v, Viewer.high)
+  }
 
-  private def mkSensitive (v : IntExpr, p : LevelTy) =
-    if (p > UserLevels.userDefaultL)
-      mkSensitiveValue(UserLevels.levels, level, v, p);
-    else v
+  // This only operates over logical variables.
+  def addFriend (friendId : BigInt) = {
+    (context~'id === friendId) ==> (contextLevel === Viewer.high);
+  }
 
-  override def toString = "jcu" + id
+  override def toString = "gu" + id
   override def hashCode = id.toInt
   override def equals(that: Any) =
     if (that.isInstanceOf[GeoUser])
