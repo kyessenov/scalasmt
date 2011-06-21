@@ -9,7 +9,7 @@ import JeevesLib._
 
 object GeoLocBackend {
   private val __db = new Database[GeoUser]();
-  val context : AtomVar = pickAtom();
+  val context : ObjectVar = pickObject();
 
   /*
   def getUser (uname : BigInt) : UserRecord = {

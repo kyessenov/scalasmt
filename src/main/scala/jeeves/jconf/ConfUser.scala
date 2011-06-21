@@ -18,7 +18,7 @@ object UserStatus {
 /* Conference User */
 class ConfUser( val id : BigInt
               , _name : IntExpr, _pwd : IntExpr, _email : IntExpr
-              , val status : BigInt, val context : AtomVar ) extends Atom {
+              , val status : BigInt, val context : ObjectVar ) extends Atom {
 
   val name = {
     val level = pick(default = Viewer.low);

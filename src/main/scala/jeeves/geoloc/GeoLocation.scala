@@ -16,7 +16,7 @@ class GeoLocation( val id : BigInt
                  , _xCoord : BigInt, _yCoord : BigInt
                  , _location : BigInt
                  , contextLevel : IntVar
-                 , context : AtomVar ) extends Atom {
+                 , context : ObjectVar ) extends Atom {
   val contextHigh = contextLevel === Viewer.high
 
   // Reveal the user location.

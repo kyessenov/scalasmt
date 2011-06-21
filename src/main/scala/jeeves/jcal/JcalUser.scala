@@ -11,7 +11,7 @@ import cap.jeeves.JeevesLib._
 
 class JcalUser( val id : BigInt
              , _pwd : BigInt
-             , val context : AtomVar ) extends Atom {
+             , val context : ObjectVar ) extends Atom {
   val contextLevel = pick(default = Viewer.low);
   assume((context~'id === id) ==> (contextLevel === Viewer.high));
 

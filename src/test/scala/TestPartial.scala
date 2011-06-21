@@ -13,7 +13,7 @@ class ExamplePartial extends FunSuite {
 
   val b = Var.makeBool
   val i = Var.makeInt
-  val a = Var.makeAtom
+  val a = Var.makeObject
 
   test ("boolean simplifications") {
     expect(T) {eval(true && true)}
