@@ -11,7 +11,7 @@ object JConfBackend {
   private val __userDB = new Database[ConfUser]();
   private val __paperDB = new Database[PaperRecord]();
 
-  val jcContext : AtomVar = pickAtom();
+  val jcContext : ObjectVar = pickObject();
 
   /* Database functions. */
   def addUser ( name : String, pwd : String, username : String, email : String

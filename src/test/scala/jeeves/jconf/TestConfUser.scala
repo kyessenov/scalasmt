@@ -10,7 +10,7 @@ import scala.collection.immutable.Map
 import JeevesLib._
 
 class ExampleConfUser extends FunSuite {
-  val context = pickAtom();
+  val context = pickObject();
 
   val author0 =
     new ConfUser( 0, Constant(0), Constant(123), Constant(10)

@@ -12,8 +12,8 @@ object Partial {
   def eqs(f: Formula)(implicit env: Environment) = {
     var out = env;
     for (c <- f.clauses) c match {    
-      case ObjectEq(v: AtomVar, Object(o)) => out = out + (v -> o)
-      case ObjectEq(Object(o), v: AtomVar) => out = out + (v -> o)
+      case ObjectEq(v: ObjectVar, Object(o)) => out = out + (v -> o)
+      case ObjectEq(Object(o), v: ObjectVar) => out = out + (v -> o)
       case IntEq(v: IntVar, Constant(i)) => out = out + (v -> i)
       case IntEq(Constant(i), v: IntVar) => out = out + (v -> i)
       case _ =>
@@ -78,15 +78,15 @@ object Partial {
 
   def eval(e: ObjectExpr)(implicit env: Environment): ObjectExpr =
     {e match {
-      case AtomConditional(a, b, c) => 
+      case ObjectConditional(a, b, c) => 
         val sa = eval(a)
-        AtomConditional(sa, eval(b)(eqs(sa)), eval(c)(eqs(eval(! sa))))
+        ObjectConditional(sa, eval(b)(eqs(sa)), eval(c)(eqs(eval(! sa))))
       case e => e
     }} match {
       case e if env.hasAll(e.vars) => e.eval
-      case AtomConditional(TrueF, thn, _) => thn
-      case AtomConditional(FalseF, _, els) => els
-      case AtomConditional(_, a, b) if a == b => a
+      case ObjectConditional(TrueF, thn, _) => thn
+      case ObjectConditional(FalseF, _, els) => els
+      case ObjectConditional(_, a, b) if a == b => a
       case e => e
     }
 }

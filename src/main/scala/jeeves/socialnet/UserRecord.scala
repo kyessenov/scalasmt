@@ -17,7 +17,7 @@ class UserRecord( _name : IntExpr, val namep : LevelTy
                 , _email : IntExpr, val emailp : LevelTy
                 , _network : IntExpr, val networkp : LevelTy
                 , val friendsp : LevelTy
-                , val context : AtomVar ) extends Atom {
+                , val context : ObjectVar ) extends Atom {
   val level : IntVar = pick(default = defaultL);
 
   val name = mkSensitive(_name, namep);

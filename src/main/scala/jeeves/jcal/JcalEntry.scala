@@ -19,7 +19,7 @@ class JcalEntry( val id : BigInt
                  , _location : BigInt
                  // Who is invited...
                  , guests : List[IntExpr], groups : List[IntExpr]
-                 , context : AtomVar ) extends Atom {
+                 , context : ObjectVar ) extends Atom {
   val contextLevel : IntVar =
     pick( x => (CONTAINS(guests, context~'id) ==> (x === Viewer.high))
         , Viewer.low)

@@ -9,7 +9,7 @@ import JeevesLib._
 
 object SocialNetBackend {
   private val __db = new Database[UserRecord]();
-  val snbContext : AtomVar = pickAtom();
+  val snbContext : ObjectVar = pickObject();
 
   /* Database functions. */
   def addUser ( name      : String      , namep     : BigInt
