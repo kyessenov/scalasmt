@@ -317,7 +317,10 @@ object RelExpr {
   implicit def fromRefSet(s: Traversable[_ <: Atom]) = ObjectSet(s)
 }
 object `package` {
-  def IF(cond: Formula)(thn: IntExpr) = new {def ELSE(els: IntExpr) = cond ? thn ! els}
+  case class IF(cond: Formula) {
+    def apply(thn: IntExpr) = new {def ELSE(els: IntExpr) = cond ? thn ! els}
+    def apply(thn: ObjectExpr) = new {def ELSE(els: ObjectExpr) = cond ? thn ! els}
+  }
   def DISTINCT[T <% IntExpr](vs: Traversable[T]) = 
     for (vs1 <- vs; vs2 <- vs; if (vs1 != vs2)) yield ( ! (vs1 === vs2))
   def NULL = Object(null)
