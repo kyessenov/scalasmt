@@ -30,8 +30,8 @@ object Var {
   private def inc = {COUNTER = COUNTER + 1; COUNTER.toString}
   def makeInt = IntVar(inc)
   def makeBool = BoolVar(inc)
-  def makeAtom = AtomVar(inc)
-  def makeAtomSet = AtomSetVar(inc)
+  def makeObject = ObjectVar(inc)
+  def makeObjectSet = ObjectSetVar(inc)
 } 
 sealed trait BinaryExpr[T <: Expr[_]] {
   assert (left != null)
@@ -60,7 +60,7 @@ sealed abstract class Formula extends Expr[Boolean] {
   def unary_! = Not(this)
   def ?(thn: Formula) = new {def !(els: Formula) = BoolConditional(Formula.this, thn, els)}
   def ?(thn: IntExpr) = new {def !(els: IntExpr) = IntConditional(Formula.this, thn, els)}
-  def ?(thn: ObjectExpr) = new {def !(els: ObjectExpr) = AtomConditional(Formula.this, thn, els)}
+  def ?(thn: ObjectExpr) = new {def !(els: ObjectExpr) = ObjectConditional(Formula.this, thn, els)}
 
   def clauses: List[Formula] = this match {
     case And(a,b) => a.clauses ++ b.clauses
@@ -165,7 +165,7 @@ object ObjectIntField {
 }
 
 /**
- * Atom equality theory.
+ * Object equality theory.
  */
 trait Atom extends AnyRef {
   // Must respect equality but uniquely identify the object
@@ -175,19 +175,31 @@ sealed abstract class ObjectExpr extends Expr[Atom] {
   def ===(that: ObjectExpr) = ObjectEq(this, that)
   def ++(that: ObjectExpr) = Union(Singleton(this), Singleton(that))
   def ~(f: Symbol) = ObjectIntField(this, IntFieldDesc(f.name))
+  def /(f: Symbol) = ObjectField(this, ObjectFieldDesc(f.name))
 }
-case class AtomConditional(cond: Formula, thn: ObjectExpr, els: ObjectExpr) extends ObjectExpr with Ite[Atom]
+case class ObjectConditional(cond: Formula, thn: ObjectExpr, els: ObjectExpr) extends ObjectExpr with Ite[Atom]
 case class Object(o: Atom) extends ObjectExpr {
   def vars = Set()
   def eval(implicit env: Environment) = o
 }
-case class AtomVar(id: String) extends ObjectExpr with Var[Atom] {
+case class ObjectVar(id: String) extends ObjectExpr with Var[Atom] {
   def default = null
   override def toString = "a" + id
 }
+case class ObjectField(root: ObjectExpr, f: ObjectFieldDesc) extends ObjectExpr {
+  def vars = root.vars + ObjectField.unknown
+  def eval(implicit env: Environment) = f(root.eval) match {
+    case Some(o: ObjectExpr) => o.eval
+    case None => ObjectField.default
+  }
+}
+object ObjectField {
+  def default = null
+  private def unknown = ObjectVar("unknown")
+}
 
 /**
- * Atom fields.
+ * Object fields.
  */
 sealed trait FieldDesc[T <: Expr[_]] {
   def name: String
@@ -198,7 +210,8 @@ sealed trait FieldDesc[T <: Expr[_]] {
       fid.setAccessible(true);
       if ((fid.getModifiers | java.lang.reflect.Modifier.FINAL) == 0)
         throw new RuntimeException("non-final fields are disallowed")
-      Some(fid.get(o))
+      try Some(fid.get(o))
+      finally fid.setAccessible(false);
     } catch {
       case _: NoSuchFieldException => None 
     }
@@ -210,7 +223,7 @@ case class IntFieldDesc(name: String) extends FieldDesc[IntExpr] {
     case _ => None
   }
 }
-case class AtomFieldDesc(name: String) extends FieldDesc[ObjectExpr] {
+case class ObjectFieldDesc(name: String) extends FieldDesc[ObjectExpr] {
   override def apply(o: Atom): Option[ObjectExpr] = read(o) match {
     case Some(null) => Some(Object(null))
     case Some(o: Atom) => Some(Object(o))
@@ -228,7 +241,7 @@ sealed abstract class RelExpr extends Expr[Set[Atom]] {
   def &(that: RelExpr) = Intersect(this, that)
   def ++(that: RelExpr) = Union(this, that)
   def --(that: RelExpr) = Diff(this, that)
-  def ><(f: Symbol) = RelJoin(this, AtomFieldDesc(f.name)) 
+  def ><(f: Symbol) = RelJoin(this, ObjectFieldDesc(f.name)) 
 }
 case class Singleton(sub: ObjectExpr) extends RelExpr with UnaryExpr[ObjectExpr] {
   def eval(implicit env: Environment) = Set(sub.eval)
@@ -237,11 +250,11 @@ case class ObjectSet(elts: Traversable[_ <: Atom]) extends RelExpr {
   def vars = Set()
   def eval(implicit env: Environment) = elts.toSet[Atom]
 }
-case class AtomSetVar(id: String) extends RelExpr with Var[Set[Atom]] {
+case class ObjectSetVar(id: String) extends RelExpr with Var[Set[Atom]] {
   def default = Set()
   override def toString = "s" + id
 }
-case class RelJoin(root: RelExpr, f: AtomFieldDesc) extends RelExpr {
+case class RelJoin(root: RelExpr, f: ObjectFieldDesc) extends RelExpr {
   def vars = root.vars
   def eval(implicit env: Environment) = (for (o <- root.eval) yield f(o)).flatten.map(_.eval)
 }
@@ -312,6 +325,8 @@ object `package` {
     vs.foldLeft(false: Formula)(_ || _)
   def CONTAINS[T <% IntExpr](vs: Traversable[T], i: IntExpr) = 
     OR(for (v <- vs) yield v === i)
-
+  def CONTAINS[T <% ObjectExpr](vs: Traversable[T], i: ObjectExpr) = 
+    OR(for (v <- vs) yield v === i)
 }
+
 

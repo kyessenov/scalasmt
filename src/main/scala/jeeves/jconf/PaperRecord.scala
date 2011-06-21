@@ -12,7 +12,7 @@ import cap.jeeves.JeevesLib._
 class PaperRecord( val id : BigInt
                 , _name : IntExpr
                 , _authors : List[IntExpr]
-                , val context : AtomVar ) extends Atom {
+                , val context : ObjectVar ) extends Atom {
   private val isAuthor = CONTAINS(_authors, context~'id);
 
   // The name of the paper is always visible to the authors.

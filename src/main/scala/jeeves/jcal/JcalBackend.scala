@@ -9,7 +9,7 @@ import JeevesLib._
 
 object JcalBackend {
   private val __db = new Database[JcalUser]();
-  val context : AtomVar = pickAtom();
+  val context : ObjectVar = pickObject();
 
   /*
   def getUser (uname : BigInt) : UserRecord = {

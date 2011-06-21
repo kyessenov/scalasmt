@@ -63,8 +63,8 @@ object JeevesLib extends Sceeves {
   }
   def createSensitiveValue
     (level : IntVar, vals : Map[BigInt, ObjectExpr])
-    : AtomVar = {
-    var x = pickAtom(default = NULL);
+    : ObjectVar = {
+    var x = pickObject(default = NULL);
     vals foreach {
       case (keyval, valConstraint) =>
         assume((level === keyval) ==> (x === valConstraint))
@@ -73,7 +73,7 @@ object JeevesLib extends Sceeves {
   }
 
   def concretizeList[T] (
-    ctxtVar : AtomVar, context : ObjectExpr, lst : List[ObjectExpr])
+    ctxtVar : ObjectVar, context : ObjectExpr, lst : List[ObjectExpr])
   : List[T] = {
     val objLst : List[T] =
       lst.map(x => concretize(ctxtVar, context, x).asInstanceOf[T]);

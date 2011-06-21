@@ -82,7 +82,7 @@ class ExampleAtoms extends FunSuite {
   }
 
   test ("SMT variable translation") {
-    val a = Var.makeAtom;
+    val a = Var.makeObject;
     val b = Dummy(1);
     expect(b) {val env = SMT.solve( a === ((a === a) ? b ! NULL)); env(a)}
   }
@@ -91,10 +91,17 @@ class ExampleAtoms extends FunSuite {
 
   test ("SMT int field constraints") {
     val i = Var.makeInt;
-    val a = Var.makeAtom;
+    val a = Var.makeObject;
     val r = Record(i, 1337);
     val env = SMT.solve( (a === r && a ~ 'f === a ~ 'i));
     expect(1337) {env(i)}; 
     expect(r) {env(a)};
+  }
+
+  test ("SMT object field constraints") {
+    import ObjectExpr._
+    var x = Dummy(1);
+    var y = Node(x);
+    SMT.solve(y / 'sub === x);
   }
 }

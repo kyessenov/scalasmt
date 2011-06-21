@@ -9,7 +9,7 @@ import org.scalatest.Assertions.{expect}
 import JeevesLib._
 
 class ExamplePaperRecord extends FunSuite {
-  val context = pickAtom();
+  val context = pickObject();
 
   val paper0 = new PaperRecord(0, 33, List(0, 3), context);
 
