@@ -10,7 +10,7 @@ import java.sql
 import JeevesLib._
 
 class ExampleUserRecord extends FunSuite {
-  val context = pickAtom();
+  val context = pickObject();
 
   test ("equals self") {
     val u =

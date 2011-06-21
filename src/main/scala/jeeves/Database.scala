@@ -28,7 +28,7 @@ class Database[T<:Atom] {
           case None => throw KeyException
         }
       case _ =>
-        val r : AtomVar = pickAtom(default = NULL);
+        val r : ObjectVar = pickObject(default = NULL);
         elements foreach {
           case (curkey, v) => assume((key === curkey) ==> (r === v))
         }
@@ -44,7 +44,7 @@ class Database[T<:Atom] {
           case TrueF => returnList = v :: returnList
           case FalseF => ()
           case _ =>
-            val r : AtomVar = pickAtom(default = NULL);
+            val r : ObjectVar = pickObject(default = NULL);
             assume (isEligible ==> (r === v))
             returnList = r :: returnList
         }

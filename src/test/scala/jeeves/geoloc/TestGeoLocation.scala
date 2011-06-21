@@ -9,7 +9,7 @@ import org.scalatest.Assertions.{expect}
 import JeevesLib._
 
 class ExampleGeoLocation extends FunSuite {
-  val context = pickAtom();
+  val context = pickObject();
 
   /*
   val author0 =

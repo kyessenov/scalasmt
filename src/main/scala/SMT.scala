@@ -17,7 +17,7 @@ trait Solver {
   /** Terminate the solver. */
   def close()
   /** Assert a boolean condition. */
-  def swear(s: String) = command("(assert " + s + ")")
+  def assert(s: String) = command("(assert " + s + ")")
   /** Push a context */
   def push() = command("(push)")
   /** Pop a context */
@@ -70,7 +70,7 @@ class Z3 extends Solver {
   command("""(set-logic QF_NIA)""")
   command("""(set-option set-param "ELIM_QUANTIFIERS" "true")""")
 
-  override def command(s: String) = {>(s); assert (< == "success")} 
+  override def command(s: String) = {>(s); Predef.assert (< == "success")} 
   override def check = {>("(check-sat)"); < == "sat"}
   override def next  = {>("(next-sat)"); < == "sat"}
   override def model = {>("(get-info model)"); <<.mkString}
@@ -119,9 +119,10 @@ object SMT {
   }
 
   private def atom(e: ObjectExpr)(implicit env: Environment): String = e match {
-    case AtomConditional(cond, thn, els) => "(if " + formula(cond) + " " + atom(thn) + " " + atom(els) + ")"
+    case ObjectConditional(cond, thn, els) => "(if " + formula(cond) + " " + atom(thn) + " " + atom(els) + ")"
     case Object(o) => uniq(o)
-    case v: AtomVar =>  
+    case ObjectField(root, f) => "(" + f.name + " " + atom(root) + ")"
+    case v: ObjectVar =>  
       if (env.has(v)) 
         uniq(env(v))
       else
@@ -138,7 +139,7 @@ object SMT {
       val r = q + "0";
       "(exists (" + r + " Object) (and (= " + q + 
         " (" + f.name + " " + r + ")) " + set(root)(r, env) + "))"
-    case v: AtomSetVar => 
+    case v: ObjectSetVar => 
       if (env.has(v))
         set(ObjectSet(env(v)))
       else
@@ -163,25 +164,29 @@ object SMT {
     override def toString = "objects: " + objects.size + "; fields: " + fields.size + "; vars: " + vars.size
   }
 
-  private def univ(f: Expr[_])(implicit env: Environment): Scope = f match {
+  
+  private def univ(f: Expr[_])(implicit env: Environment): Scope = (f: @unchecked) match {
     case f: BinaryExpr[_] => univ(f.left) ++ univ(f.right)
     case f: Ite[_] => univ(f.cond) ++ univ(f.thn) ++ univ(f.els)
     case f: UnaryExpr[_] => univ(f.sub)
     case v: BoolVar => Scope() ++ v
     case v: IntVar => Scope() ++ v
-    case v: AtomVar => Scope(objects = if (env.has(v)) Set(env(v)) else Set()) ++ v
-    case v: AtomSetVar => Scope(objects = if (env.has(v)) env(v) else Set()) ++ v
-    case Object(o) => Scope() ++ o
+    case v: ObjectVar => Scope(objects = if (env.has(v)) Set(env(v)) else Set()) ++ v
+    case v: ObjectSetVar => Scope(objects = if (env.has(v)) env(v) else Set()) ++ v
     case os: ObjectSet => Scope(objects = os.eval)
     case RelJoin(root, f) => univ(root) ++ f
     case ObjectIntField(root, f) => univ(root) ++ f
-    case _  => Scope()
+    case ObjectField(root, f) => univ(root) ++ f
+    case Object(o) => Scope() ++ o
+    case TrueF => Scope()
+    case FalseF => Scope()
+    case Constant(_) => Scope()
   }
 
   @annotation.tailrec 
   private def closure(cur: Scope)(implicit env: Environment): Scope = {
     val exprs = {for (o <- cur.objects; f <- cur.fields) yield f match {
-      case f: AtomFieldDesc => f(o)
+      case f: ObjectFieldDesc => f(o)
       case f: IntFieldDesc => f(o)
     }}.flatten
 
@@ -205,7 +210,7 @@ object SMT {
     "(declare-datatypes ((Object " + objects.map("(" + uniq(_) + ")").mkString(" ") + ")))" :: 
     // declare all fields
     {for (f <- fields) yield "(declare-fun " + f.name + {f match {
-      case _: AtomFieldDesc => " (Object) Object)"
+      case _: ObjectFieldDesc => " (Object) Object)"
       case _: IntFieldDesc => " (Object) Int)"
     }}}.toList :::
     // declare all variables
@@ -213,12 +218,12 @@ object SMT {
       yield "(declare-fun " + v + {v match {
         case _: IntVar =>  " () Int) "
         case _: BoolVar => " () Bool)"
-        case _: AtomVar => " () Object)"
-        case _: AtomSetVar => " (Object) Bool)"
+        case _: ObjectVar => " () Object)"
+        case _: ObjectSetVar => " (Object) Bool)"
     }}}.toList :::
     // declare field values
     {for (o <- objects; f <- fields) yield "(assert (= (" + f.name + " " + uniq(o) + ") " + {f match {
-      case f: AtomFieldDesc => f(o) match {
+      case f: ObjectFieldDesc => f(o) match {
         case Some(a) => atom(a)
         case None => /* function is total */ uniq(null)
       }
@@ -244,13 +249,13 @@ object SMT {
     val solver = new Z3// with Logging
   
     for (s <- prelude) solver.command(s)  
-    for (clause <- f.clauses) solver.swear(formula(clause))
+    for (clause <- f.clauses) solver.assert(formula(clause))
 
     // invariant: the model is consistent 
     if (! solver.check) throw UnsatException
     for (d <- defaults) {
       solver.push;
-      solver.swear(formula(d));
+      solver.assert(formula(d));
       if (! solver.check) solver.pop;
     }
     assert (solver.check)
@@ -278,9 +283,9 @@ object SMT {
         v match {
           case v: IntVar => result = result + (v -> BigInt(value))
           case v: BoolVar => result = result + (v -> value.toBoolean)
-          case v: AtomVar => result = result + 
+          case v: ObjectVar => result = result + 
             (v -> scope.objects.find(o => uniq(o) == value).get)
-          case v: AtomSetVar => 
+          case v: ObjectSetVar => 
             // TODO: better S-expression parsing
             throw new RuntimeException("not implemented")
         }

@@ -21,8 +21,8 @@ trait Sceeves {
     // type erasure makes it impossible to be type safe here
     case v: IntVar => v === a.e.asInstanceOf[IntExpr]
     case v: BoolVar => v <==> a.e.asInstanceOf[Formula]
-    case v: AtomVar => v === a.e.asInstanceOf[ObjectExpr]
-    case v: AtomSetVar => v === a.e.asInstanceOf[RelExpr]
+    case v: ObjectVar => v === a.e.asInstanceOf[ObjectExpr]
+    case v: ObjectSetVar => v === a.e.asInstanceOf[RelExpr]
   }
 
   private def solve(fs: List[Formula], defs: Defaults, env: Env): Env =
@@ -47,8 +47,8 @@ trait Sceeves {
     x
   }
 
-  def pickAtom(spec: AtomVar => Formula = _ => true, default: ObjectExpr = null) = {
-    val x = Var.makeAtom;
+  def pickObject(spec: ObjectVar => Formula = _ => true, default: ObjectExpr = null) = {
+    val x = Var.makeObject;
     VARS = x :: VARS;
     assume(spec(x)); defaultAssign(x, default)
     x
@@ -73,7 +73,7 @@ trait Sceeves {
   def concretize[T](f: Formula, e: Expr[T]): T = 
     e.eval(solve(f :: CONSTRAINTS, DEFAULTS, ENV))
 
-  def concretize[T](v: AtomVar, o: ObjectExpr, e: Expr[T]): T = 
+  def concretize[T](v: ObjectVar, o: ObjectExpr, e: Expr[T]): T = 
     concretize(v === o, e);
   def concretize[T](v: IntVar, i: IntExpr, e: Expr[T]): T = 
     concretize(v === i, e);

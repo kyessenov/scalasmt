@@ -11,7 +11,7 @@ import cap.jeeves._
 import JeevesLib._
 
 class ExampleDatabase extends FunSuite {
-  private val context = pickAtom();
+  private val context = pickObject();
   private val uRecord =
     new UserRecord( 0, 0  // name, namep
                   , 1337, 0  // pwd, pwdp
