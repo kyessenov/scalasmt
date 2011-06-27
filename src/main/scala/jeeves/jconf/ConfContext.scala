@@ -16,12 +16,6 @@ object PaperStage {
   val publicReveal  : LevelTy = 3;
 }
 
-object Viewer {
-  val low   : LevelTy = 0
-  val high  : LevelTy = 1
-  val levels = List(low, high)
-}
-
 class ConfContext( val id : BigInt, val name : BigInt
                  , val status : BigInt
                  , val stage : BigInt ) extends Atom {
