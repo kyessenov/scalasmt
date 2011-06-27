@@ -12,10 +12,17 @@ import scala.collection.mutable.{Map => MMap};
 import scala.collection.mutable.HashMap;
 
 object Undefined extends RuntimeException("undefined")
+
 object JeevesLib extends Sceeves {
   type LevelTy = BigInt;
   type ValueTy = BigInt;
   type SensitiveMap = Map[BigInt, IntExpr];
+
+  object Viewer {
+    val low   : BigInt = 0
+    val high  : BigInt = 1
+    val levels = List(low, high)
+  }
 
   private val __strs = new HashMap[BigInt, String]();
   def fromString (str : String) : BigInt = {
