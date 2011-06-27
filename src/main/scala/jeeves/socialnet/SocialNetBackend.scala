@@ -6,18 +6,19 @@ import scala.collection.mutable.Set;
 import cap.scalasmt._
 import cap.jeeves._
 import JeevesLib._
+import UserLevel._
 
 object SocialNetBackend {
   private val __db = new Database[UserRecord]();
   val snbContext : ObjectVar = pickObject();
 
   /* Database functions. */
-  def addUser ( name      : String      , namep     : BigInt
-              , pwd       : String      , pwdp      : BigInt
-              , username  : String      , usernamep : BigInt
-              , email     : String      , emailp    : BigInt
-              , network   : String      , networkp  : BigInt
-              , friendsp  : BigInt )
+  def addUser ( name      : String      , namep     : UserLevel
+              , pwd       : String      , pwdp      : UserLevel
+              , username  : String      , usernamep : UserLevel
+              , email     : String      , emailp    : UserLevel
+              , network   : String      , networkp  : UserLevel
+              , friendsp  : UserLevel )
             : UserRecord = {
     val iName = fromString(name);
     val iPwd = fromString(pwd);

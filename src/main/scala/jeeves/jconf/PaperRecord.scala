@@ -37,9 +37,8 @@ class PaperRecord( val id : BigInt
 
   private def mkSensitive(levelVar : IntVar, v : IntExpr) : IntExpr = {
     val isAuthor : Formula = CONTAINS(_authors, context~'name);
-    assume(CONTAINS(Viewer.levels, levelVar));
     assume(isAuthor ==> (levelVar === Viewer.high));
-    mkSensitiveValue(Viewer.levels, levelVar, v, Viewer.high)
+    mkSensitiveValue(levelVar, v)
   }
  
   override def toString = "jcp" + id

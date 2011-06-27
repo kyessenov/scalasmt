@@ -4,6 +4,7 @@ import cap.scalasmt._
 import cap.jeeves._
 import cap.jeeves.socialnet._
 import JeevesLib._
+import UserLevel._
 import SocialNetBackend._
 import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
@@ -11,28 +12,28 @@ import scala.collection.immutable.Map
 
 class ExampleSocialNetBackend extends FunSuite {
   val user0 =
-    addUser( "Jean Yang",         UserLevels.friendsL
-           , "xyz",               UserLevels.selfL
-           , "jeanyang",          UserLevels.friendsL
-           , "jeanyang@mit.edu",  UserLevels.friendsL
-           , "MIT",               UserLevels.friendsL
-           , UserLevels.friendsL );
+    addUser( "Jean Yang",         Friends
+           , "xyz",               Self
+           , "jeanyang",          Friends
+           , "jeanyang@mit.edu",  Friends
+           , "MIT",               Friends
+           , Friends );
   val uid0 = user0.id
   val user1 =
-    addUser ( "Kuat Yessenov",    UserLevels.friendsL
-            , "abc",              UserLevels.selfL
-            , "kuaty",            UserLevels.friendsL
-            , "kuat@mit.edu",     UserLevels.friendsL
-            , "MIT",              UserLevels.friendsL
-            , UserLevels.friendsL );
+    addUser ( "Kuat Yessenov",    Friends
+            , "abc",              Self
+            , "kuaty",            Friends
+            , "kuat@mit.edu",     Friends
+            , "MIT",              Friends
+            , Friends );
   val uid1 = user1.id
   val user2 =
-    addUser ( "Rishabh Singh",    UserLevels.friendsL
-            , "abc",              UserLevels.selfL
-            , "rishabh",          UserLevels.friendsL
-            , "rishabh@mit.edu",  UserLevels.friendsL
-            , "MIT",              UserLevels.friendsL
-            , UserLevels.friendsL );
+    addUser ( "Rishabh Singh",    Friends
+            , "abc",              Self
+            , "rishabh",          Friends
+            , "rishabh@mit.edu",  Friends
+            , "MIT",              Friends
+            , Friends );
   val uid2 = user2.id
 
   addFriend(uid0, uid1)
