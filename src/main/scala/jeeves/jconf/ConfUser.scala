@@ -40,9 +40,8 @@ class ConfUser( val id : BigInt
   }
 
   private def mkSensitive(levelVar : IntVar, v : IntExpr) : IntExpr = {
-    assume(CONTAINS(Viewer.levels, levelVar));
     assume((context~'id === id) ==> (levelVar === Viewer.high));
-    mkSensitiveValue(Viewer.levels, levelVar, v, Viewer.high)
+    mkSensitiveValue(levelVar, v)
   }
 
   override def toString = "jcu" + id

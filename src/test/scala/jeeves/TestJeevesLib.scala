@@ -38,12 +38,9 @@ class ExampleJeevesLib extends FunSuite {
 
   test ("mkSensitiveValue") {
     val x =
-      JeevesLib.mkSensitiveValue(
-          List(2 : BigInt, 1 : BigInt, 0 : BigInt)
-        , level, Constant(42), 1 : BigInt);
-    expect(-1) { concretize(level, 0, x) };
-    expect(42) { concretize(level, 1, x) };
-    expect(42) { concretize(level, 1, x) };
+      JeevesLib.mkSensitiveValue(level, Constant(42));
+    expect(-1) { concretize(level, Viewer.low, x) };
+    expect(42) { concretize(level, Viewer.high, x) };
   }
 
   case class Node(v: Int) extends Atom
