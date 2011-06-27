@@ -9,12 +9,6 @@ import cap.scalasmt._
 import scala.collection.mutable.Map;
 import cap.jeeves.JeevesLib._
 
-object Viewer {
-  val low   : LevelTy = 0
-  val high  : LevelTy = 1
-  val levels = List(low, high)
-}
-
 class GeoContext( val id : BigInt, val name : BigInt
                  , val xCoord : BigInt, val yCoord : BigInt
                  , val loc : BigInt ) extends Atom {
