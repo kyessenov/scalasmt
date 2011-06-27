@@ -44,8 +44,7 @@ class GeoLocation( val id : BigInt
   }
 
   private def mkSensitive(levelVar : IntVar, v : IntExpr) : IntExpr = {
-    assume(CONTAINS(Viewer.levels, levelVar));
-    mkSensitiveValue(Viewer.levels, levelVar, v, Viewer.high)
+    mkSensitiveValue(levelVar, v)
   }
 
   override def toString = "gl" + id

@@ -7,41 +7,71 @@ package cap.jeeves.socialnet
 
 import cap.scalasmt._
 import scala.collection.mutable.Map;
-import UserLevels._
 import cap.jeeves.JeevesLib._
 
-/* NOTE: We will not be using this with beans for now... */
-class UserRecord( _name : IntExpr, val namep : LevelTy
-                , _pwd : IntExpr, val pwdp : LevelTy
-                , val id : BigInt, val usernamep : LevelTy
-                , _email : IntExpr, val emailp : LevelTy
-                , _network : IntExpr, val networkp : LevelTy
-                , val friendsp : LevelTy
-                , val context : ObjectVar ) extends Atom {
-  val level : IntVar = pick(default = defaultL);
+object UserLevel extends Enumeration {
+  type UserLevel = Value
+  val Self, Friends, Anyone = Value
+}
 
-  val name = mkSensitive(_name, namep);
-  val pwd = mkSensitive(_pwd, pwdp);
-  val username = mkSensitive(id, usernamep);
-  val email = mkSensitive(_email, emailp);
-  val network = mkSensitive(_network, networkp);
+import UserLevel._
+
+/* NOTE: We will not be using this with beans for now... */
+class UserRecord( _name : IntExpr, val namep : UserLevel = Anyone
+                , _pwd : IntExpr, val pwdp : UserLevel = Anyone
+                , val id : BigInt, val usernamep : UserLevel = Anyone
+                , _email : IntExpr, val emailp : UserLevel = Anyone
+                , _network : IntExpr, val networkp : UserLevel = Anyone
+                , val friendsp : UserLevel = Anyone
+                , val context : ObjectVar ) extends Atom {
+  val isFriends : Formula = pickBool(default = false);
+
+  val name = {
+    val level : IntVar = pick(default = Viewer.low);
+    mkSensitive(level, _name, namep);
+  }
+  val pwd = {
+    val level : IntVar = pick(default = Viewer.low);
+    mkSensitive(level, _pwd, pwdp);
+  }
+  val username = {
+    val level : IntVar = pick(default = Viewer.low);
+    mkSensitive(level, id, usernamep);
+  }
+  val email = {
+    val level : IntVar = pick(default = Viewer.low);
+    mkSensitive(level, _email, emailp);
+  }
+  val network = {
+    val level : IntVar = pick(default = Viewer.low);
+    mkSensitive(level, _network, networkp);
+  }
   var friends : List[IntExpr] = Nil
  
-  /* Set initial privacy levels. */
-  assume((context~'id === id) <==> (level === selfL))
-  assume(CONTAINS(levels, level))
-
-  private def mkSensitive (v : IntExpr, p : LevelTy) =
-    if (p > UserLevels.defaultL)
-      mkSensitiveValue(UserLevels.levels, level, v, p);
-    else v
+  private def mkSensitive (level : IntVar, v : IntExpr, p : UserLevel)
+  : IntExpr = {
+    assume((context~'id === id) ==> (level === Viewer.high))
+    if (p == Anyone) { v
+    } else {
+      val sv = mkSensitiveValue(level, v);
+      p match {
+        case Self => ()
+//          assume((context~'id === id) ==> (level === Viewer.high))
+        case Friends =>
+          assume(isFriends ==> (level === Viewer.high))
+      }
+      sv
+    }
+  }
 
   /* Define getters and setters. */
   def isFriends(u : IntExpr) : Formula = CONTAINS(friends, u) 
   def addFriend (friend : IntExpr) {
-    val newfriend = mkSensitive(friend, friendsp);
+    val level = pick(default = Viewer.low);
+    val newfriend = mkSensitive(level, friend, friendsp);
     friends = newfriend :: friends
-    assume((context~'id === friend) ==> (level === friendsL))
+
+    assume((context~'id === friend) ==> isFriends)
   }
 
   override def toString = "u" + id

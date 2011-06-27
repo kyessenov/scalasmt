@@ -9,16 +9,17 @@ import java.sql
 
 import cap.jeeves._
 import JeevesLib._
+import UserLevel._
 
 class ExampleDatabase extends FunSuite {
   private val context = pickObject();
   private val uRecord =
-    new UserRecord( 0, 0  // name, namep
-                  , 1337, 0  // pwd, pwdp
-                  , 0, 0  // username, usernamep
-                  , 0, 0  // email, emailp
-                  , 0, 0  // network, networkp
-                  , 0 // friendsp
+    new UserRecord( 0, Anyone  // name, namep
+                  , 1337, Anyone  // pwd, pwdp
+                  , 0, Anyone  // username, usernamep
+                  , 0, Anyone  // email, emailp
+                  , 0, Anyone  // network, networkp
+                  , Anyone // friendsp
                   , context )
 
   private def mkTestDB() : Database[UserRecord] = {
