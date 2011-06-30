@@ -54,7 +54,6 @@ class ExampleConfUser extends FunSuite {
           concretize(context, getPcCtxt0(stage), author0.name);
         }
     }
-    
     // Other authors should not be able to see the current author ever.
     expect (-1) { concretize(context, getAuthorCtxt1(), author0.name) };
   }

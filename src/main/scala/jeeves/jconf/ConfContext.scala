@@ -16,15 +16,5 @@ object PaperStage {
   val publicReveal  : LevelTy = 3;
 }
 
-class ConfContext( val id : BigInt, val name : BigInt
-                 , val status : BigInt
-                 , val stage : BigInt ) extends Atom {
-
-  override def toString = "jcc" + id
-  override def hashCode = id.toInt
-  override def equals(that: Any) =
-    if (that.isInstanceOf[ConfContext])
-      (id == that.asInstanceOf[ConfContext].id) 
-    else 
-      false
-}
+case class ConfContext(
+  id : BigInt, name : BigInt, status : BigInt, stage : BigInt ) extends Atom
