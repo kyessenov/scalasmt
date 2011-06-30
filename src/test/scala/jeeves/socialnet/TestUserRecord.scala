@@ -70,11 +70,11 @@ class ExampleUserRecord extends FunSuite {
 
   test ("privacy level: self") {
     val u =
-      new UserRecord( _name = Constant(0), namep = Self
-                    , _pwd = Constant(0), pwdp = Self
+      new UserRecord( _name = 0, namep = Self
+                    , _pwd = 0, pwdp = Self
                     , id = 0, usernamep = Self
-                    , _email = Constant(0), emailp = Self
-                    , _network = Constant(0), networkp = Self
+                    , _email = 0, emailp = Self
+                    , _network = 0, networkp = Self
                     , context = ctxt );
     val other = mkDummyUser(1)
     expect (0) { concretize(ctxt, u, u.name) };
@@ -83,11 +83,11 @@ class ExampleUserRecord extends FunSuite {
 
   test ("privacy level: friends") {
     val u0 =
-     new UserRecord( _name = Constant(0), namep = Friends
-                    , _pwd = Constant(0), pwdp = Self
+     new UserRecord( _name = 0, namep = Friends
+                    , _pwd = 0, pwdp = Self
                     , id = 0, usernamep = Self
-                    , _email = Constant(0), emailp = Self
-                    , _network = Constant(0), networkp = Self
+                    , _email = 0, emailp = Self
+                    , _network = 0, networkp = Self
                     , context = ctxt );
     val u1 = mkDummyUser(6);
     u0.addFriend(u1.username)
