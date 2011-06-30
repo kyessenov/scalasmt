@@ -53,7 +53,7 @@ trait Sceeves {
   }
 
   def concretize[T](e: Expr[T]): T = {
-    if (! ENV.hasAll(e.vars)) {  
+    if (CONSTRAINTS.size > 0) {  
       ENV = solve(CONSTRAINTS);
       CONSTRAINTS = Nil;
       DEFAULTS = DEFAULTS.filter(d => ! ENV.has(d.v));
@@ -62,14 +62,8 @@ trait Sceeves {
   }
     
   def concretize[T](f: Formula, e: Expr[T]): T = {
-    val env = solve(f :: CONSTRAINTS);
-    val v = e.eval(env);
-    CONSTRAINTS = (f ==> (e === (e match {
-        case _: IntExpr => IntVal(v)
-        case _: Formula => BoolVal(v)
-        case _: ObjectExpr => Object(v)
-        case _ => throw new RuntimeException("not implemented")
-      }))) :: CONSTRAINTS;
+    val v = e.eval(solve(f :: CONSTRAINTS));
+    CONSTRAINTS = (f ==> (e === e.constant(v))) :: CONSTRAINTS;
     v
   }
 
