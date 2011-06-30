@@ -31,7 +31,7 @@ class ExampleChoice extends FunSuite {
   }
 
   test ("complete functional synthesis") {
-    import IntExpr._
+    import Expr._
     val x = 3 * 3600 + 14 * 60 + 18
     expect((3, 14, 18)) {
       choose {(h,m,s) => h * 3600 + m * 60 + s === x &&

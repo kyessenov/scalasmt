@@ -14,8 +14,8 @@ object Partial {
     for (c <- f.clauses) c match {    
       case ObjectEq(v: ObjectVar, Object(o)) => out = out + (v -> o)
       case ObjectEq(Object(o), v: ObjectVar) => out = out + (v -> o)
-      case IntEq(v: IntVar, Constant(i)) => out = out + (v -> i)
-      case IntEq(Constant(i), v: IntVar) => out = out + (v -> i)
+      case IntEq(v: IntVar, IntVal(i)) => out = out + (v -> i)
+      case IntEq(IntVal(i), v: IntVar) => out = out + (v -> i)
       case _ =>
     }
     out
@@ -26,6 +26,7 @@ object Partial {
       case BoolConditional(a, b, c) => 
         val sa = eval(a); 
         BoolConditional(sa, eval(b)(eqs(sa)), eval(c)(eqs(eval(! sa))))
+      case BoolEq(a, b) => BoolEq(eval(a), eval(b))
       case And(a, b) => And(eval(a), eval(b))
       case Or(a, b) => Or(eval(a), eval(b))
       case Not(f) => Not(eval(f))
@@ -37,21 +38,25 @@ object Partial {
       case f: RelFormula => f
       case ObjectEq(a, b) => ObjectEq(eval(a), eval(b))
       case b: BoolVar => b
-      case TrueF => TrueF
-      case FalseF => FalseF
+      case BoolVal(true) => BoolVal(true)
+      case BoolVal(false) => BoolVal(false)
     }} match {
       case f if env.hasAll(f.vars) => f.eval
-      case BoolConditional(TrueF, thn, _) => thn
-      case BoolConditional(FalseF, _, els) => els
+      case BoolConditional(BoolVal(true), thn, _) => thn
+      case BoolConditional(BoolVal(false), _, els) => els
       case BoolConditional(_, a, b) if a == b => a
-      case And(FalseF, _) => false
-      case And(_, FalseF) => false
-      case And(TrueF, x) => x
-      case And(x, TrueF) => x
-      case Or(FalseF, x) => x
-      case Or(x, FalseF) => x
-      case Or(TrueF, x) => true
-      case Or(x, TrueF) => true
+      case And(BoolVal(false), _) => false
+      case And(_, BoolVal(false)) => false
+      case And(BoolVal(true), x) => x
+      case And(x, BoolVal(true)) => x
+      case Or(BoolVal(false), x) => x
+      case Or(x, BoolVal(false)) => x
+      case Or(BoolVal(true), x) => true
+      case Or(x, BoolVal(true)) => true
+      case BoolEq(x, BoolVal(true)) => x
+      case BoolEq(BoolVal(true), x) => x
+      case BoolEq(x, BoolVal(false)) => Not(x)
+      case BoolEq(BoolVal(false), x) => Not(x)
       case Not(Not(f)) => f
       case ObjectEq(a, b) if (a == b) => true
       case IntEq(a, b) if (a == b) => true
@@ -70,8 +75,8 @@ object Partial {
       case e => e
     }} match {
       case e if env.hasAll(e.vars) => e.eval
-      case IntConditional(TrueF, thn, _) => thn
-      case IntConditional(FalseF, _, els) => els
+      case IntConditional(BoolVal(true), thn, _) => thn
+      case IntConditional(BoolVal(false), _, els) => els
       case IntConditional(_, a, b) if a == b => a
       case e => e
     }
@@ -84,8 +89,8 @@ object Partial {
       case e => e
     }} match {
       case e if env.hasAll(e.vars) => e.eval
-      case ObjectConditional(TrueF, thn, _) => thn
-      case ObjectConditional(FalseF, _, els) => els
+      case ObjectConditional(BoolVal(true), thn, _) => thn
+      case ObjectConditional(BoolVal(false), _, els) => els
       case ObjectConditional(_, a, b) if a == b => a
       case e => e
     }

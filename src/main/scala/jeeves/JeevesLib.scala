@@ -44,7 +44,7 @@ object JeevesLib extends Sceeves {
   def mkSensitiveValue (level : IntVar, v : IntExpr)
   : IntVar = {
     assume(CONTAINS(Viewer.levels, level));
-    val map = Map((Viewer.low, Constant(-1)), (Viewer.high, v));
+    val map = Map((Viewer.low, IntVal(-1)), (Viewer.high, v));
     createSensitiveValue(level, -1, map)
   }
 
