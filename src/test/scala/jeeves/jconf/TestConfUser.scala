@@ -10,7 +10,7 @@ import scala.collection.immutable.Map
 import JeevesLib._
 
 class ExampleConfUser extends FunSuite {
-  val context = pickObject();
+  private val context = pickObject();
 
   val author0 =
     new ConfUser( 0, 0, 123, 10
@@ -54,11 +54,11 @@ class ExampleConfUser extends FunSuite {
           concretize(context, getPcCtxt0(stage), author0.name);
         }
     }
-
+    
     // Other authors should not be able to see the current author ever.
     expect (-1) { concretize(context, getAuthorCtxt1(), author0.name) };
   }
-
+  
   test ("pwd visibility") {
     expect (-1) {
       concretize(context, getReviewerCtxt0(), author0.pwd) };
