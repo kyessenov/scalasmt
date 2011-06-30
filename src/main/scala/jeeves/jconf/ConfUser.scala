@@ -21,26 +21,27 @@ class ConfUser( val id : BigInt
               , val status : BigInt, val context : ObjectVar ) extends Atom {
 
   val name = {
-    val level = pick(default = Viewer.low);
+    val level = mkLevel();
     // Reviewers can see names after authors are revealed 
-    assume(((context~'status >= UserStatus.reviewerL) &&
-            (context~'stage >= PaperStage.authorReveal))==>
-            (level === Viewer.high));
+    policy( level
+          , (context~'status >= UserStatus.reviewerL) &&
+            (context~'stage >= PaperStage.authorReveal)
+          , Viewer.high);
     mkSensitive(level, _name);
   }
   // Password is always sensitive
   val pwd = {
-    val level = pick(default = Viewer.low);
+    val level = mkLevel()
     mkSensitive(level, _pwd);
   }
   val email = {
-    val level = pick(default = Viewer.low);
-    assume((context~'status === UserStatus.pcL) ==> (level === Viewer.high));
+    val level = mkLevel()
+    policy(level, context~'status === UserStatus.pcL, Viewer.high);
     mkSensitive(level, _email);
   }
 
   private def mkSensitive(levelVar : IntVar, v : IntExpr) : IntExpr = {
-    assume((context~'id === id) ==> (levelVar === Viewer.high));
+    policy(levelVar, context~'id === id, Viewer.high);
     mkSensitiveValue(levelVar, v)
   }
 
