@@ -12,6 +12,7 @@ sealed trait Expr[T] extends Serializable {
   def vars: Set[Var[_]]
   def eval(implicit env: Environment = EmptyEnv): T
   def ===(that: Expr[T]): Formula
+  def constant(v: T): Constant[T]
 }
 sealed trait Ite[T] extends Expr[T] {
   def cond: Expr[Boolean]
@@ -62,6 +63,7 @@ sealed trait Constant[T] extends Expr[T] {
  */
 sealed abstract class Formula extends Expr[Boolean] {
   def ===(that: Expr[Boolean]) = that match {case that: Formula => BoolEq(this, that)}
+  def constant(v: Boolean) = BoolVal(v)
   def &&(that: Formula) = And(this, that)
   def ||(that: Formula) = Or(this, that)
   def ==> (that: Formula) = Or(Not(this), that)
@@ -127,6 +129,7 @@ case class RelEq(left: RelExpr, right: RelExpr) extends RelFormula with Eq[RelEx
  */
 sealed abstract class IntExpr extends Expr[BigInt] {
   def ===(that: Expr[BigInt]) = that match {case that: IntExpr => IntEq(this, that)}
+  def constant(v: BigInt) = IntVal(v)
   def !==(that: IntExpr) = ! (this === that)
   def <=(that: IntExpr) = Leq(this, that)
   def >=(that: IntExpr) = Geq(this, that)
@@ -168,7 +171,7 @@ object ObjectIntField {
 }
 
 /**
- * Object equality theory.
+ * Object and field expressions.
  */
 trait Atom extends AnyRef {
   // Must respect equality but uniquely identify the object
@@ -176,6 +179,7 @@ trait Atom extends AnyRef {
 }
 sealed abstract class ObjectExpr extends Expr[Atom] { 
   def ===(that: Expr[Atom]) = that match {case that: ObjectExpr => ObjectEq(this, that)}
+  def constant(v: Atom) = Object(v)
   def ++(that: ObjectExpr) = Union(Singleton(this), Singleton(that))
   def ~(f: Symbol) = ObjectIntField(this, IntFieldDesc(f.name))
   def /(f: Symbol) = ObjectField(this, ObjectFieldDesc(f.name))
@@ -236,6 +240,7 @@ case class ObjectFieldDesc(name: String) extends FieldDesc[ObjectExpr] {
  */
 sealed abstract class RelExpr extends Expr[Set[Atom]] {
   def ===(that: Expr[Set[Atom]]) = that match {case that: RelExpr => RelEq(this, that)}
+  def constant(v: Set[Atom]) = ObjectSet(v)
   def in(that: RelExpr) = RelSub(this, that)
   def &(that: RelExpr) = Intersect(this, that)
   def ++(that: RelExpr) = Union(this, that)
@@ -245,10 +250,7 @@ sealed abstract class RelExpr extends Expr[Set[Atom]] {
 case class Singleton(sub: ObjectExpr) extends RelExpr with UnaryExpr[ObjectExpr] {
   def eval(implicit env: Environment) = Set(sub.eval)
 }
-case class ObjectSet(elts: Traversable[_ <: Atom]) extends RelExpr {
-  def vars = Set()
-  def eval(implicit env: Environment) = elts.toSet[Atom]
-}
+case class ObjectSet(v: Set[Atom]) extends RelExpr with Constant[Set[Atom]] 
 case class ObjectSetVar(id: String) extends RelExpr with Var[Set[Atom]] {
   def default = Set()
   override def toString = "s" + id
@@ -310,7 +312,7 @@ object Formula {
 object RelExpr {
   implicit def fromRef(o: Atom) = Singleton(Object(o))
   implicit def fromSingleton(o: ObjectExpr) = Singleton(o)
-  implicit def fromRefSet(s: Traversable[_ <: Atom]) = ObjectSet(s)
+  implicit def fromRefSet(s: Traversable[_ <: Atom]) = ObjectSet(s.toSet)
 }
 object `package` {
   case class IF(cond: Formula) {
