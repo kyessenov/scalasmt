@@ -32,6 +32,10 @@ object JConfBackend {
     val result = (__userDB.getEntry(uname)).eval
     result.asInstanceOf[ConfUser];
   }
+  def getPaper (paperName : BigInt) : PaperRecord = {
+    val result = (__paperDB.getEntry(paperName)).eval
+    result.asInstanceOf[PaperRecord]
+  }
 
   /*************************************************/
   /* Functions that use concretize to show things. */
