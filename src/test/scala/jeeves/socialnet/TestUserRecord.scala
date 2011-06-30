@@ -69,39 +69,29 @@ class ExampleUserRecord extends FunSuite {
   }
 
   test ("privacy level: self") {
-    val u = mkDummyUser(0);
-//    expect (Viewer.high) { concretize(ctxt, u, u.level) };
+    val u =
+      new UserRecord( _name = Constant(0), namep = Self
+                    , _pwd = Constant(0), pwdp = Self
+                    , id = 0, usernamep = Self
+                    , _email = Constant(0), emailp = Self
+                    , _network = Constant(0), networkp = Self
+                    , context = ctxt );
+    val other = mkDummyUser(1)
+    expect (0) { concretize(ctxt, u, u.name) };
+    expect (-1) { concretize(ctxt, other, u.name) };
   }
 
   test ("privacy level: friends") {
-    val u0 = mkDummyUser(5);
+    val u0 =
+     new UserRecord( _name = Constant(0), namep = Friends
+                    , _pwd = Constant(0), pwdp = Self
+                    , id = 0, usernamep = Self
+                    , _email = Constant(0), emailp = Self
+                    , _network = Constant(0), networkp = Self
+                    , context = ctxt );
     val u1 = mkDummyUser(6);
     u0.addFriend(u1.username)
-    u1.addFriend(u0.username)
-    expect (true) { concretize(ctxt, u1, u0.isFriends); }
-    // expect (Viewer.high) { concretize(ctxt, u1, u0.level); }
-    expect (true) { concretize(ctxt, u0, u1.isFriends); }
-    // expect (Viewer.high) { concretize(ctxt, u0, u1.level); }
-  }
-
-  test ("privacy level: default") {
-    val u3 = mkDummyUser(3);
-    val u4 = mkDummyUser(4);
-    // expect (Viewer.low) { concretize(ctxt, u4, u3.level); }
-    // expect (Viewer.low) { concretize(ctxt, u3, u4.level); }
-  }
-
-  test ("privacy levels") {
-    val u0 = mkDummyUser(5);
-    val u1 = mkDummyUser(6);
-    u0.addFriend(u1.username)
-    u1.addFriend(u0.username)
-
-    // self level
-    expect (0) { concretize(ctxt, u0, u0.pwd) };
-//    expect (-1) { concretize(ctxt, u1, u0.pwd) };
-
-    expect (6) { concretize(ctxt, u1, (u0.friends).head) }
-    expect (true) { concretize(ctxt, u1, u0.isFriends(u1.username)) }
+    expect (0) { concretize(ctxt, u1, u0.name); }
+    expect (-1) { concretize(ctxt, u1, u0.pwd); }
   }
 }
