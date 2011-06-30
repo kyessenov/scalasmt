@@ -3,7 +3,8 @@ package test.cap.scalasmt
 import cap.scalasmt._
 import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
-import IntExpr._
+
+import Expr._
 
 class ExampleSceeves extends FunSuite with Sceeves {
   test ("pick") {

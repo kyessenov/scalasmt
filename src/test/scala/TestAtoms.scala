@@ -33,7 +33,7 @@ class ExampleAtoms extends FunSuite {
   }
 
   test ("singleton and conditional") {
-    import ObjectExpr._
+    import Expr._
     val a = Dummy(1);
     val b = Dummy(2);
     expect(a) {eval(a)}
@@ -57,7 +57,7 @@ class ExampleAtoms extends FunSuite {
   }
 
   test ("object int field") {
-    import ObjectExpr._
+    import Expr._
     val a = Dummy(1);
     expect(1) {eval(a ~ 'id)}
   }
@@ -99,7 +99,7 @@ class ExampleAtoms extends FunSuite {
   }
 
   test ("SMT object field constraints") {
-    import ObjectExpr._
+    import Expr._
     var x = Dummy(1);
     var y = Node(x);
     SMT.solve(y / 'sub === x);

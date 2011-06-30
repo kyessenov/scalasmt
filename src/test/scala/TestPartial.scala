@@ -4,7 +4,7 @@ import cap.scalasmt._
 import org.scalatest.FunSuite
 import org.scalatest.Assertions
 import Partial.eval
-import Formula._
+import Expr._
 
 class ExamplePartial extends FunSuite {
   implicit val env = EmptyEnv

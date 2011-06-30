@@ -13,9 +13,9 @@ import UserLevel._
 class ExampleUserRecord extends FunSuite {
   val ctxt = pickObject();
   private def mkDummyUser (uid : BigInt) : UserRecord =
-    new UserRecord( _name = Constant(0), _pwd = Constant(0)
+    new UserRecord( _name = 0, _pwd = 0
                   , id = uid
-                  , _email = Constant(0), _network = Constant(0)
+                  , _email = 0, _network = 0
                   , context = ctxt );
 
   test ("equals self") {
@@ -41,11 +41,11 @@ class ExampleUserRecord extends FunSuite {
 
   test ("isFriends") {
     val u =
-      new UserRecord( _name = Constant(0)
-                    , _pwd = Constant(0)
+      new UserRecord( _name = 0
+                    , _pwd = 0
                     , id = 0
-                    , _email = Constant(0)
-                    , _network = Constant(0)
+                    , _email = 0
+                    , _network = 0
                     , friendsp = Friends  // friends, friendsp
                     , context = ctxt );
     u.addFriend(1);

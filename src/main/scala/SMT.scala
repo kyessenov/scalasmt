@@ -91,8 +91,8 @@ object SMT {
     case And(a,b) => "(and " + formula(a) + " " + formula(b) + ")"
     case Or(a,b) => "(or " + formula(a) + " " + formula(b) + ")"
     case Not(a) => "(not " + formula(a) + ")"
-    case TrueF => "true"
-    case FalseF => "false"
+    case BoolEq(a,b) => "(= " + formula(a) + " " + formula(b) + ")"
+    case BoolVal(v) => v.toString
     case IntEq(a,b) => "(= " + integer(a) + " " + integer(b) + ")"
     case Leq(a,b) => "(<= " + integer(a) + " " + integer(b) + ")"
     case Geq(a,b) => "(>= " + integer(a) + " " + integer(b) + ")" 
@@ -113,7 +113,7 @@ object SMT {
     case Minus(a,b) => "(- " + integer(a) + " " + integer(b) + ")"
     case Times(a,b) => "(* " + integer(a) + " " + integer(b) + ")"
     case IntConditional(c,a,b) => "(if " + formula(c) + " " + integer(a) + " " + integer(b) + ")"
-    case Constant(i) => i.toString
+    case IntVal(i) => i.toString
     case ObjectIntField(root, f) => "(" + f.name + " " + atom(root) + ")"
     case v: IntVar => variable(v) 
   }
@@ -178,9 +178,8 @@ object SMT {
     case ObjectIntField(root, f) => univ(root) ++ f
     case ObjectField(root, f) => univ(root) ++ f
     case Object(o) => Scope() ++ o
-    case TrueF => Scope()
-    case FalseF => Scope()
-    case Constant(_) => Scope()
+    case _: BoolVal => Scope()
+    case _: IntVal => Scope()
   }
 
   @annotation.tailrec 

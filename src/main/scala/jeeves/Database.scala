@@ -22,7 +22,7 @@ class Database[T<:Atom] {
   def putEntry (key : BigInt, item : T) : Unit = elements.put(key, item)
   def getEntry (key : IntExpr) : ObjectExpr =
     key match {
-      case Constant(k) =>
+      case IntVal(k) =>
         elements.get(k) match {
           case Some(record) => record
           case None => throw KeyException
@@ -41,8 +41,8 @@ class Database[T<:Atom] {
       case (curkey, v) => {
         val isEligible : Formula = ffun (v : T);
         isEligible match {
-          case TrueF => returnList = v :: returnList
-          case FalseF => ()
+          case BoolVal(true) => returnList = v :: returnList
+          case BoolVal(false) => ()
           case _ =>
             val r : ObjectVar = pickObject(default = NULL);
             assume (isEligible ==> (r === v))
