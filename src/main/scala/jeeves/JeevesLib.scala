@@ -41,6 +41,15 @@ object JeevesLib extends Sceeves {
     }
   }
 
+  def mkLevel () : IntVar = {
+    val level : IntVar = pick(default = Viewer.low);
+    assume (CONTAINS(Viewer.levels, level));
+    level
+  }
+  def policy (level : IntVar, f : Formula, levelVal : BigInt) = {
+    assume(f ==> (level === levelVal))
+  }
+
   def mkSensitiveValue (level : IntVar, v : IntExpr)
   : IntVar = {
     assume(CONTAINS(Viewer.levels, level));
