@@ -24,41 +24,25 @@ class UserRecord( _name : IntExpr, val namep : UserLevel = Anyone
                 , _network : IntExpr, val networkp : UserLevel = Anyone
                 , val friendsp : UserLevel = Anyone
                 , val context : ObjectVar ) extends Atom {
+  // Instead of having this guy, can go through and explicitly 
   val isFriends : Formula = pickBool(default = false);
 
-  val name = {
-    val level : IntVar = pick(default = Viewer.low);
-    mkSensitive(level, _name, namep);
-  }
-  val pwd = {
-    val level : IntVar = pick(default = Viewer.low);
-    mkSensitive(level, _pwd, pwdp);
-  }
-  val username = {
-    val level : IntVar = pick(default = Viewer.low);
-    mkSensitive(level, id, usernamep);
-  }
-  val email = {
-    val level : IntVar = pick(default = Viewer.low);
-    mkSensitive(level, _email, emailp);
-  }
-  val network = {
-    val level : IntVar = pick(default = Viewer.low);
-    mkSensitive(level, _network, networkp);
-  }
+  val name = mkSensitive(mkLevel(), _name, namep);
+  val pwd = mkSensitive(mkLevel(), _pwd, pwdp);
+  val username = mkSensitive(mkLevel(), id, usernamep);
+  val email = mkSensitive(mkLevel(), _email, emailp);
+  val network = mkSensitive(mkLevel(), _network, networkp);
   var friends : List[IntExpr] = Nil
  
   private def mkSensitive (level : IntVar, v : IntExpr, p : UserLevel)
   : IntExpr = {
-    assume((context~'id === id) ==> (level === Viewer.high))
+    policy(level, context~'id === id, Viewer.high)
     if (p == Anyone) { v
     } else {
       val sv = mkSensitiveValue(level, v);
       p match {
         case Self => ()
-//          assume((context~'id === id) ==> (level === Viewer.high))
-        case Friends =>
-          assume(isFriends ==> (level === Viewer.high))
+        case Friends => policy(level, isFriends, Viewer.high)
       }
       sv
     }
@@ -66,8 +50,8 @@ class UserRecord( _name : IntExpr, val namep : UserLevel = Anyone
 
   /* Define getters and setters. */
   def isFriends(u : IntExpr) : Formula = CONTAINS(friends, u) 
-  def addFriend (friend : IntExpr) {
-    val level = pick(default = Viewer.low);
+  def addFriend (friend : IntExpr) = {
+    val level = mkLevel();
     val newfriend = mkSensitive(level, friend, friendsp);
     friends = newfriend :: friends
 

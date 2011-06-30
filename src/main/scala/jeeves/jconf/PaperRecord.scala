@@ -17,27 +17,25 @@ class PaperRecord( val id : BigInt
 
   // The name of the paper is always visible to the authors.
   val name : IntExpr = {
-    val nameLevel : IntVar = pick(default = Viewer.low)
-    assume(isAuthor ==> (nameLevel === Viewer.high))
-    assume((context~'status >= UserStatus.reviewerL) ==>
-            (nameLevel === Viewer.high));
+    val nameLevel : IntVar = mkLevel()
+    policy (nameLevel, isAuthor, Viewer.high)
+    policy (nameLevel, context~'status >= UserStatus.reviewerL, Viewer.high)
     mkSensitive(nameLevel, _name)
   }
 
   // The authors of the paper are visible to the authors themselves and during
   // the reveal stage.
   val authors : List[IntExpr] = {
-    val authorsLevel : IntVar = pick(default = Viewer.low)
-      assume(isAuthor ==> (authorsLevel === Viewer.high));
-      assume(((context~'status >= UserStatus.reviewerL) &&
-             (context~'stage >= PaperStage.authorReveal)) ==>
-              (authorsLevel === Viewer.high))
+    val authorsLevel : IntVar = mkLevel()
+      policy(authorsLevel, isAuthor, Viewer.high);
+      policy(authorsLevel, ((context~'status >= UserStatus.reviewerL) &&
+             (context~'stage >= PaperStage.authorReveal)), Viewer.high);
     _authors.map(a => mkSensitive(authorsLevel, a))
   }
 
   private def mkSensitive(levelVar : IntVar, v : IntExpr) : IntExpr = {
     val isAuthor : Formula = CONTAINS(_authors, context~'name);
-    assume(isAuthor ==> (levelVar === Viewer.high));
+    policy(levelVar, isAuthor, Viewer.high);
     mkSensitiveValue(levelVar, v)
   }
  
