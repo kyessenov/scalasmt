@@ -14,16 +14,15 @@ object JConfBackend {
   val jcContext : ObjectVar = pickObject();
 
   /* Database functions. */
-  def addUser ( name : String, pwd : String, username : String, email : String
+  def addUser ( name : String, username : String, email : String
               , status : BigInt )
             : ConfUser = {
     val iName = fromString(name);
-    val iPwd = fromString(pwd);
     val iUsername = fromString(username);
     val iEmail = fromString(email);
 
     val user =
-      new ConfUser(iUsername, iName, iPwd, iEmail, status, jcContext);
+      new ConfUser(iUsername, iName, iEmail, status, jcContext);
     __userDB.putEntry(iUsername, user);
     return user
   }
@@ -36,6 +35,22 @@ object JConfBackend {
     val result = (__paperDB.getEntry(paperName)).eval
     result.asInstanceOf[PaperRecord]
   }
+
+  /* Search by... */
+  /*
+  def getFriendNetworks (user : BigInt) : List[IntExpr] = {
+    val friends = getFriends(user);
+    val networks = friends.foldLeft (Set.empty[IntExpr]) (
+        (set : Set[IntExpr], friend : IntExpr) =>
+        set + (__db.getEntry(friend))~'network)
+    networks.toList
+  }
+
+  def getUsersByNetwork (network : String) : List[ObjectExpr] = {
+    val f = (x : ObjectExpr) => (x ~ 'network === fromString(network));
+    __db.findEntry(f);
+  }
+  */
 
   /*************************************************/
   /* Functions that use concretize to show things. */

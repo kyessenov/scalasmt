@@ -17,32 +17,25 @@ object UserStatus {
 
 /* Conference User */
 class ConfUser( val id : BigInt
-              , _name : IntExpr, _pwd : IntExpr, _email : IntExpr
+              , _name : IntExpr, _email : IntExpr
               , val status : BigInt, val context : ObjectVar ) extends Atom {
+    private val isSelf : Formula = context~'id === id;
 
-  val name = {
+    val name = {
     val level = mkLevel();
     // Reviewers can see names after authors are revealed 
+    policy( level, isSelf, Viewer.high);
     policy( level
           , (context~'status >= UserStatus.reviewerL) &&
-            (context~'stage >= PaperStage.authorReveal)
+            (context~'stage >= PaperStage.decision)
           , Viewer.high);
-    mkSensitive(level, _name);
-  }
-  // Password is always sensitive
-  val pwd = {
-    val level = mkLevel()
-    mkSensitive(level, _pwd);
+    mkSensitiveValue(level, _name);
   }
   val email = {
     val level = mkLevel()
+    policy(level, isSelf, Viewer.high);
     policy(level, context~'status === UserStatus.pcL, Viewer.high);
-    mkSensitive(level, _email);
-  }
-
-  private def mkSensitive(levelVar : IntVar, v : IntExpr) : IntExpr = {
-    policy(levelVar, context~'id === id, Viewer.high);
-    mkSensitiveValue(levelVar, v)
+    mkSensitiveValue(level, _email);
   }
 
   override def toString = "jcu" + id
