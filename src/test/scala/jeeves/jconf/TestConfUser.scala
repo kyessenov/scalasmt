@@ -12,39 +12,35 @@ import JeevesLib._
 class ExampleConfUser extends FunSuite {
   private val context = pickObject();
 
-  val author0 =
-    new ConfUser( 0, 0, 123, 10
-                , UserStatus.authorL, context);
+  val author0Info = TestUsers.mkUser(UserStatus.authorL, context)
+  val author0Name = author0Info._1;
+  val author0Email = author0Info._2;
+  val author0 = author0Info._3;
   private def getAuthorCtxt0 (stage : BigInt = PaperStage.submission)
   : ConfContext =
-    new ConfContext(0, 0, UserStatus.authorL, stage);
+    new ConfContext(author0.id, UserStatus.authorL, stage);
   private def getAuthorCtxt1 (stage : BigInt = PaperStage.submission)
-  : ConfContext =
-    new ConfContext(3, 3, UserStatus.authorL, stage);
+  : ConfContext = new ConfContext(3, UserStatus.authorL, stage);
 
-  val reviewer0 =
-    new ConfUser( 1, 1, 456, 11
-                , UserStatus.reviewerL, context);
+  val reviewer0Info = TestUsers.mkUser(UserStatus.reviewerL, context);
+  val reviewer0 = reviewer0Info._3;
   private def getReviewerCtxt0 (stage : BigInt = PaperStage.submission)
-  : ConfContext =
-    new ConfContext(1, 1, UserStatus.reviewerL, stage);
+  : ConfContext = new ConfContext(reviewer0.id, UserStatus.reviewerL, stage);
 
-  val pc0 =
-    new ConfUser( 2, 1, 789, 12
-                , UserStatus.pcL, context);
+  val pc0Info = TestUsers.mkUser(UserStatus.pcL, context);
+  val pc0 = pc0Info._3;
   private def getPcCtxt0 (stage : BigInt = PaperStage.submission)
-  : ConfContext =
-    new ConfContext( 2, 2, UserStatus.pcL, stage);
+  : ConfContext = new ConfContext( 2, UserStatus.pcL, stage);
 
   test ("name visibility") {
     // Reviewers and PC members can see names of submitters.
-    expect (0) {
+    expect (author0Name) {
       concretize(context, getAuthorCtxt0(), author0.name) };
 
     val viewMap =
       Map( (PaperStage.submission, -1)
          , (PaperStage.review, -1)
-         , (PaperStage.authorReveal, 0) );
+         , (PaperStage.decision, author0Name) );
     viewMap.foreach {
       case (stage, r) =>
         expect (r) {
@@ -58,14 +54,9 @@ class ExampleConfUser extends FunSuite {
     expect (-1) { concretize(context, getAuthorCtxt1(), author0.name) };
   }
   
-  test ("pwd visibility") {
-    expect (-1) {
-      concretize(context, getReviewerCtxt0(), author0.pwd) };
-    expect (-1) { concretize(context, getPcCtxt0(), author0.pwd) }
-    expect (123) { concretize(context, getAuthorCtxt0(), author0.pwd) };
-  }
-
   test ("email visibility") {
-    expect (10) { concretize(context, getAuthorCtxt0(), author0.email) };
+    expect (author0Email) {
+      concretize(context, getAuthorCtxt0(), author0.email)
+    };
   }
 }
