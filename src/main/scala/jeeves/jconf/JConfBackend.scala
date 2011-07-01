@@ -45,12 +45,12 @@ object JConfBackend {
         set + (__db.getEntry(friend))~'network)
     networks.toList
   }
-
-  def getUsersByNetwork (network : String) : List[ObjectExpr] = {
-    val f = (x : ObjectExpr) => (x ~ 'network === fromString(network));
-    __db.findEntry(f);
-  }
   */
+
+  def getPaperByTag (tag : BigInt) : List[ObjectExpr] = {
+    val f = (x : PaperRecord) => (CONTAINS(x.tags, tag));
+    __paperDB.findEntry(f);
+  }
 
   /*************************************************/
   /* Functions that use concretize to show things. */
