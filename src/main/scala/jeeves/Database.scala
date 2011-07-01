@@ -35,7 +35,7 @@ class Database[T<:Atom] {
         r
     }
 
-  def findEntry (ffun : ObjectExpr => Formula) : List[ObjectExpr] = {
+  def findEntry (ffun : T => Formula) : List[ObjectExpr] = {
     var returnList : List[ObjectExpr] = Nil;
     elements foreach {
       case (curkey, v) => {

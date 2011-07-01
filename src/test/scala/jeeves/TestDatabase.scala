@@ -51,7 +51,7 @@ class ExampleDatabase extends FunSuite {
 
   test ("findEntry") {
     val db = mkTestDB();
-    val f = (x : ObjectExpr) => (x~'pwd === 1337);
+    val f = (x : UserRecord) => (x.pwd === 1337);
     val result = db.findEntry(f);
     val concreteList : List[UserRecord] =
       concretizeList(context, uRecord, result);
