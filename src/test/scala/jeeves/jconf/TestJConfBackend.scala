@@ -11,18 +11,6 @@ import scala.collection.immutable.Map
 
 class ExampleJConfBackend extends FunSuite {
   /*
-  val uid1 = user1.id
-  val user2 =
-    addUser ( "Rishabh Singh",    UserLevels.friendsL
-            , "abc",              UserLevels.selfL
-            , "rishabh",          UserLevels.friendsL
-            , "rishabh@mit.edu",  UserLevels.friendsL
-            , "MIT",              UserLevels.friendsL
-            , UserLevels.friendsL );
-  val uid2 = user2.id
-
-  addFriend(uid0, uid1)
-
   test ("getUser using default user") {
     val otherUser0 = getUser(uid0);
     expect (true) { user0.equals(otherUser0) };

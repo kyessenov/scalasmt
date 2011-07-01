@@ -37,29 +37,30 @@ class PaperRecord( val id : BigInt
                 , _papertags : MSet[BigInt] // & keywords
                 , val context : ObjectVar ) extends Atom {
   private val isAuthor = CONTAINS(_authors, context~'id);
+  private val isAccepted = pickBool(default = false)
 
   // The name of the paper is always visible to the authors.
   val name : IntExpr = {
     val level : IntVar = mkLevel()
+    policy (level, isAuthor, Viewer.high);
     policy (level, context~'status >= UserStatus.reviewerL, Viewer.high)
-    policy( level
-            , (context~'stage === PaperStage.public) &&
-              CONTAINS(tags, PaperTag.accepted)
+    policy ( level
+            , (context~'stage === PaperStage.public) && isAccepted
             , Viewer.high);
-    mkSensitive(level, _name)
+    mkSensitiveValue(level, _name)
   }
 
   // The authors of the paper are visible to the authors themselves and during
   // the reveal stage.
   val authors : List[IntExpr] = {
     val level : IntVar = mkLevel()
-      policy(level, ((context~'status >= UserStatus.reviewerL) &&
+    policy (level, isAuthor, Viewer.high);
+    policy (level, ((context~'status >= UserStatus.reviewerL) &&
              (context~'stage >= PaperStage.decision)), Viewer.high);
       policy( level
-            , (context~'stage === PaperStage.public) &&
-              CONTAINS(tags, PaperTag.accepted)
+            , (context~'stage === PaperStage.public) && isAccepted
             , Viewer.high);
-    _authors.map(a => mkSensitive(level, a))
+    _authors.map(a => mkSensitiveValue(level, a))
   }
 
   private def addTagPermission (tag : BigInt) : IntExpr = {
@@ -83,24 +84,20 @@ class PaperRecord( val id : BigInt
                , context~'stage === PaperStage.public
                , Viewer.high )
     }
-    mkSensitive(level, tag)
+    mkSensitiveValue(level, tag)
   }
 
   // If a tag is not in the environment and a tag is then added to the
   // environment, how do we resolve this?
   private var _tags : MSet[BigInt] = _papertags
-  private var tags : MSet[IntExpr] = _tags.map(addTagPermission)
+  var tags : MSet[IntExpr] = _tags.map(addTagPermission)
 
-  def addTag (newtag : BigInt) =
+  def addTag (newtag : BigInt) : Unit = {
     _tags.add(newtag);
-    tags = _tags.map(addTagPermission)
-  def hasTag (tag : IntExpr) : Formula = CONTAINS(tags, tag)
-
-  private def mkSensitive(levelVar : IntVar, v : IntExpr) : IntExpr = {
-    val isAuthor : Formula = CONTAINS(_authors, context~'name);
-    policy(levelVar, isAuthor, Viewer.high);
-    mkSensitiveValue(levelVar, v)
+    tags = _tags.map(addTagPermission);
+    if (newtag == PaperTag.accepted) assume(isAccepted)
   }
+  def hasTag (tag : IntExpr) : Formula = CONTAINS(tags, tag)
  
   override def toString = "jcp" + id
   override def hashCode = id.toInt

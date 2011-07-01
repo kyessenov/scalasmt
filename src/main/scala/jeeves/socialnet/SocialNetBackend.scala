@@ -78,7 +78,7 @@ object SocialNetBackend {
   }
 
   def getUsersByNetwork (network : String) : List[ObjectExpr] = {
-    val f = (x : ObjectExpr) => (x ~ 'network === fromString(network));
+    val f = (x : UserRecord) => (x.network === fromString(network));
     __db.findEntry(f);
   }
 
