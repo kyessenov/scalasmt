@@ -6,29 +6,31 @@ import cap.scalasmt._
 import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
 
+import scala.collection.mutable.Set
+
 import JeevesLib._
 
 class ExamplePaperRecord extends FunSuite {
   val context = pickObject();
 
-  val paper0 = new PaperRecord(0, 33, List(0, 3), context);
+  val paper0 = new PaperRecord(0, 33, List(0, 3), Set(), context);
 
   private def getAuthorCtxt0 (stage : BigInt = PaperStage.submission)
   : ConfContext =
-    new ConfContext(0, 0, UserStatus.authorL, stage);
+    new ConfContext(0, UserStatus.authorL, stage);
   private def getAuthorCtxt1 (stage : BigInt = PaperStage.submission) 
   : ConfContext =
-    new ConfContext(3, 3, UserStatus.authorL, stage);
+    new ConfContext(3, UserStatus.authorL, stage);
   private def getAuthorCtxt2 (stage : BigInt = PaperStage.submission)
   : ConfContext =
-    new ConfContext(4, 4, UserStatus.authorL, stage);
+    new ConfContext(4, UserStatus.authorL, stage);
 
   private def getReviewerCtxt0 (stage : BigInt = PaperStage.submission)
   : ConfContext =
-    new ConfContext(1, 1, UserStatus.reviewerL, stage);
+    new ConfContext(1, UserStatus.reviewerL, stage);
   private def getPcCtxt0 (stage : BigInt = PaperStage.submission)
   : ConfContext =
-    new ConfContext( 2, 2, UserStatus.pcL, stage);
+    new ConfContext(2, UserStatus.pcL, stage);
 
   // Name visibility
   test ("name visibility") {
@@ -42,7 +44,7 @@ class ExamplePaperRecord extends FunSuite {
     val viewMap =
       Map( (PaperStage.submission, 33)
          , (PaperStage.review, 33)
-         , (PaperStage.authorReveal, 33) );
+         , (PaperStage.decision, 33) );
     viewMap.foreach {
       case (stage, r) =>
         expect (r) {
