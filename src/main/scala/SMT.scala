@@ -28,8 +28,7 @@ trait Solver {
 }
 
 trait Logging extends Solver {
-  abstract override def >(s: String) {println("> " + s); super.>(s)}
-  abstract override def <() = {val s = super.<(); println("< " + s); s}
+  abstract override def >(s: String) {println(s); super.>(s)}
 }
 
 class Z3 extends Solver {
@@ -248,7 +247,8 @@ object SMT {
     val solver = new Z3// with Logging
   
     for (s <- prelude) solver.command(s)  
-    for (clause <- f.clauses) solver.assert(formula(clause))
+    for (clause <- f.clauses) 
+      solver.assert(formula(clause))
 
     // invariant: the model is consistent 
     if (! solver.check) throw UnsatException
