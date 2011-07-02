@@ -22,6 +22,8 @@ trait Sceeves {
   private def solve(fs: List[Formula]) =  
     SMT.solve(fs, DEFAULTS.map(_.eval))(ENV)
   
+  // TODO: get rid of nulls here
+
   def pick(spec: IntVar => Formula = _ => true, default: IntExpr = null) = {
     val x = Var.makeInt; 
     assume(spec(x)); 
@@ -63,16 +65,10 @@ trait Sceeves {
     
   def concretize[T](f: Formula, e: Expr[T]): T = {
     val v = e.eval(solve(f :: CONSTRAINTS));
-    CONSTRAINTS = (f ==> (e === e.constant(v))) :: CONSTRAINTS;
+    // TODO: record the entire state (like absence of objects) into context to make this work
+    // CONSTRAINTS = (f ==> (e === e.constant(v))) :: CONSTRAINTS;
     v
   }
-
-  def concretize[T](v: ObjectVar, o: ObjectExpr, e: Expr[T]): T = 
-    concretize(v === o, e);
-  def concretize[T](v: IntVar, i: IntExpr, e: Expr[T]): T = 
-    concretize(v === i, e);
-  def concretize[T](v: BoolVar, f: Formula, e: Expr[T]): T = 
-    concretize(v <==> f, e);
 }
 
 
