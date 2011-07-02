@@ -86,7 +86,7 @@ object SMT {
     else
       v.toString
 
-  private def formula(f: Formula)(implicit env: Environment): String = f match {
+  private def formula(f: Expr[Boolean])(implicit env: Environment): String = f match {
     case And(a,b) => "(and " + formula(a) + " " + formula(b) + ")"
     case Or(a,b) => "(or " + formula(a) + " " + formula(b) + ")"
     case Not(a) => "(not " + formula(a) + ")"
@@ -107,7 +107,7 @@ object SMT {
     case v: BoolVar => variable(v)
   }
 
-  private def integer(e: IntExpr)(implicit env: Environment): String = e match {
+  private def integer(e: Expr[BigInt])(implicit env: Environment): String = e match {
     case Plus(a,b) => "(+ " + integer(a) + " " + integer(b) + ")"
     case Minus(a,b) => "(- " + integer(a) + " " + integer(b) + ")"
     case Times(a,b) => "(* " + integer(a) + " " + integer(b) + ")"
@@ -117,7 +117,7 @@ object SMT {
     case v: IntVar => variable(v) 
   }
 
-  private def atom(e: ObjectExpr)(implicit env: Environment): String = e match {
+  private def atom(e: Expr[Atom])(implicit env: Environment): String = e match {
     case ObjectConditional(cond, thn, els) => "(if " + formula(cond) + " " + atom(thn) + " " + atom(els) + ")"
     case Object(o) => uniq(o)
     case ObjectField(root, f) => "(" + f.name + " " + atom(root) + ")"
@@ -128,7 +128,7 @@ object SMT {
         v.toString
   }
 
-  private def set(e: RelExpr)(implicit q: String, env: Environment): String = e match {
+  private def set(e: Expr[Set[Atom]])(implicit q: String, env: Environment): String = e match {
     case Union(a,b) => "(or " + set(a) + " " + set(b) + ")"
     case Diff(a,b) => "(and " + set(a) + " (not " + set(b) + "))"
     case Intersect(a,b) => "(and " + set(a) + " " + set(b) + ")"
@@ -233,11 +233,11 @@ object SMT {
     {for (o <- objects; f <- fields) yield "(assert (= (" + f.name + " " + uniq(o) + ") " + {f match {
       case f: ObjectFieldDesc => f(o) match {
         case Some(a) => atom(a)
-        case None => /* function is total */ uniq(null)
+        case None => /* function is total */ uniq(f.default)
       }
       case f: IntFieldDesc => f(o) match {
         case Some(i) => integer(i)
-        case None => /* function is total */ ObjectIntField.default
+        case None => /* function is total */ f.default
       }
     }} + "))"}.toList :::
     Nil
