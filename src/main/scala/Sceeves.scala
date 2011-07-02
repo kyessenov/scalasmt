@@ -34,7 +34,7 @@ trait Sceeves {
     x
   }
 
-  def pickObject(spec: ObjectVar => Formula = _ => true, default: ObjectExpr = null) = {
+  def pickObject(spec: ObjectVar => Formula = _ => true, default: ObjectExpr[Atom] = null) = {
     val x = Var.makeObject;
     assume(spec(x)); 
     byDefault(x, default)
