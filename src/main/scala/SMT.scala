@@ -151,44 +151,54 @@ object SMT {
 
   private def uniq(o: Atom) = "o" + (if (o == null) "0" else o.uniq)
   
+  private object Scope {
+    implicit def fromField(f: FieldDesc[_]) = Scope(fields = Set(f))
+    implicit def fromVar(v: Var[_]) = Scope(vars = Set(v))
+    implicit def fromAtom(o: Atom) = Scope(objects = Set(o))
+    implicit def fromAtomSet(o: Set[Atom]) = Scope(objects = o)
+  }
+
   private case class Scope(objects: Set[Atom] = Set(), 
                        fields: Set[FieldDesc[_]] = Set(), 
                        vars: Set[Var[_]] = Set()) {
-    def ++ (that: Scope) = 
-      Scope(this.objects ++ that.objects, this.fields ++ that.fields, this.vars ++ that.vars)
-    def ++ (f: FieldDesc[_]) = copy(fields = fields + f)
-    def ++ (v: Var[_]) = copy(vars = vars + v)
-    def ++ (o: Atom) = copy(objects = objects + o)
+    def ++ (that: Scope) = Scope(
+      this.objects ++ that.objects, 
+      this.fields ++ that.fields, 
+      this.vars ++ that.vars
+    )
     def size = objects.size + fields.size + vars.size
-    override def toString = "objects: " + objects.size + "; fields: " + fields.size + "; vars: " + vars.size
   }
-
-  
+ 
   private def univ(f: Expr[_])(implicit env: Environment): Scope = (f: @unchecked) match {
     case f: BinaryExpr[_] => univ(f.left) ++ univ(f.right)
     case f: Ite[_] => univ(f.cond) ++ univ(f.thn) ++ univ(f.els)
     case f: UnaryExpr[_] => univ(f.sub)
-    case v: BoolVar => Scope() ++ v
-    case v: IntVar => Scope() ++ v
-    case v: ObjectVar => Scope(objects = if (env.has(v)) Set(env(v)) else Set()) ++ v
-    case v: ObjectSetVar => Scope(objects = if (env.has(v)) env(v) else Set()) ++ v
-    case os: ObjectSet => Scope(objects = os.eval)
+    case v: Var[_] => v
+    case os: ObjectSet => os.eval
+    case o: Object => o.eval
     case RelJoin(root, f) => univ(root) ++ f
     case ObjectIntField(root, f) => univ(root) ++ f
     case ObjectField(root, f) => univ(root) ++ f
-    case Object(o) => Scope() ++ o
-    case _: BoolVal => Scope()
-    case _: IntVal => Scope()
+    case _: Constant[_] => Scope()
   }
 
   @annotation.tailrec 
   private def closure(cur: Scope)(implicit env: Environment): Scope = {
-    val exprs = {for (o <- cur.objects; f <- cur.fields) yield f match {
+    val fields = {for (o <- cur.objects; f <- cur.fields) yield f match {
       case f: ObjectFieldDesc => f(o)
       case f: IntFieldDesc => f(o)
     }}.flatten
 
-    val more = exprs.foldLeft(cur){(scope, expr) => scope ++ univ(expr)} ++ (null: Atom)
+    val variables = {for (v <- cur.vars; if env.has(v)) yield v match {
+      case v: ObjectVar => Set(env(v))
+      case v: ObjectSetVar => env(v)
+      case _ => Set[Atom]()
+    }}.flatten
+
+    val more = cur ++ 
+      (null: Atom) ++ 
+      variables ++ 
+      fields.map(univ(_)).foldLeft(Scope())(_ ++ _)
 
     if (more.size > cur.size)
       closure(more)
