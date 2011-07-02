@@ -30,16 +30,20 @@ class ExampleAtoms extends FunSuite {
     val b = (k + 1 to 2*k).toList.map(Dummy(_))
     SMT.solve(a in (a ++ b))
     SMT.solve((a & b) === Set())
+  } 
+
+  test ("conditional") {
+    import Expr._
+    val a = Dummy(1);
+    expect(a) {eval ((a === a) ? a ! NULL)}
   }
 
   test ("singleton and conditional") {
-    import Expr._
+    import RelExpr._
     val a = Dummy(1);
-    val b = Dummy(2);
-    expect(a) {eval(a)}
+    expect(Set(a)) {eval(a)}
     expect(Set(a)) {eval(a ++ a)}
     expect(Set(a, null)) {eval(a ++ NULL)}
-    expect(a) {eval((a === a) ? a ! b)}
   }
 
   case class Node(sub: Dummy) extends Atom
