@@ -221,9 +221,9 @@ class ExampleSceeves extends FunSuite with Sceeves {
   test ("context") {
     val key = pick(_ > 0);
     val hidden = (key === 1) ? 1 ! 0;
-    expect(1) {concretize(key, 1, hidden)}
-    expect(0) {concretize(key, 2, hidden)}
-    intercept[UnsatException.type] {concretize(key, 0, hidden)}
+    expect(1) {concretize(key === 1, hidden)}
+    expect(0) {concretize(key === 2, hidden)}
+    intercept[UnsatException.type] {concretize(key === 0, hidden)}
   }
 
   test("symbolic context") {
@@ -231,9 +231,9 @@ class ExampleSceeves extends FunSuite with Sceeves {
     val hidden = (key === 1) ? 1 ! 0;
     val x = pick(_ === 1);
     val y = pick(_ === 2);
-    expect(1) {concretize(key, x, hidden)}
-    expect(0) {concretize(key, y, hidden)}
-    intercept[UnsatException.type] { concretize(key, 0, hidden) }
+    expect(1) {concretize(key === x, hidden)}
+    expect(0) {concretize(key === y, hidden)}
+    intercept[UnsatException.type] { concretize(key === 0, hidden) }
   }
 
   test ("n queens") {

@@ -11,80 +11,72 @@ import scala.collection.immutable.Map;
 import scala.collection.mutable.{Map => MMap};
 import scala.collection.mutable.HashMap;
 
-object Undefined extends RuntimeException("undefined")
-
 object JeevesLib extends Sceeves {
-  type LevelTy = BigInt;
-  type ValueTy = BigInt;
-  type SensitiveMap = Map[BigInt, IntExpr];
+  type LevelVar = BoolVar;
+  type Context = ObjectExpr;
+  trait JeevesRecord extends Atom
 
-  object Viewer {
-    val low   : BigInt = 0
-    val high  : BigInt = 1
-    val levels = List(low, high)
+  val HIGH = true
+  val LOW = false
+
+  val CONTEXT: Context = pickObject();
+
+  def mkLevel(): LevelVar = pickBool(default = LOW)
+
+  def mkSensitiveInt(lvar: LevelVar, high: IntExpr, low: IntExpr = -1): IntVar = {
+    val v = pick(default = low);
+    assume(lvar ==> (v === high));
+    v;
   }
 
-  private val __strs = new HashMap[BigInt, String]();
-  def fromString (str : String) : BigInt = {
-    val idx : BigInt = str.hashCode();
-    __strs += (idx -> str);
-    idx
+  def mkSensitiveObject(lvar: LevelVar, high: ObjectExpr, low: ObjectExpr = NULL): ObjectVar = {
+    val v = pickObject(default = low);
+    assume(lvar ==> (v === high));
+    v;
+  } 
+
+  def policy(lvar: LevelVar, f: Formula) {
+    assume(f ==> lvar);
   }
-  def asString (v : BigInt) : String = {
-    if (v == -1) {
-      "[default]"
-    } else {
-      __strs.get(v) match {
-        case Some(str) => str
-        case None => println(v); throw Undefined
+  def policy(lvar: LevelVar, f: () => Formula) {
+    POLICIES = (lvar, f) :: POLICIES
+  }
+  
+
+  /** 
+   * Extend Sceeves functionality in a specific way.
+   */
+  private var POLICIES: List[(LevelVar, () => Formula)] = Nil
+
+  def concretize[T](ctx: Context, e: Expr[T]) = {
+    val context = (CONTEXT === ctx) && AND(POLICIES.map{case (lvar, f) => f() ==> lvar})
+    super.concretize(context, e);
+  }
+
+  /**
+   * Collections of symbolic values.
+   */ 
+  def concretize[T <: JeevesRecord](ctx: Context, lst: List[ObjectExpr]): List[T] = 
+    for (o <- lst;
+      t = concretize(ctx, o).asInstanceOf[T];
+      if (t != null))
+      yield t;
+
+  def filter[T <: JeevesRecord](lst: List[T], filter: T => Formula) : List[ObjectExpr] = 
+    {for (o <- lst; 
+      f = filter(o)) 
+      yield f match {    
+        case BoolVal(true) => 
+          Some(Object(o))
+        case BoolVal(false) => 
+          None
+        case f =>
+          val r = pickObject(default = NULL);
+          assume (f ==> (r === o))
+          Some(r)
       }
-    }
-  }
+    }.flatten
+  
 
-  def mkLevel () : IntVar = {
-    val level : IntVar = pick(default = Viewer.low);
-    assume (CONTAINS(Viewer.levels, level));
-    level
-  }
-  def policy (level : IntVar, f : Formula, levelVal : BigInt) = {
-    assume(f ==> (level === levelVal))
-  }
-
-  def mkSensitiveValue (level : IntVar, v : IntExpr)
-  : IntVar = {
-    assume(CONTAINS(Viewer.levels, level));
-    val map = Map((Viewer.low, IntVal(-1)), (Viewer.high, v));
-    createSensitiveValue(level, -1, map)
-  }
-
-  // Associates a constraint with a field.
-  def createSensitiveValue
-    (level : IntVar, defaultV : BigInt, vals : SensitiveMap) : IntVar = {
-    var x = pick(default = defaultV);
-    vals foreach {
-      case (keyval, valConstraint) =>
-        assume((level === keyval) ==> (x === valConstraint))
-    }
-    x
-  }
-  def createSensitiveValue
-    (level : IntVar, vals : Map[BigInt, ObjectExpr])
-    : ObjectVar = {
-    var x = pickObject(default = NULL);
-    vals foreach {
-      case (keyval, valConstraint) =>
-        assume((level === keyval) ==> (x === valConstraint))
-    }
-    x
-  }
-
-  def concretizeList[T] (
-    ctxtVar : ObjectVar, context : ObjectExpr, lst : List[ObjectExpr])
-  : List[T] = {
-    val objLst : List[T] =
-      lst.map(x => concretize(ctxtVar, context, x).asInstanceOf[T]);
-    objLst.filter(x => !(x == null))
-  }
-
-  override def assume(f: Formula) = super.assume(Partial.eval(f)(EmptyEnv))
 }
+
