@@ -12,14 +12,14 @@ import scala.collection.mutable.{Map => MMap};
 import scala.collection.mutable.HashMap;
 
 object JeevesLib extends Sceeves {
-  type LevelVar = BoolVar;
-  type Context = ObjectExpr;
   trait JeevesRecord extends Atom
+  type LevelVar = BoolVar;
+  type Symbolic = ObjectExpr[Atom];
 
   val HIGH = true
   val LOW = false
 
-  val CONTEXT: Context = pickObject();
+  val CONTEXT: Symbolic = pickObject();
 
   def mkLevel(): LevelVar = pickBool(default = LOW)
 
@@ -29,7 +29,7 @@ object JeevesLib extends Sceeves {
     v;
   }
 
-  def mkSensitiveObject(lvar: LevelVar, high: ObjectExpr, low: ObjectExpr = NULL): ObjectVar = {
+  def mkSensitiveObject(lvar: LevelVar, high: Symbolic, low: Symbolic = NULL): Symbolic = {
     val v = pickObject(default = low);
     assume(lvar ==> (v === high));
     v;
@@ -48,7 +48,7 @@ object JeevesLib extends Sceeves {
    */
   private var POLICIES: List[(LevelVar, () => Formula)] = Nil
 
-  def concretize[T](ctx: Context, e: Expr[T]) = {
+  def concretize[T](ctx: Symbolic, e: Expr[T]) = {
     val context = (CONTEXT === ctx) && AND(POLICIES.map{case (lvar, f) => f() ==> lvar})
     super.concretize(context, e);
   }
@@ -56,13 +56,13 @@ object JeevesLib extends Sceeves {
   /**
    * Collections of symbolic values.
    */ 
-  def concretize[T <: JeevesRecord](ctx: Context, lst: List[ObjectExpr]): List[T] = 
+  def concretize[T <: JeevesRecord](ctx: Symbolic, lst: List[Symbolic]): List[T] = 
     for (o <- lst;
       t = concretize(ctx, o).asInstanceOf[T];
       if (t != null))
       yield t;
 
-  def filter[T <: JeevesRecord](lst: List[T], filter: T => Formula) : List[ObjectExpr] = 
+  def filter[T <: JeevesRecord](lst: List[T], filter: T => Formula) : List[Symbolic] = 
     {for (o <- lst; 
       f = filter(o)) 
       yield f match {    

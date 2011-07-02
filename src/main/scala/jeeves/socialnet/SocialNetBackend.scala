@@ -30,7 +30,7 @@ object SocialNetBackend {
   def getFriendNetworks(user: UserRecord) =
     user.getFriends().map(_ / 'network)
 
-  def getUsersByNetwork (network : Network) : List[ObjectExpr] = 
+  def getUsersByNetwork (network : Network) : List[Symbolic] = 
     filter(users, (u: UserRecord) => u.network === network)
 
   /* What if we wanted to have a series of operations on the friends of
