@@ -323,6 +323,7 @@ object `package` {
     for (vs1 <- vs; vs2 <- vs; if (vs1 != vs2)) yield ( ! (vs1 === vs2))
   def NULL = Object(null)
   def OR(vs: Traversable[Formula]) = vs.foldLeft(false: Formula)(_ || _)
+  def AND(vs: Traversable[Formula]) = vs.foldLeft(true: Formula)(_ && _)
   def CONTAINS[T <% IntExpr](vs: Traversable[T], i: IntExpr) = 
     OR(for (v <- vs) yield v === i)
   def CONTAINS[T <% ObjectExpr](vs: Traversable[T], i: ObjectExpr) = 
