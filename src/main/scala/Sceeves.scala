@@ -4,13 +4,11 @@ import cap.scalasmt.{Environment => Env}
 
 /** 
  * Constraint environment for Sceeves.
- * Note change to terminology: pick = defer, assume = assert (since overriding assert is a bad idea given the implicits.)
- * There is no garbage collection.
  */
 
 trait Sceeves {
   case class Assign[T](v: Var[T], e: Expr[T]) {
-    def eval = (v === e)
+    def eval = (v === e) match {case f: Formula => f}
   }
   type Defaults = List[Assign[_]]
   type Constraints = List[Formula]
@@ -22,8 +20,6 @@ trait Sceeves {
   private def solve(fs: List[Formula]) =  
     SMT.solve(fs, DEFAULTS.map(_.eval))(ENV)
   
-  // TODO: get rid of nulls here
-
   def pick(spec: IntVar => Formula = _ => true, default: IntExpr = null) = {
     val x = Var.makeInt; 
     assume(spec(x)); 
