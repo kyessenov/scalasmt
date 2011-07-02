@@ -175,7 +175,7 @@ object SMT {
     case f: UnaryExpr[_] => univ(f.sub)
     case v: Var[_] => v
     case os: ObjectSet => os.eval
-    case o: Object => o.eval
+    case o: Object[_] => o.eval
     case RelJoin(root, f) => univ(root) ++ f
     case ObjectIntField(root, f) => univ(root) ++ f
     case ObjectField(root, f) => univ(root) ++ f
