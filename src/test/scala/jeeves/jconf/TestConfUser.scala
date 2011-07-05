@@ -10,10 +10,10 @@ import scala.collection.immutable.Map
 import JeevesLib._
 
 class ExampleConfUser extends FunSuite {
+  /*
   val author0Info = TestUsers.mkUser(UserStatus.authorL)
   val author0Name = author0Info._1;
-  val author0Email = author0Info._2;
-  val author0 = author0Info._3;
+  val author0 = author0Info._2;
   private def getAuthorCtxt0 (stage : BigInt = PaperStage.submission)
   : ConfContext =
     new ConfContext(author0.id, UserStatus.authorL, stage);
@@ -21,12 +21,12 @@ class ExampleConfUser extends FunSuite {
   : ConfContext = new ConfContext(3, UserStatus.authorL, stage);
 
   val reviewer0Info = TestUsers.mkUser(UserStatus.reviewerL);
-  val reviewer0 = reviewer0Info._3;
+  val reviewer0 = reviewer0Info._2;
   private def getReviewerCtxt0 (stage : BigInt = PaperStage.submission)
   : ConfContext = new ConfContext(reviewer0.id, UserStatus.reviewerL, stage);
 
   val pc0Info = TestUsers.mkUser(UserStatus.pcL);
-  val pc0 = pc0Info._3;
+  val pc0 = pc0Info._2;
   private def getPcCtxt0 (stage : BigInt = PaperStage.submission)
   : ConfContext = new ConfContext( 2, UserStatus.pcL, stage);
 
@@ -51,10 +51,5 @@ class ExampleConfUser extends FunSuite {
     // Other authors should not be able to see the current author ever.
     expect (-1) { concretize(getAuthorCtxt1(), author0.name) };
   }
-  
-  test ("email visibility") {
-    expect (author0Email) {
-      concretize(getAuthorCtxt0(), author0.email)
-    };
-  }
+  */
 }
