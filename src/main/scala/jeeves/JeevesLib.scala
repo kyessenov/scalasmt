@@ -49,14 +49,17 @@ trait JeevesLib extends Sceeves {
 
   override def assume(f: Formula) = super.assume(Partial.eval(f)(EmptyEnv))
   
-  def concretize[T](ctx: Symbolic, e: Expr[T]) = {
+  def concretize[T](ctx: Symbolic, e: Expr[T]): T = {
     val context = (CONTEXT === ctx) && AND(POLICIES.map{case (lvar, f) => f() ==> lvar})
-    super.concretize(context, e);
+    super.concretize(Partial.eval(context)(EmptyEnv), e);
   }
-
+  
   /**
    * Collections of symbolic values.
    */ 
+  def concretize[T](ctx: Symbolic, e: (Expr[T], Expr[T])): (T, T) = 
+    (concretize(ctx, e._1), concretize(ctx, e._2))
+ 
   def concretize[T <: JeevesRecord](ctx: Symbolic, lst: List[Symbolic]): List[T] = 
     for (o <- lst;
       t = concretize(ctx, o).asInstanceOf[T];
@@ -64,20 +67,17 @@ trait JeevesLib extends Sceeves {
       yield t;
 
   def filter[T >: Null <: JeevesRecord](lst: List[T], filter: T => Formula) : List[Symbolic] = 
-    {for (o <- lst; 
-      f = filter(o)) 
-      yield f match {    
-        case BoolVal(true) => 
-          Some(Object(o))
-        case BoolVal(false) => 
-          None
-        case f =>
-        val r = pickObject(_ => true, NULL);
-          assume (f ==> (r === o))
-          Some(r)
-      }
-    }.flatten
-  
+    for(o <- lst) yield filter(o) match {    
+      case BoolVal(true) => 
+        o: Symbolic
+      case BoolVal(false) => 
+        null: Symbolic
+      case f =>
+        pickObject(_ === (IF (f) {o} ELSE {NULL}))
+    }
+    
+   
+
 
 }
 

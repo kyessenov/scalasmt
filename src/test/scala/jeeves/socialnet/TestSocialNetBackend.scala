@@ -54,4 +54,16 @@ class ExampleSocialNetBackend extends FunSuite {
     removeFriend(joe, eunsuk)
     expect (null) { concretize(eunsuk, joe.network)} 
   }
+
+  test("geo location") {
+    jean.setLocation(8, 8) // top
+    kuat.setLocation(4, 4)
+    joe.setLocation(0, 0) // bottom
+    expect((-1, -1)) {concretize(jean, joe.getLocation)}
+    expect((-1, -1)) {concretize(joe, jean.getLocation)}
+    expect((0, 0)) {concretize(kuat, joe.getLocation)}
+    expect((8, 8)) {concretize(kuat, jean.getLocation)}
+    expect((4, 4)) {concretize(joe, kuat.getLocation)}
+    expect((4, 4)) {concretize(jean, kuat.getLocation)}
+  }
 }
