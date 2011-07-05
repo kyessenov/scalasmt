@@ -41,12 +41,8 @@ class ExampleJConfBackend extends FunSuite {
 
   // Name visibility
   test ("name visibility") {
-    expect(33) {
-      concretize(getAuthorCtxt0(), paper0.name);
-    }
-    expect(-1) {
-      concretize(getAuthorCtxt2(), paper0.name);
-    }
+    expect(33) { concretize(getAuthorCtxt0(), paper0.name); }
+    expect(-1) { concretize(getAuthorCtxt2(), paper0.name); }
 
     val viewMap =
       Map((Submission, 33), (Review, 33), (Decision, 33));
@@ -59,6 +55,29 @@ class ExampleJConfBackend extends FunSuite {
           concretize(getPcCtxt0(stage), paper0.name);
         }
     }
+  }
+
+  // Author list visibility
+  test ("author list") {
+    expect (true) {
+      concretize(getAuthorCtxt0(), CONTAINS(paper0.authors, author0))
+    };
+    expect (true) {
+      concretize(getAuthorCtxt1(), CONTAINS(paper0.authors, author0))
+    }
+    expect (false) {
+      concretize(getReviewerCtxt0(), CONTAINS(paper0.authors, author0));
+    }
+    expect (true) {
+      concretize(getReviewerCtxt0(Decision), CONTAINS(paper0.authors, author0));
+    }
+    expect (true) {
+      concretize(getPcCtxt0(Decision), CONTAINS(paper0.authors, author0));
+    }
+  }
+
+  test ("tags") {
+
   }
 
   /*

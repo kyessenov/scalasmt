@@ -10,9 +10,10 @@ import scala.collection.mutable.Map;
 import cap.jeeves.JeevesLib._
 
 object UserStatus {
-  val authorL  : BigInt = 0
-  val reviewerL : BigInt = 1
-  val pcL      : BigInt = 2
+  val publicL   : BigInt = 0
+  val authorL   : BigInt = 1
+  val reviewerL : BigInt = 2
+  val pcL       : BigInt = 3
 }
 
 /* Conference User */
