@@ -6,14 +6,10 @@ import cap.scalasmt._
 import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
 
-import scala.collection.mutable.Set
-
 import JeevesLib._
 
 class ExamplePaperRecord extends FunSuite {
-  val context = pickObject();
-
-  val paper0 = new PaperRecord(0, 33, List(0, 3), Set(), context);
+  val paper0 = new PaperRecord(0, 33, List(0, 3), Nil);
 
   private def getAuthorCtxt0 (stage : BigInt = PaperStage.submission)
   : ConfContext =
@@ -35,10 +31,10 @@ class ExamplePaperRecord extends FunSuite {
   // Name visibility
   test ("name visibility") {
     expect(33) {
-      concretize(context, getAuthorCtxt0(), paper0.name);
+      concretize(getAuthorCtxt0(), paper0.name);
     }
     expect(-1) {
-      concretize(context, getAuthorCtxt2(), paper0.name);
+      concretize(getAuthorCtxt2(), paper0.name);
     }
 
     val viewMap =
@@ -48,10 +44,10 @@ class ExamplePaperRecord extends FunSuite {
     viewMap.foreach {
       case (stage, r) =>
         expect (r) {
-          concretize(context, getReviewerCtxt0(stage), paper0.name)
+          concretize(getReviewerCtxt0(stage), paper0.name)
         };
         expect (r) {
-          concretize(context, getPcCtxt0(stage), paper0.name);
+          concretize(getPcCtxt0(stage), paper0.name);
         }
     }
   }
@@ -59,13 +55,13 @@ class ExamplePaperRecord extends FunSuite {
   // Author visibility
   test ("author list visibility") {
     expect (true) {
-      concretize(context, getAuthorCtxt0(0), CONTAINS(paper0.authors, 0))
+      concretize(getAuthorCtxt0(0), CONTAINS(paper0.authors, 0))
     };
     expect (true) {
-      concretize(context, getAuthorCtxt1(0), CONTAINS(paper0.authors, 0))
+      concretize(getAuthorCtxt1(0), CONTAINS(paper0.authors, 0))
     };
     expect (false) {
-      concretize(context, getAuthorCtxt2(0), CONTAINS(paper0.authors, 0))
+      concretize(getAuthorCtxt2(0), CONTAINS(paper0.authors, 0))
     };
 
   }

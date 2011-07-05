@@ -1,6 +1,7 @@
 package cap.jeeves.jconf
 
 import scala.collection.mutable.HashMap;
+//import scala.collection.mutable.Map;
 import scala.collection.mutable.Set;
 
 import cap.scalasmt._
@@ -8,33 +9,20 @@ import cap.jeeves._
 import JeevesLib._
 
 object JConfBackend {
-  private val __userDB = new Database[ConfUser]();
-  private val __paperDB = new Database[PaperRecord]();
-
-  val jcContext : ObjectVar = pickObject();
+//  private val __userDB : Map[BigInt, ConfUser] = Map();
+  private val papers : List[PaperRecord] = Nil;
 
   /* Database functions. */
-  def addUser ( name : String, username : String, email : String
-              , status : BigInt )
-            : ConfUser = {
-    val iName = fromString(name);
-    val iUsername = fromString(username);
-    val iEmail = fromString(email);
 
-    val user =
-      new ConfUser(iUsername, iName, iEmail, status, jcContext);
-    __userDB.putEntry(iUsername, user);
-    return user
-  }
+  /*
   def getUser (uname : BigInt) : ConfUser = {
-    // We know that this is going to be concrete.
-    val result = (__userDB.getEntry(uname)).eval
-    result.asInstanceOf[ConfUser];
+    __userDB.getEntry(uname)
   }
   def getPaper (paperName : BigInt) : PaperRecord = {
     val result = (__paperDB.getEntry(paperName)).eval
     result.asInstanceOf[PaperRecord]
   }
+  */
 
   /* Search by... */
   /*
@@ -47,14 +35,14 @@ object JConfBackend {
   }
   */
 
-  def getPaperByTag (tag : BigInt) : List[ObjectExpr] = {
-    val f = (x : PaperRecord) => (CONTAINS(x.tags, tag));
-    __paperDB.findEntry(f);
+  def getPaperByTag (tag : BigInt) : List[Symbolic] = {
+    filter(papers, (p : PaperRecord) => CONTAINS(p.tags, tag))
   }
 
   /*************************************************/
   /* Functions that use concretize to show things. */
   /*************************************************/
+  /*
   def getBool(ctxtUser : BigInt, b : Formula) : Boolean = {
     val ctxt = getUser(ctxtUser);
     concretize(jcContext, ctxt, b)
@@ -70,4 +58,5 @@ object JConfBackend {
     val ctxt = getUser(ctxtUser);
     lst.map(x => asString(concretize(jcContext, ctxt, x)));
   }
+  */
 }
