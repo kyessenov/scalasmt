@@ -325,6 +325,7 @@ object RelExpr {
 object `package` {
   case class IF(cond: Formula) {
     def apply(thn: IntExpr) = new {def ELSE(els: IntExpr) = cond ? thn ! els}
+    def apply(thn: ObjectExpr[Atom]) = new {def ELSE(els: ObjectExpr[Atom]) = cond ? thn ! els}
   }
   def DISTINCT[T <% IntExpr](vs: Traversable[T]) = 
     for (vs1 <- vs; vs2 <- vs; if (vs1 != vs2)) yield ( ! (vs1 === vs2))
@@ -335,6 +336,7 @@ object `package` {
     OR(for (v <- vs) yield v === i)
   def CONTAINS[T <% ObjectExpr[Atom]](vs: Traversable[T], i: ObjectExpr[Atom]) = 
     OR(for (v <- vs) yield v === i)
+  def ABS(x: IntExpr) = IF (x > 0) {x} ELSE {-x}
 }
 
 
