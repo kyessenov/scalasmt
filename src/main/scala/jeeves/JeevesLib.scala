@@ -11,8 +11,10 @@ import scala.collection.immutable.Map;
 import scala.collection.mutable.{Map => MMap};
 import scala.collection.mutable.HashMap;
 
-object JeevesLib extends Sceeves {
-  trait JeevesRecord extends Atom
+trait JeevesLib extends Sceeves {
+  trait JeevesRecord extends Atom {
+    register(this)
+  }
   type LevelVar = BoolVar;
   type Symbolic = ObjectExpr[Atom];
 
@@ -20,17 +22,19 @@ object JeevesLib extends Sceeves {
   val LOW = false
 
   val CONTEXT: Symbolic = pickObject();
+  
+  private var POLICIES: List[(LevelVar, () => Formula)] = Nil
 
-  def mkLevel(): LevelVar = pickBool(default = LOW)
+  def mkLevel(): LevelVar = pickBool(_ => true, LOW)
 
   def mkSensitiveInt(lvar: LevelVar, high: IntExpr, low: IntExpr = -1): IntVar = {
-    val v = pick(default = low);
+    val v = pick(_ => true, low);
     assume(lvar ==> (v === high));
     v;
   }
 
   def mkSensitiveObject(lvar: LevelVar, high: Symbolic, low: Symbolic = NULL): Symbolic = {
-    val v = pickObject(default = low);
+    val v = pickObject(_ => true,low);
     assume(lvar ==> (v === high));
     v;
   } 
@@ -42,12 +46,6 @@ object JeevesLib extends Sceeves {
     POLICIES = (lvar, f) :: POLICIES
   }
   
-
-  /** 
-   * Extend Sceeves functionality in a specific way.
-   */
-  private var POLICIES: List[(LevelVar, () => Formula)] = Nil
-
   def concretize[T](ctx: Symbolic, e: Expr[T]) = {
     val context = (CONTEXT === ctx) && AND(POLICIES.map{case (lvar, f) => f() ==> lvar})
     super.concretize(context, e);
@@ -71,7 +69,7 @@ object JeevesLib extends Sceeves {
         case BoolVal(false) => 
           None
         case f =>
-          val r = pickObject(default = NULL);
+        val r = pickObject(_ => true, NULL);
           assume (f ==> (r === o))
           Some(r)
       }

@@ -12,6 +12,7 @@ sealed trait Expr[T] extends Serializable {
   def vars: Set[Var[_]]
   def eval(implicit env: Environment = EmptyEnv): T
   def ===(that: Expr[T]): Expr[Boolean]
+  def constant(t: T): Constant[T]
 }
 sealed trait Ite[T] extends Expr[T] {
   def cond: Expr[Boolean]
@@ -63,6 +64,7 @@ sealed trait Constant[T] extends Expr[T] {
 sealed abstract class Formula extends Expr[Boolean] {
   def ===(that: Expr[Boolean]): Formula = 
     that match {case that: Formula => BoolEq(this, that)}
+  def constant(t: Boolean) = BoolVal(t)
   def &&(that: Formula) = And(this, that)
   def ||(that: Formula) = Or(this, that)
   def ==> (that: Formula) = Or(Not(this), that)
@@ -129,6 +131,7 @@ case class RelEq(left: RelExpr, right: RelExpr) extends RelFormula with Eq[RelEx
 sealed abstract class IntExpr extends Expr[BigInt] {
   def ===(that: Expr[BigInt]): Formula = 
     that match {case that: IntExpr => IntEq(this, that)}
+  def constant(t: BigInt) = IntVal(t)
   def !==(that: IntExpr) = ! (this === that)
   def <=(that: IntExpr) = Leq(this, that)
   def >=(that: IntExpr) = Geq(this, that)
@@ -173,9 +176,10 @@ trait Atom extends AnyRef {
 sealed abstract class ObjectExpr[+T <: Atom] extends Expr[Atom] { 
   def ===(that: Expr[Atom]): Formula = 
     that match {case that: ObjectExpr[_] => ObjectEq(this, that)}
+  def constant(t: Atom) = Object(t)
   def ~(f: Symbol) = ObjectIntField(this, IntFieldDesc(f.name))
   def /(f: Symbol) = ObjectField(this, ObjectFieldDesc(f.name))
-  def eval(implicit env: Environment): T
+  override def eval(implicit env: Environment): T
 }
 case class ObjectConditional[T <: Atom](cond: Formula, thn: ObjectExpr[T], els: ObjectExpr[T]) extends ObjectExpr[T] with Ite[Atom] {
   override def eval(implicit env: Environment): T = if (cond.eval) thn.eval else els.eval
@@ -240,6 +244,7 @@ case class ObjectFieldDesc(name: String) extends FieldDesc[Atom] {
 sealed abstract class RelExpr extends Expr[Set[Atom]] {
   def ===(that: Expr[Set[Atom]]): Formula = 
     that match {case that: RelExpr => RelEq(this, that)}
+  def constant(t: Set[Atom]) = ObjectSet(t)
   def in(that: RelExpr) = RelSub(this, that)
   def &(that: RelExpr) = Intersect(this, that)
   def ++(that: RelExpr) = Union(this, that)

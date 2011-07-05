@@ -7,7 +7,8 @@ package cap.jeeves.jconf
 
 import cap.scalasmt._
 import scala.collection.mutable.Map;
-import cap.jeeves.JeevesLib._
+
+import JConfBackend._
 
 object UserStatus {
   val publicL   : BigInt = 0
