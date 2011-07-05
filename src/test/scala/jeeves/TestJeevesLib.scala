@@ -2,12 +2,11 @@ package test.cap.jeeves
 
 import cap.scalasmt._
 import cap.jeeves._
-import JeevesLib._
 import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
 import scala.collection.immutable.Map
 
-class ExampleJeevesLib extends FunSuite {
+class ExampleJeevesLib extends FunSuite with JeevesLib {
   test ("sensitive int") {
     val l = mkLevel();
     val x = mkSensitiveInt(l, 42, -1);
@@ -36,7 +35,7 @@ class ExampleJeevesLib extends FunSuite {
   }
 
   test ("concretizeList null") {
-    val x = pickObject(default = NULL);
+    val x = pickObject(_ => true, NULL);
     val symList = List(x);
     val cList : List[Test] = concretize(NULL, symList);
     expect(Nil) {cList};

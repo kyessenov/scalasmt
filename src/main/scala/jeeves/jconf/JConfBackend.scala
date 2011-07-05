@@ -1,14 +1,12 @@
 package cap.jeeves.jconf
 
 import scala.collection.mutable.HashMap;
-//import scala.collection.mutable.Map;
 import scala.collection.mutable.Set;
 
 import cap.scalasmt._
 import cap.jeeves._
-import JeevesLib._
 
-object JConfBackend {
+object JConfBackend extends JeevesLib {
 //  private val __userDB : Map[BigInt, ConfUser] = Map();
   private val papers : List[PaperRecord] = Nil;
 
