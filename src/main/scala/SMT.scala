@@ -249,10 +249,12 @@ object SMT {
    * 
    * Super-normal default logic is decided to saturating context in the order
    * the judgements are supplied.
+   * 
+   * Initial scope of objects is used to make sound equality theory for objects.
    */
-  def solve(f: Formula, defaults: List[Formula] = Nil, checkNext: Boolean = true)
+  def solve(f: Formula, defaults: List[Formula] = Nil, initial: Set[Atom] = Set(), checkNext: Boolean = true)
     (implicit env: Environment = DefaultEnv) = {
-    implicit val scope = closure(univ(f :: defaults))
+    implicit val scope = closure(univ(f :: defaults) ++ initial)
 
     val solver = new Z3// with Logging
   

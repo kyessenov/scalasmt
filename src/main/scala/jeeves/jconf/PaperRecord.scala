@@ -7,7 +7,8 @@ package cap.jeeves.jconf
 
 import cap.scalasmt._
 import scala.collection.immutable.List;
-import cap.jeeves.JeevesLib._
+
+import JConfBackend._
 
 sealed trait PaperStage extends JeevesRecord
 object Submission extends PaperStage

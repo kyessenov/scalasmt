@@ -3,7 +3,6 @@ package test.cap.jeeves.jconf
 import cap.scalasmt._
 import cap.jeeves._
 import cap.jeeves.jconf._
-import JeevesLib._
 import JConfBackend._
 
 import org.scalatest.FunSuite
