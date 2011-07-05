@@ -22,11 +22,11 @@ object TestUsers {
     random.nextInt () % 8
   }
 
-  def mkUser(userStatus : BigInt, context : ObjectVar)
+  def mkUser(userStatus : BigInt)
     : Tuple3[BigInt, BigInt, ConfUser] = {
     val name = genField ();
     val email = genField ();
-    val user = new ConfUser(newUid(), name, email, userStatus, context);
+    val user = new ConfUser(newUid(), name, email, userStatus);
     (name, email, user)
   }
 
