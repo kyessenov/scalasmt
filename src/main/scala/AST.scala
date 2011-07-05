@@ -157,10 +157,7 @@ case class IntVar(id: String) extends IntExpr with Var[BigInt] {
   override def toString = "i" + id
 }
 case class ObjectIntField(root: ObjectExpr[Atom], f: IntFieldDesc) extends IntExpr {
-  def vars = {
-    val vs = root.vars;
-    if (vs.size > 0) vs + IntVar("global" + f.name) else Set()
-  }
+  def vars = root.vars + IntVar("global" + f.name)
   def eval(implicit env: Environment) = f(root.eval) match {
     case Some(e: IntExpr) => e.eval
     case None => 0
@@ -193,10 +190,7 @@ case class ObjectVar(id: String) extends ObjectExpr[Atom] with Var[Atom] {
   override def toString = "a" + id
 }
 case class ObjectField(root: ObjectExpr[Atom], f: ObjectFieldDesc) extends ObjectExpr[Atom] {
-  def vars = {
-    val vs = root.vars
-    if (vs.size > 0) vs + ObjectVar("global" + f.name) else Set()
-  }
+  def vars = root.vars + ObjectVar("global" + f.name)
   def eval(implicit env: Environment) = f(root.eval) match {
     case Some(o: ObjectExpr[_]) => o.eval
     case None => null
@@ -216,12 +210,20 @@ sealed trait FieldDesc[U] {
   protected def read(o: Atom) = if (o == null) None else
     try {
       val fid = o.getClass.getDeclaredField(name);
-      fid.setAccessible(true);
-      if ((fid.getModifiers | java.lang.reflect.Modifier.FINAL) == 0)
-        throw new RuntimeException("non-final fields are disallowed")
-      try Some(fid.get(o)) finally fid.setAccessible(false);
+      try {
+        fid.setAccessible(true);
+        Some(fid.get(o)) 
+      } finally 
+        fid.setAccessible(false);
     } catch {
       case _: NoSuchFieldException => None 
+    }
+  def immutable(o: Atom) = 
+    try {
+      val fid = o.getClass.getDeclaredField(name);
+      java.lang.reflect.Modifier.isFinal(fid.getModifiers);
+    } catch {
+      case _: NoSuchFieldException => true
     }
 }
 case class IntFieldDesc(name: String) extends FieldDesc[BigInt] {
