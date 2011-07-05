@@ -18,24 +18,23 @@ object UserStatus {
 /* Conference User */
 class ConfUser( val id : BigInt
               , _name : IntExpr, _email : IntExpr
-              , val status : BigInt, val context : ObjectVar ) extends Atom {
-    private val isSelf : Formula = context~'id === id;
+              , val status : BigInt ) extends JeevesRecord {
+    private val isSelf : Formula = CONTEXT~'id === id;
 
     val name = {
     val level = mkLevel();
     // Reviewers can see names after authors are revealed 
-    policy( level, isSelf, Viewer.high);
+    policy( level, isSelf);
     policy( level
-          , (context~'status >= UserStatus.reviewerL) &&
-            (context~'stage >= PaperStage.decision)
-          , Viewer.high);
-    mkSensitiveValue(level, _name);
+          , (CONTEXT~'status >= UserStatus.reviewerL) &&
+            (CONTEXT~'stage >= PaperStage.decision) );
+    mkSensitiveInt(level, _name, -1);
   }
   val email = {
     val level = mkLevel()
-    policy(level, isSelf, Viewer.high);
-    policy(level, context~'status === UserStatus.pcL, Viewer.high);
-    mkSensitiveValue(level, _email);
+    policy(level, isSelf);
+    policy(level, CONTEXT~'status === UserStatus.pcL);
+    mkSensitiveInt(level, _email, -1);
   }
 
   override def toString = "jcu" + id
