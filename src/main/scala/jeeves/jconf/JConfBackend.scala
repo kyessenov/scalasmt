@@ -35,7 +35,7 @@ object JConfBackend {
   }
   */
 
-  def getPaperByTag (tag : BigInt) : List[Symbolic] = {
+  def getPaperByTag (tag : PaperTag) : List[Symbolic] = {
     filter(papers, (p : PaperRecord) => CONTAINS(p.tags, tag))
   }
 

@@ -5,11 +5,62 @@ import cap.jeeves._
 import cap.jeeves.jconf._
 import JeevesLib._
 import JConfBackend._
+
 import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
 import scala.collection.immutable.Map
+import scala.util.Random
 
 class ExampleJConfBackend extends FunSuite {
+  private def random = new Random()
+  private def genField() : BigInt = random.nextInt () % 8
+  def mkUser(userStatus : BigInt) : ConfUser =
+    new ConfUser(genField (), userStatus);
+
+  // jconf users.
+  val author0 = mkUser(UserStatus.authorL)
+  private def getAuthorCtxt0 (stage : PaperStage = Submission)
+  : ConfContext = new ConfContext(author0, UserStatus.authorL, stage);
+  val author1 = mkUser(UserStatus.authorL);
+  private def getAuthorCtxt1 (stage : PaperStage = Submission)
+  : ConfContext = new ConfContext(author1, UserStatus.authorL, stage);
+  val author2 = mkUser(UserStatus.authorL)
+  private def getAuthorCtxt2 (stage : PaperStage = Submission)
+  : ConfContext = new ConfContext(author2, UserStatus.authorL, stage);
+
+  val reviewer0 = mkUser(UserStatus.reviewerL);
+  private def getReviewerCtxt0 (stage : PaperStage = Submission)
+  : ConfContext = new ConfContext(reviewer0, UserStatus.reviewerL, stage);
+
+  val pc0 = mkUser(UserStatus.pcL);
+  private def getPcCtxt0 (stage : PaperStage = Submission)
+  : ConfContext = new ConfContext(pc0, UserStatus.pcL, stage);
+
+  // papers.
+  val paper0 = new PaperRecord(33, List(author0, author1), Nil);
+
+  // Name visibility
+  test ("name visibility") {
+    expect(33) {
+      concretize(getAuthorCtxt0(), paper0.name);
+    }
+    expect(-1) {
+      concretize(getAuthorCtxt2(), paper0.name);
+    }
+
+    val viewMap =
+      Map((Submission, 33), (Review, 33), (Decision, 33));
+    viewMap.foreach {
+      case (stage, r) =>
+        expect (r) {
+          concretize(getReviewerCtxt0(stage), paper0.name)
+        };
+        expect (r) {
+          concretize(getPcCtxt0(stage), paper0.name);
+        }
+    }
+  }
+
   /*
   test ("getUser using default user") {
     val otherUser0 = getUser(uid0);
