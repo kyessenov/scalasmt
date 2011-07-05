@@ -56,8 +56,6 @@ sealed trait Constant[T] extends Expr[T] {
   def eval(implicit env: Environment) = v
 } 
 
-
-
 /** 
  * Boolean expressions and algebra.
  */
@@ -159,7 +157,10 @@ case class IntVar(id: String) extends IntExpr with Var[BigInt] {
   override def toString = "i" + id
 }
 case class ObjectIntField(root: ObjectExpr[Atom], f: IntFieldDesc) extends IntExpr {
-  def vars = root.vars + IntVar("global" + f.name)
+  def vars = {
+    val vs = root.vars;
+    if (vs.size > 0) vs + IntVar("global" + f.name) else Set()
+  }
   def eval(implicit env: Environment) = f(root.eval) match {
     case Some(e: IntExpr) => e.eval
     case None => 0
@@ -173,7 +174,7 @@ trait Atom extends AnyRef {
   // Must respect equality but uniquely identify the object
   def uniq = toString.hashCode
 }
-sealed abstract class ObjectExpr[+T <: Atom] extends Expr[Atom] { 
+sealed abstract class ObjectExpr[+T >: Null <: Atom] extends Expr[Atom] { 
   def ===(that: Expr[Atom]): Formula = 
     that match {case that: ObjectExpr[_] => ObjectEq(this, that)}
   def constant(t: Atom) = Object(t)
@@ -181,10 +182,10 @@ sealed abstract class ObjectExpr[+T <: Atom] extends Expr[Atom] {
   def /(f: Symbol) = ObjectField(this, ObjectFieldDesc(f.name))
   override def eval(implicit env: Environment): T
 }
-case class ObjectConditional[T <: Atom](cond: Formula, thn: ObjectExpr[T], els: ObjectExpr[T]) extends ObjectExpr[T] with Ite[Atom] {
+case class ObjectConditional[+T >: Null <: Atom](cond: Formula, thn: ObjectExpr[T], els: ObjectExpr[T]) extends ObjectExpr[T] with Ite[Atom] {
   override def eval(implicit env: Environment): T = if (cond.eval) thn.eval else els.eval
 }
-case class Object[T <: Atom](v: T) extends ObjectExpr[T] with Constant[Atom] {
+case class Object[+T >: Null <: Atom](v: T) extends ObjectExpr[T] with Constant[Atom] {
   override def eval(implicit env: Environment): T = v
 }
 case class ObjectVar(id: String) extends ObjectExpr[Atom] with Var[Atom] {
@@ -192,7 +193,10 @@ case class ObjectVar(id: String) extends ObjectExpr[Atom] with Var[Atom] {
   override def toString = "a" + id
 }
 case class ObjectField(root: ObjectExpr[Atom], f: ObjectFieldDesc) extends ObjectExpr[Atom] {
-  def vars = root.vars + ObjectVar("global" + f.name)
+  def vars = {
+    val vs = root.vars
+    if (vs.size > 0) vs + ObjectVar("global" + f.name) else Set()
+  }
   def eval(implicit env: Environment) = f(root.eval) match {
     case Some(o: ObjectExpr[_]) => o.eval
     case None => null
@@ -308,7 +312,7 @@ object Expr {
   implicit def fromBigInt(i: BigInt) = IntVal(i)  
   implicit def fromInt(i: Int) = IntVal(i)
   implicit def fromBool(b: Boolean) = BoolVal(b)
-  implicit def fromAtom[T <: Atom](o: T) = Object(o)
+  implicit def fromAtom[T >: Null <: Atom](o: T) = Object(o)
 }
 object Formula {
   implicit def fromList(vs: Traversable[Formula]) = vs.foldLeft(true: Formula)(_ && _)
