@@ -42,9 +42,12 @@ trait JeevesLib extends Sceeves {
   def policy(lvar: LevelVar, f: Formula) {
     assume(f ==> lvar);
   }
+
   def policy(lvar: LevelVar, f: () => Formula) {
     POLICIES = (lvar, f) :: POLICIES
   }
+
+  override def assume(f: Formula) = super.assume(Partial.eval(f)(EmptyEnv))
   
   def concretize[T](ctx: Symbolic, e: Expr[T]) = {
     val context = (CONTEXT === ctx) && AND(POLICIES.map{case (lvar, f) => f() ==> lvar})
@@ -60,7 +63,7 @@ trait JeevesLib extends Sceeves {
       if (t != null))
       yield t;
 
-  def filter[T <: JeevesRecord](lst: List[T], filter: T => Formula) : List[Symbolic] = 
+  def filter[T >: Null <: JeevesRecord](lst: List[T], filter: T => Formula) : List[Symbolic] = 
     {for (o <- lst; 
       f = filter(o)) 
       yield f match {    
