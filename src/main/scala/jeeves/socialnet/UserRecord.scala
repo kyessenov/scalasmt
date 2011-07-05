@@ -41,7 +41,7 @@ extends JeevesRecord {
     friends.map(mkSensitiveObject(l, _)).toList
   }
   def isFriends(u: UserRecord) = CONTAINS(getFriends, u)
-  def getLocation() = {
+  def location = {
     val l = mkLevel();
     policy(l, () => DISTANCE(CONTEXT, this) < 10)
     (mkSensitiveInt(l, x), mkSensitiveInt(l, y))
