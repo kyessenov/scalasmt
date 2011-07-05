@@ -7,7 +7,8 @@ package cap.jeeves.jconf
 
 import cap.scalasmt._
 import scala.collection.mutable.Map;
-import cap.jeeves.JeevesLib._
+
+import JConfBackend._
 
 case class ConfContext( viewer : ConfUser
                       , status : BigInt

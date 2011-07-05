@@ -5,9 +5,8 @@ import scala.collection.mutable.Set;
 
 import cap.scalasmt._
 import cap.jeeves._
-import JeevesLib._
 
-object SocialNetBackend {
+object SocialNetBackend extends JeevesLib {
   private var users: List[UserRecord] = Nil;
 
   /* Database functions. */

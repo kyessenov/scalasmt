@@ -236,6 +236,13 @@ class ExampleSceeves extends FunSuite with Sceeves {
     intercept[UnsatException.type] { concretize(key === 0, hidden) }
   }
 
+  test("deterministic context concretize") {
+    val ctx = pick();
+    val key = pick(x => x > ctx);
+    val out = concretize(ctx === 1337, key);
+    expect(out) {concretize(ctx === 1337, key)}
+  }
+
   test ("n queens") {
     val N = 8;
 

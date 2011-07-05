@@ -7,37 +7,50 @@ import cap.scalasmt.{Environment => Env}
  */
 
 trait Sceeves {
-  case class Assign[T](v: Var[T], e: Expr[T]) {
-    def eval = (v === e) match {case f: Formula => f}
-  }
-  type Defaults = List[Assign[_]]
+  type Defaults = List[Formula]
   type Constraints = List[Formula]
 
   private var CONSTRAINTS: Constraints = Nil
   private var DEFAULTS: Defaults = Nil
+  private var SCOPE: Set[Atom] = Set()
   private var ENV: Env = DefaultEnv
 
   private def solve(fs: List[Formula]) =  
-    SMT.solve(fs, DEFAULTS.map(_.eval))(ENV)
+    SMT.solve(fs, DEFAULTS, SCOPE)(ENV)
   
-  def pick(spec: IntVar => Formula = _ => true, default: IntExpr = null) = {
+  def pick(spec: IntVar => Formula = _ => true): IntVar = {
     val x = Var.makeInt; 
     assume(spec(x)); 
-    byDefault(x, default);
     x
   }
 
-  def pickBool(spec: BoolVar => Formula = _ => true, default: Formula = null) = {
-    val x = Var.makeBool;
+  def pickBool(spec: BoolVar => Formula = _ => true): BoolVar = {
+    val x = Var.makeBool; 
     assume(spec(x)); 
-    byDefault(x, default)
     x
   }
 
-  def pickObject(spec: ObjectVar => Formula = _ => true, default: ObjectExpr[Atom] = null) = {
-    val x = Var.makeObject;
+  def pickObject(spec: ObjectVar => Formula = _ => true): ObjectVar = {
+    val x = Var.makeObject; 
     assume(spec(x)); 
-    byDefault(x, default)
+    x
+  }
+
+  def pick(spec: IntVar => Formula, default: IntExpr): IntVar = {
+    val x = pick(spec); 
+    usually(x === default); 
+    x
+  }
+
+  def pickBool(spec: BoolVar => Formula, default: Formula): BoolVar = {
+    val x = pickBool(spec); 
+    usually(x === default); 
+    x
+  }
+
+  def pickObject(spec: ObjectVar => Formula, default: ObjectExpr[Atom]): ObjectVar = {
+    val x = pickObject(spec); 
+    usually(x === default); 
     x
   }
   
@@ -45,24 +58,25 @@ trait Sceeves {
     CONSTRAINTS = f :: CONSTRAINTS
   }
 
-  private def byDefault[T](v: Var[T], e: Expr[T]) = Option(e) match {
-    case Some(e) => DEFAULTS = Assign(v, e) :: DEFAULTS
-    case _ => 
+  def usually(f: Formula) {
+    DEFAULTS = f :: DEFAULTS
+  }
+
+  def register(a: Atom) {
+    SCOPE = SCOPE + a;
   }
 
   def concretize[T](e: Expr[T]): T = {
     if (CONSTRAINTS.size > 0) {  
       ENV = solve(CONSTRAINTS);
       CONSTRAINTS = Nil;
-      DEFAULTS = DEFAULTS.filter(d => ! ENV.has(d.v));
     }
     e.eval(ENV)
   }
     
   def concretize[T](f: Formula, e: Expr[T]): T = {
     val v = e.eval(solve(f :: CONSTRAINTS));
-    // TODO: record the entire state (like absence of objects) into context to make this work
-    // CONSTRAINTS = (f ==> (e === e.constant(v))) :: CONSTRAINTS;
+    usually(f ==> ((e === e.constant(v)) match {case f: Formula => f}));
     v
   }
 }
