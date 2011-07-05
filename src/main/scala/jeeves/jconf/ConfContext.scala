@@ -9,4 +9,6 @@ import cap.scalasmt._
 import scala.collection.mutable.Map;
 import cap.jeeves.JeevesLib._
 
-case class ConfContext(id : BigInt, status : BigInt, stage : BigInt ) extends Atom
+case class ConfContext( viewer : ConfUser
+                      , status : BigInt
+                      , stage  : PaperStage ) extends JeevesRecord

@@ -9,6 +9,7 @@ import org.scalatest.Assertions.{expect}
 import JeevesLib._
 
 class ExamplePaperRecord extends FunSuite {
+  /*
   val paper0 = new PaperRecord(0, 33, List(0, 3), Nil);
 
   private def getAuthorCtxt0 (stage : BigInt = PaperStage.submission)
@@ -65,4 +66,5 @@ class ExamplePaperRecord extends FunSuite {
     };
 
   }
+  */
 }
