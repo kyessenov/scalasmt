@@ -6,7 +6,6 @@ package cap.jeeves.jconf
  */
 
 import cap.scalasmt._
-import scala.collection.mutable.Map;
 
 import JConfBackend._
 
@@ -18,20 +17,5 @@ object UserStatus {
 }
 
 /* Conference User */
-class ConfUser( val name : IntExpr, val status : BigInt ) extends JeevesRecord;
-//    private val isSelf : Formula = CONTEXT~'id === id;
-
-    /*
-    val name = {
-    val level = mkLevel();
-    // Reviewers can see names after authors are revealed 
-    
-    policy( level, isSelf);
-    policy( level
-          , (CONTEXT~'status >= UserStatus.reviewerL) &&
-            (CONTEXT~'stage >= PaperStage.decision) );
-    policy( level
-          , (CONTEXT~'stage === PaperStage.public) && isAccepted );
-    mkSensitiveInt(level, _name, -1);
-  }
-  */
+case class Name (name : String) extends JeevesRecord
+case class ConfUser( val name : Name, val status : BigInt ) extends JeevesRecord
