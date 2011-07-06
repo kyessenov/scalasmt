@@ -12,27 +12,27 @@ import scala.collection.mutable.Set
 import scala.util.Random
 
 class ExampleJConfBackend extends FunSuite {
-  def mkUser(userName : String, userStatus : BigInt) : ConfUser =
+  def mkUser(userName : String, userStatus : UserStatus) : ConfUser =
     new ConfUser(Name (userName), userStatus);
 
   // jconf users.
-  val author0 = mkUser("author0", UserStatus.authorL)
+  val author0 = mkUser("author0", AuthorStatus)
   private def getAuthorCtxt0 (stage : PaperStage = Submission)
-  : ConfContext = new ConfContext(author0, UserStatus.authorL, stage);
-  val author1 = mkUser("author1", UserStatus.authorL);
+  : ConfContext = new ConfContext(author0, AuthorStatus, stage);
+  val author1 = mkUser("author1", AuthorStatus);
   private def getAuthorCtxt1 (stage : PaperStage = Submission)
-  : ConfContext = new ConfContext(author1, UserStatus.authorL, stage);
-  val author2 = mkUser("author2", UserStatus.authorL)
+  : ConfContext = new ConfContext(author1, AuthorStatus, stage);
+  val author2 = mkUser("author2", AuthorStatus)
   private def getAuthorCtxt2 (stage : PaperStage = Submission)
-  : ConfContext = new ConfContext(author2, UserStatus.authorL, stage);
+  : ConfContext = new ConfContext(author2, AuthorStatus, stage);
 
-  val reviewer0 = mkUser("reviewer0", UserStatus.reviewerL);
+  val reviewer0 = mkUser("reviewer0", ReviewerStatus);
   private def getReviewerCtxt0 (stage : PaperStage = Submission)
-  : ConfContext = new ConfContext(reviewer0, UserStatus.reviewerL, stage);
+  : ConfContext = new ConfContext(reviewer0, ReviewerStatus, stage);
 
-  val pc0 = mkUser("pc0", UserStatus.pcL);
+  val pc0 = mkUser("pc0", PCStatus);
   private def getPcCtxt0 (stage : PaperStage = Submission)
-  : ConfContext = new ConfContext(pc0, UserStatus.pcL, stage);
+  : ConfContext = new ConfContext(pc0, PCStatus, stage);
 
   // papers.
   val emptyName = Title("")
@@ -52,12 +52,8 @@ class ExampleJConfBackend extends FunSuite {
       Map((Submission, paper0Name), (Review, paper0Name), (Decision, paper0Name));
     viewMap.foreach {
       case (stage, r) =>
-        expect (r) {
-          concretize(getReviewerCtxt0(stage), paper0.name)
-        };
-        expect (r) {
-          concretize(getPcCtxt0(stage), paper0.name);
-        }
+        expect (r) { concretize(getReviewerCtxt0(stage), paper0.name) };
+        expect (r) { concretize(getPcCtxt0(stage), paper0.name); }
     }
   }
 
@@ -104,45 +100,5 @@ class ExampleJConfBackend extends FunSuite {
   }
 
   /*
-  test ("getUser using default user") {
-    val otherUser0 = getUser(uid0);
-    expect (true) { user0.equals(otherUser0) };
-  }
-
-  test ("isFriends") {
-    expect (true) { getBool(uid0, isFriends(uid0, uid1)) };
-    expect (true) { getBool(uid1, isFriends(uid0, uid1)) };
-  }
-
-  test ("friends") {
-    val friends = getFriends(uid0);
-    val friendStrs = printStringList(uid1, friends);
-    expect (true) { friendStrs.contains("kuaty") };
-  }
-
-  test ("view sensitive data non-friend") {
-    expect (false) { concretize(snbContext, user0, isFriends(uid0, uid2)) };
-    expect (-1) { concretize(snbContext, user0, user2.network) };
-    expect (fromString("MIT")) {
-      concretize(snbContext, user1, user1.network)
-    };
-  }
-
-  test ("getFriendNetworks") {
-    val networks = getFriendNetworks(uid0);
-    val networkStrs = printStringList(uid1, networks);
-    expect (true) { networkStrs.contains("MIT") } ;
-  }
-
-  test("getUsersByNetworks view by friend") {
-    val friends = getUsersByNetwork("MIT");
-    val concreteFriends = getConcreteRecordList(uid0, friends);
-    concreteFriends.foreach(x => println(x.id));
-    expect (2) { concreteFriends.length };
-    expect (true)
-      { concreteFriends.exists(x => x.id == fromString("jeanyang")) };
-    expect (true)
-      { concreteFriends.exists(x => x.id == fromString("kuaty")) };
-  }
   */
 }
