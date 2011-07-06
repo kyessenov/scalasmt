@@ -81,7 +81,7 @@ object Partial {
       case e => e
     }
 
-  def eval[T <: Atom](e: ObjectExpr[T])(implicit env: Environment): ObjectExpr[T] =
+  def eval[T >: Null <: Atom](e: ObjectExpr[T])(implicit env: Environment): ObjectExpr[T] =
     {e match {
       case ObjectConditional(a, b, c) => 
         val sa = eval(a)
