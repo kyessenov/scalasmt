@@ -33,13 +33,14 @@ class PaperRecord( val id : Int
 
   // Some predicates...
   private val isAuthor : Formula = CONTAINS(_authors, CONTEXT/'viewer);
-  private val isInternal : Formula = CONTEXT~'STATUS >= UserStatus.reviewerL
+  private val isInternal : Formula =
+    (CONTEXT/'status === ReviewerStatus) || (CONTEXT/'status === PCStatus)
 
   // The name of the paper is always visible to the authors.
   val nameLevel: LevelVar = mkLevel ();
   val name : Symbolic = {
     policy (nameLevel, isAuthor);
-    policy (nameLevel, CONTEXT~'status >= UserStatus.reviewerL)
+    policy (nameLevel, isInternal)
     policy (nameLevel, () => isPublic(getTags ()))
     mkSensitiveObject(nameLevel, _name, Title(""))
   }
@@ -47,8 +48,7 @@ class PaperRecord( val id : Int
   val authorLevel: LevelVar = mkLevel ();
   val authors : List[Symbolic] = {
     policy (authorLevel, isAuthor);
-    policy (authorLevel, (CONTEXT~'status >= UserStatus.reviewerL) &&
-                    (CONTEXT/'stage === Decision));
+    policy (authorLevel, isInternal && (CONTEXT/'stage === Decision));
     policy (authorLevel, () => isPublic(getTags ()))
     _authors.map(a => mkSensitiveObject(authorLevel, a, NULL))
   }
