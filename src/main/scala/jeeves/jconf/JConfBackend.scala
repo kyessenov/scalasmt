@@ -1,60 +1,45 @@
 package cap.jeeves.jconf
 
-import scala.collection.mutable.HashMap;
-import scala.collection.mutable.Set;
+import scala.collection.mutable.Map
 
 import cap.scalasmt._
 import cap.jeeves._
 
 object JConfBackend extends JeevesLib {
-//  private val __userDB : Map[BigInt, ConfUser] = Map();
-  private val papers : List[PaperRecord] = Nil;
+  private var papers : Map[Int, PaperRecord] = Map();
 
-  /* Database functions. */
-
-  /*
-  def getUser (uname : BigInt) : ConfUser = {
-    __userDB.getEntry(uname)
+  /* Making papers. */
+  private var _papercount = 0;
+  private def getPaperUid () : Int = {
+    val count = _papercount;
+    _papercount = _papercount + 1;
+    count
   }
-  def getPaper (paperName : BigInt) : PaperRecord = {
-    val result = (__paperDB.getEntry(paperName)).eval
-    result.asInstanceOf[PaperRecord]
+  def mkPaper(name : Title, authors : List[ConfUser], tags : List[PaperTag])
+      : PaperRecord = {
+    val paper = new PaperRecord(getPaperUid(), name, authors, tags);
+    papers += (paper.id -> paper);
+    paper
   }
-  */
-
-  /* Search by... */
-  /*
-  def getFriendNetworks (user : BigInt) : List[IntExpr] = {
-    val friends = getFriends(user);
-    val networks = friends.foldLeft (Set.empty[IntExpr]) (
-        (set : Set[IntExpr], friend : IntExpr) =>
-        set + (__db.getEntry(friend))~'network)
-    networks.toList
+ 
+  /* Updating papers. */
+  def addTag (uid : Int, tag : PaperTag) : Unit = {
+    papers.get(uid) match {
+      case Some(p) => p.addTag(tag)
+      case None => ()
+    }
   }
-  */
+  
+  def addReview (uid : Int, reviewer : ConfUser, review : ReviewBody) {
+    papers.get(uid) match {
+      case Some(p) => p.addReview(reviewer, review)
+      case None => ()
+    }
+  }
 
+  /* Searching. */
   def getPaperByTag (tag : PaperTag) : List[Symbolic] = {
-    filter(papers, (p : PaperRecord) => CONTAINS(p.tags, tag))
+    val paperList = (papers.toList).map(x => x._2);
+    filter(paperList, (p : PaperRecord) => CONTAINS(p.getTags (), tag))
   }
-
-  /*************************************************/
-  /* Functions that use concretize to show things. */
-  /*************************************************/
-  /*
-  def getBool(ctxtUser : BigInt, b : Formula) : Boolean = {
-    val ctxt = getUser(ctxtUser);
-    concretize(jcContext, ctxt, b)
-  }
-
-  def getConcreteRecordList (ctxtUser : BigInt, lst : List[ObjectExpr])
-    : List[ConfUser] = {
-    val ctxt = getUser(ctxtUser);
-    concretizeList(jcContext, ctxt, lst);
-  }
-
-  def printStringList (ctxtUser : BigInt, lst : List[IntExpr]) : List[String]= {
-    val ctxt = getUser(ctxtUser);
-    lst.map(x => asString(concretize(jcContext, ctxt, x)));
-  }
-  */
 }

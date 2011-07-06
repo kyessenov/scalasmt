@@ -8,43 +8,48 @@ import JConfBackend._
 import org.scalatest.FunSuite
 import org.scalatest.Assertions.{expect}
 import scala.collection.immutable.Map
+import scala.collection.mutable.Set
 import scala.util.Random
 
 class ExampleJConfBackend extends FunSuite {
-  private def random = new Random()
-  private def genField() : BigInt = random.nextInt () % 8
-  def mkUser(userStatus : BigInt) : ConfUser =
-    new ConfUser(genField (), userStatus);
+  def mkUser(userName : String, userStatus : BigInt) : ConfUser =
+    new ConfUser(Name (userName), userStatus);
 
   // jconf users.
-  val author0 = mkUser(UserStatus.authorL)
+  val author0 = mkUser("author0", UserStatus.authorL)
   private def getAuthorCtxt0 (stage : PaperStage = Submission)
   : ConfContext = new ConfContext(author0, UserStatus.authorL, stage);
-  val author1 = mkUser(UserStatus.authorL);
+  val author1 = mkUser("author1", UserStatus.authorL);
   private def getAuthorCtxt1 (stage : PaperStage = Submission)
   : ConfContext = new ConfContext(author1, UserStatus.authorL, stage);
-  val author2 = mkUser(UserStatus.authorL)
+  val author2 = mkUser("author2", UserStatus.authorL)
   private def getAuthorCtxt2 (stage : PaperStage = Submission)
   : ConfContext = new ConfContext(author2, UserStatus.authorL, stage);
 
-  val reviewer0 = mkUser(UserStatus.reviewerL);
+  val reviewer0 = mkUser("reviewer0", UserStatus.reviewerL);
   private def getReviewerCtxt0 (stage : PaperStage = Submission)
   : ConfContext = new ConfContext(reviewer0, UserStatus.reviewerL, stage);
 
-  val pc0 = mkUser(UserStatus.pcL);
+  val pc0 = mkUser("pc0", UserStatus.pcL);
   private def getPcCtxt0 (stage : PaperStage = Submission)
   : ConfContext = new ConfContext(pc0, UserStatus.pcL, stage);
 
   // papers.
-  val paper0 = new PaperRecord(33, List(author0, author1), Nil);
+  val emptyName = Title("")
+
+  val paper0Name = Title("my paper")
+  val paper0 = mkPaper(paper0Name, List(author0, author1), Nil);
+
+  val paper1Name = Title("hello world")
+  val paper1 = mkPaper(paper1Name, List(author2), List(Accepted));
 
   // Name visibility
   test ("name visibility") {
-    expect(33) { concretize(getAuthorCtxt0(), paper0.name); }
-    expect(-1) { concretize(getAuthorCtxt2(), paper0.name); }
+    expect(paper0Name) { concretize(getAuthorCtxt0(), paper0.name); }
+    expect(emptyName) { concretize(getAuthorCtxt2(), paper0.name); }
 
     val viewMap =
-      Map((Submission, 33), (Review, 33), (Decision, 33));
+      Map((Submission, paper0Name), (Review, paper0Name), (Decision, paper0Name));
     viewMap.foreach {
       case (stage, r) =>
         expect (r) {
@@ -75,7 +80,26 @@ class ExampleJConfBackend extends FunSuite {
     }
   }
 
-  test ("tags") {
+  test ("tag visibility") {
+    expect (false) {
+      concretize(getAuthorCtxt0(Decision), paper1.hasTag(Accepted)) }
+    expect (true) {
+      concretize(getAuthorCtxt0(Public), paper1.hasTag(Accepted));
+    }
+  }
+
+  test ("tag state change") {
+    expect (false) {
+      concretize(getAuthorCtxt0(Public), paper0.hasTag(Accepted));
+    }
+    paper0.addTag(Accepted);
+    expect (true) {
+      concretize(getAuthorCtxt0(Public), paper0.hasTag(Accepted));
+    }
+    paper0.removeTag(Accepted);
+    expect (false) {
+      concretize(getAuthorCtxt0(Public), paper0.hasTag(Accepted));
+    }
 
   }
 
