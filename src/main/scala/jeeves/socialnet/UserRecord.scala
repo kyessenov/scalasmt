@@ -10,7 +10,9 @@ import collection.immutable.ListSet;
 import SocialNetBackend._
 
 case class Name(s: String) extends JeevesRecord
+case class Email(s: String) extends JeevesRecord
 case class Network(s: String) extends JeevesRecord
+
 
 sealed trait UserLevel 
 object Anyone extends UserLevel
@@ -19,7 +21,9 @@ object Friends extends UserLevel
 
 class UserRecord(
   nameV: Name, 
-  nameL: UserLevel, 
+  nameL: UserLevel,
+  emailV: Email,
+  emailL: UserLevel, 
   networkV: Network, 
   networkL: UserLevel, 
   friendsL: UserLevel) 
@@ -35,13 +39,14 @@ extends JeevesRecord {
 
   /** Observers */
   val name = mkSensitiveObject(level(nameL), nameV)
+  val email = mkSensitiveObject(level(emailL), emailV)
   val network = mkSensitiveObject(level(networkL), networkV);
   def getFriends() = {
     val l = level(friendsL);
     friends.map(mkSensitiveObject(l, _)).toList
   }
   def isFriends(u: UserRecord) = CONTAINS(getFriends, u)
-  def location = {
+  def location() = {
     val l = mkLevel();
     policy(l, () => DISTANCE(CONTEXT, this) < 10)
     (mkSensitiveInt(l, x), mkSensitiveInt(l, y))
