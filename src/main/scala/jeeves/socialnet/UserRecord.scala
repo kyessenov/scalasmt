@@ -18,15 +18,20 @@ object Self extends UserLevel
 object Friends extends UserLevel
 
 class UserRecord(
-  nameV: Name, nameL: UserLevel, 
-  networkV: Network, networkL: UserLevel, 
+  nameV: Name, 
+  nameL: UserLevel, 
+  networkV: Network, 
+  networkL: UserLevel, 
   friendsL: UserLevel) 
 extends JeevesRecord {
   private var friends : ListSet[UserRecord] = ListSet()
+  private var x: BigInt = 0;
+  private var y: BigInt = 0;
 
-  /** State mutation */
+  /** Mutators */
   def add(u: UserRecord) {friends = friends + u}
   def remove(u: UserRecord) {friends = friends - u}
+  def setLocation(x: BigInt, y: BigInt) {this.x = x; this.y = y;}
 
   /** Observers */
   val name = mkSensitiveObject(level(nameL), nameV)
@@ -36,6 +41,11 @@ extends JeevesRecord {
     friends.map(mkSensitiveObject(l, _)).toList
   }
   def isFriends(u: UserRecord) = CONTAINS(getFriends, u)
+  def location = {
+    val l = mkLevel();
+    policy(l, () => DISTANCE(CONTEXT, this) < 10)
+    (mkSensitiveInt(l, x), mkSensitiveInt(l, y))
+  }
 
   /** Helpers */
   private def level(l: UserLevel): LevelVar = {
@@ -51,4 +61,7 @@ extends JeevesRecord {
     }
     level
   }
+
+  private def DISTANCE(a: Symbolic, b: Symbolic) = 
+    ABS(a~'x - b~'x) + ABS(a~'y - b~'y) 
 }

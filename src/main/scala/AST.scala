@@ -56,8 +56,6 @@ sealed trait Constant[T] extends Expr[T] {
   def eval(implicit env: Environment) = v
 } 
 
-
-
 /** 
  * Boolean expressions and algebra.
  */
@@ -173,7 +171,7 @@ trait Atom extends AnyRef {
   // Must respect equality but uniquely identify the object
   def uniq = toString.hashCode
 }
-sealed abstract class ObjectExpr[+T <: Atom] extends Expr[Atom] { 
+sealed abstract class ObjectExpr[+T >: Null <: Atom] extends Expr[Atom] { 
   def ===(that: Expr[Atom]): Formula = 
     that match {case that: ObjectExpr[_] => ObjectEq(this, that)}
   def constant(t: Atom) = Object(t)
@@ -181,10 +179,10 @@ sealed abstract class ObjectExpr[+T <: Atom] extends Expr[Atom] {
   def /(f: Symbol) = ObjectField(this, ObjectFieldDesc(f.name))
   override def eval(implicit env: Environment): T
 }
-case class ObjectConditional[T <: Atom](cond: Formula, thn: ObjectExpr[T], els: ObjectExpr[T]) extends ObjectExpr[T] with Ite[Atom] {
+case class ObjectConditional[+T >: Null <: Atom](cond: Formula, thn: ObjectExpr[T], els: ObjectExpr[T]) extends ObjectExpr[T] with Ite[Atom] {
   override def eval(implicit env: Environment): T = if (cond.eval) thn.eval else els.eval
 }
-case class Object[T <: Atom](v: T) extends ObjectExpr[T] with Constant[Atom] {
+case class Object[+T >: Null <: Atom](v: T) extends ObjectExpr[T] with Constant[Atom] {
   override def eval(implicit env: Environment): T = v
 }
 case class ObjectVar(id: String) extends ObjectExpr[Atom] with Var[Atom] {
@@ -212,12 +210,20 @@ sealed trait FieldDesc[U] {
   protected def read(o: Atom) = if (o == null) None else
     try {
       val fid = o.getClass.getDeclaredField(name);
-      fid.setAccessible(true);
-      if ((fid.getModifiers | java.lang.reflect.Modifier.FINAL) == 0)
-        throw new RuntimeException("non-final fields are disallowed")
-      try Some(fid.get(o)) finally fid.setAccessible(false);
+      try {
+        fid.setAccessible(true);
+        Some(fid.get(o)) 
+      } finally 
+        fid.setAccessible(false);
     } catch {
       case _: NoSuchFieldException => None 
+    }
+  def immutable(o: Atom) = 
+    try {
+      val fid = o.getClass.getDeclaredField(name);
+      java.lang.reflect.Modifier.isFinal(fid.getModifiers);
+    } catch {
+      case _: NoSuchFieldException => true
     }
 }
 case class IntFieldDesc(name: String) extends FieldDesc[BigInt] {
@@ -308,7 +314,7 @@ object Expr {
   implicit def fromBigInt(i: BigInt) = IntVal(i)  
   implicit def fromInt(i: Int) = IntVal(i)
   implicit def fromBool(b: Boolean) = BoolVal(b)
-  implicit def fromAtom[T <: Atom](o: T) = Object(o)
+  implicit def fromAtom[T >: Null <: Atom](o: T) = Object(o)
 }
 object Formula {
   implicit def fromList(vs: Traversable[Formula]) = vs.foldLeft(true: Formula)(_ && _)
@@ -321,6 +327,7 @@ object RelExpr {
 object `package` {
   case class IF(cond: Formula) {
     def apply(thn: IntExpr) = new {def ELSE(els: IntExpr) = cond ? thn ! els}
+    def apply(thn: ObjectExpr[Atom]) = new {def ELSE(els: ObjectExpr[Atom]) = cond ? thn ! els}
   }
   def DISTINCT[T <% IntExpr](vs: Traversable[T]) = 
     for (vs1 <- vs; vs2 <- vs; if (vs1 != vs2)) yield ( ! (vs1 === vs2))
@@ -331,6 +338,7 @@ object `package` {
     OR(for (v <- vs) yield v === i)
   def CONTAINS[T <% ObjectExpr[Atom]](vs: Traversable[T], i: ObjectExpr[Atom]) = 
     OR(for (v <- vs) yield v === i)
+  def ABS(x: IntExpr) = IF (x > 0) {x} ELSE {-x}
 }
 
 
