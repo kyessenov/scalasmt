@@ -20,7 +20,7 @@ object Public extends PaperStage
 
 sealed trait PaperTag extends JeevesRecord
 object NeedsReview extends PaperTag
-case class ReviewedBy (name : ConfUser) extends PaperTag
+case class ReviewedBy (name : Symbolic) extends PaperTag
 object Accepted extends PaperTag
 
 case class Title (name : String) extends JeevesRecord
@@ -36,21 +36,21 @@ class PaperRecord( val id : Int
   private val isInternal : Formula = CONTEXT~'STATUS >= UserStatus.reviewerL
 
   // The name of the paper is always visible to the authors.
+  val nameLevel: LevelVar = mkLevel ();
   val name : Symbolic = {
-    val level : LevelVar = mkLevel();
-    policy (level, isAuthor);
-    policy (level, CONTEXT~'status >= UserStatus.reviewerL)
-    policy (level, () => isPublic(getTags ()))
-    mkSensitiveObject(level, _name, Title(""))
+    policy (nameLevel, isAuthor);
+    policy (nameLevel, CONTEXT~'status >= UserStatus.reviewerL)
+    policy (nameLevel, () => isPublic(getTags ()))
+    mkSensitiveObject(nameLevel, _name, Title(""))
   }
 
+  val authorLevel: LevelVar = mkLevel ();
   val authors : List[Symbolic] = {
-    val level : LevelVar = mkLevel;
-    policy (level, isAuthor);
-    policy ( level, (CONTEXT~'status >= UserStatus.reviewerL) &&
+    policy (authorLevel, isAuthor);
+    policy (authorLevel, (CONTEXT~'status >= UserStatus.reviewerL) &&
                     (CONTEXT/'stage === Decision));
-    policy (level, () => isPublic(getTags ()))
-    _authors.map(a => mkSensitiveObject(level, a, NULL))
+    policy (authorLevel, () => isPublic(getTags ()))
+    _authors.map(a => mkSensitiveObject(authorLevel, a, NULL))
   }
 
   /* Managing tags. */
@@ -90,13 +90,26 @@ class PaperRecord( val id : Int
     reviewIds = reviewIds + 1;
     id
   }
-  val reviews : Map[Int, PaperReview] = Map[Int, PaperReview]()
-  def addReview (reviewer : ConfUser, review : ReviewBody)
-  : PaperReview = {
+  private def dummyReview = new PaperReview(-1, null, "", -1, -1, false)
+  val reviews : Map[Int, Symbolic] = Map[Int, Symbolic]()
+  def addReview (reviewer: ConfUser, rtext: String, score: Int, confidence: Int)
+  : Symbolic = {
     val reviewId = getReviewId ();
-    val r = new PaperReview(reviewId, reviewer, review, isAuthor);
+    val r = {
+      val level = mkLevel();
+      val s = new PaperReview(
+                reviewId, reviewer, rtext, score, confidence, isAuthor);
+      policy(level, isInternal);
+      policy(level, isAuthor &&
+                    ((CONTEXT/'stage === Rebuttal) ||
+                      (CONTEXT/'stage === Decision)));
+      // The public can't see the reviews if they can see the paper name or
+      // authors.
+      policy(level, () => (!(nameLevel || authorLevel)) && isPublic(getTags ()));
+      mkSensitiveObject(level, s, dummyReview)
+    }
     reviews + (reviewId -> r);
-    addTag (ReviewedBy(reviewer))
+    addTag (ReviewedBy(r/'reviewer))
     r
-  } 
+  }
 }
