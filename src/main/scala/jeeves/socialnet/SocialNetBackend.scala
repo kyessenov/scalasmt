@@ -29,17 +29,18 @@ object SocialNetBackend extends JeevesLib {
   def getFriendNetworks(user: UserRecord) =
     user.getFriends().map(_ / 'network)
 
-  def getUsersByNetwork (network : Network) : List[Symbolic] = 
+  def getUsersByNetwork(network : Network) : List[Symbolic] = 
     filter(users, (u: UserRecord) => u.network === network)
 
-  /* What if we wanted to have a series of operations on the friends of
-   * symbolic friends? */
-  /*
-  def getFriendsOfFriends (user : BigInt) : List[IntExpr] = {
-    // This is still concrete.
-    val friends = getFriends(user);
-    val networks = friends.foldLeft (Set.empty[IntExpr]) 
-    friends
-  }
-  */
-}
+  /** Email user's friends user's name. */
+  def announceLocation(user: UserRecord) = 
+    for (f <- user.getFriends()) {
+      val to = concretize(user, f/'email).asInstanceOf[Email];
+      val body = concretize(f, user.name).asInstanceOf[Name];
+      email(to, body);
+    }
+
+  def email(to: Email, body: Name) = {}
+  
+  // send email to multiple people at the same time
+} 
