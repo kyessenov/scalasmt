@@ -30,9 +30,11 @@ object JConfBackend extends JeevesLib {
     }
   }
   
-  def addReview (uid : Int, reviewer : ConfUser, review : ReviewBody) {
+  def addReview
+    (uid: Int, reviewer: ConfUser, rtext: String, score: Int, confidence:Int)
+    : Unit = {
     papers.get(uid) match {
-      case Some(p) => p.addReview(reviewer, review)
+      case Some(p) => p.addReview(reviewer, rtext, score, confidence)
       case None => ()
     }
   }
