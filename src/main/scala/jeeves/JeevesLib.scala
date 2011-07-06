@@ -17,9 +17,14 @@ trait JeevesLib extends Sceeves {
   }
   type LevelVar = BoolVar;
   type Symbolic = ObjectExpr[Atom];
-
-  val HIGH = true
-  val LOW = false
+  
+  sealed trait Level
+  object HIGH extends Level
+  object LOW extends Level
+  implicit def level2sym(l: Level): Formula = l match {
+    case HIGH => true
+    case LOW => false
+  }
 
   val CONTEXT: Symbolic = pickObject();
   
@@ -39,13 +44,15 @@ trait JeevesLib extends Sceeves {
     v;
   } 
 
-  def policy(lvar: LevelVar, f: Formula, value: Boolean = HIGH) {
+  def policy(lvar: LevelVar, f: Formula, value: Level = HIGH) {
     assume(f ==> (lvar === value));
   }
   def policy(lvar: LevelVar, f: () => Formula) {
     POLICIES = (lvar, f) :: POLICIES
   }
   
+  override def assume(f: Formula) = super.assume(Partial.eval(f)(EmptyEnv))
+
   def concretize[T](ctx: Symbolic, e: Expr[T]) = {
     val context = (CONTEXT === ctx) && AND(POLICIES.map{case (lvar, f) => f() ==> lvar})
     super.concretize(context, e);
@@ -54,25 +61,24 @@ trait JeevesLib extends Sceeves {
   /**
    * Collections of symbolic values.
    */ 
+
+  def concretize[T](ctx: Symbolic, e: (Expr[T], Expr[T])): (T, T) = 
+    (concretize(ctx, e._1), concretize(ctx, e._2))
+
   def concretize[T <: JeevesRecord](ctx: Symbolic, lst: List[Symbolic]): List[T] = 
     for (o <- lst;
       t = concretize(ctx, o).asInstanceOf[T];
       if (t != null))
       yield t;
 
-  def filter[T <: JeevesRecord](lst: List[T], filter: T => Formula) : List[Symbolic] = 
-    {for (o <- lst; 
-      f = filter(o)) 
-      yield f match {    
-        case BoolVal(true) => 
-          Some(Object(o))
-        case BoolVal(false) => 
-          None
-        case f =>
-        val r = pickObject(_ => true, NULL);
-          assume (f ==> (r === o))
-          Some(r)
-      }
-    }.flatten
+  def filter[T >: Null <: JeevesRecord](lst: List[T], filter: T => Formula) : List[Symbolic] = 
+    for(o <- lst) yield filter(o) match {    
+      case BoolVal(true) => 
+        o: Symbolic
+      case BoolVal(false) => 
+        null: Symbolic
+      case f =>
+        pickObject(_ === (IF (f) {o} ELSE {NULL}))
+    }
 }
 
