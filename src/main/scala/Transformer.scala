@@ -2,6 +2,7 @@ package cap.scalasmt
 
 /**
  * AST transformers.
+ * @author kuat
  */
 
 /**
