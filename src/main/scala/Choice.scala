@@ -2,6 +2,7 @@ package cap.scalasmt
 
 /**
  * Angelic choice statement for arithmetic.
+ * @author kuat
  */
 object ChoiceStmt {
   import SMT._
