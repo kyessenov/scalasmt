@@ -27,15 +27,15 @@ object SocialNetBackend extends JeevesLib {
   /* This function demonstrates how we can work with symbolic objects and do
    * additional operations on them without worrying about permissions. */
   def getFriendNetworks(user: UserRecord) =
-    user.getFriends().map(_ / 'network)
+    user.getFriends().map(_.network)
 
   def getUsersByNetwork(network : Network) : List[Symbolic] = 
     filter(users, (u: UserRecord) => u.network === network)
 
   /** Email user's friends user's name. */
-  def announceLocation(user: UserRecord) = 
+  def announceName(user: UserRecord) = 
     for (f <- user.getFriends()) {
-      val to = concretize(user, f/'email).asInstanceOf[Email];
+      val to = concretize(user, f.email).asInstanceOf[Email];
       val body = concretize(f, user.name).asInstanceOf[Name];
       email(to, body);
     }

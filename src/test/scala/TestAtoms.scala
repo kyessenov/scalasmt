@@ -6,7 +6,7 @@ import cap.scalasmt._
 
 class ExampleAtoms extends FunSuite {
 
-  case class Dummy(id: BigInt) extends Atom
+  case class Dummy(ID: BigInt) extends Atom
 
   def eval[T](expr: Expr[T]) = expr.eval
 
@@ -52,18 +52,15 @@ class ExampleAtoms extends FunSuite {
     import RelExpr._
 
     val a = Node(null)
-    expect(Set(null)) {eval(a >< 'sub)}
-    expect(Set()) {eval(NULL >< 'sub)}
-    
     val b = Dummy(1)
     val c = Node(b)
-    expect(Set(null,b)) {eval((a ++ c) >< 'sub)}
+    expect(Set(b)) {eval((a ++ c).sub)}
   }
 
   test ("object int field") {
     import Expr._
     val a = Dummy(1);
-    expect(1) {eval(a ~ 'id)}
+    expect(1) {eval(a.ID)}
   }
 
   test ("SMT set translation") {
@@ -79,10 +76,9 @@ class ExampleAtoms extends FunSuite {
     import RelExpr._
 
     val x = Dummy(1);
-    val y = Node(x);
-    SMT.solve(y >< 'sub === x)
-    SMT.solve(x >< 'sub === NULL)
-    SMT.solve(y >< 'sub >< 'sub === NULL)
+    val y: RelExpr = Node(x);
+    SMT.solve(y.sub === x)
+    SMT.solve(y.sub.sub === NULL)
   }
 
   test ("SMT variable translation") {
@@ -91,13 +87,13 @@ class ExampleAtoms extends FunSuite {
     expect(b) {val env = SMT.solve( a === ((a === a) ? b ! NULL)); env(a)}
   }
 
-  case class Record(f: IntExpr, i: BigInt) extends Atom
+  case class Record(F: IntExpr, I: BigInt) extends Atom
 
   test ("SMT int field constraints") {
     val i = Var.makeInt;
     val a = Var.makeObject;
     val r = Record(i, 1337);
-    val env = SMT.solve( (a === r && a ~ 'f === a ~ 'i));
+    val env = SMT.solve( (a === r && (a.F: IntExpr) === (a.I: IntExpr)));
     expect(1337) {env(i)}; 
     expect(r) {env(a)};
   }
@@ -106,6 +102,6 @@ class ExampleAtoms extends FunSuite {
     import Expr._
     var x = Dummy(1);
     var y = Node(x);
-    SMT.solve(y / 'sub === x);
+    SMT.solve(y.sub === x);
   }
 }
