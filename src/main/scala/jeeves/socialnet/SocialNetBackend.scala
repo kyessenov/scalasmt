@@ -6,6 +6,10 @@ import scala.collection.mutable.Set;
 import cap.scalasmt._
 import cap.jeeves._
 
+/**
+ * External interface to social network.
+ * @author kuat
+ */
 object SocialNetBackend extends JeevesLib {
   private var users: List[UserRecord] = Nil;
 
