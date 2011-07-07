@@ -29,13 +29,13 @@ class UserRecord(
   friendsL: UserLevel) 
 extends JeevesRecord {
   private var friends : ListSet[UserRecord] = ListSet()
-  private var x: BigInt = 0;
-  private var y: BigInt = 0;
+  private var X: BigInt = 0;
+  private var Y: BigInt = 0;
 
   /** Mutators */
   def add(u: UserRecord) {friends = friends + u}
   def remove(u: UserRecord) {friends = friends - u}
-  def setLocation(x: BigInt, y: BigInt) {this.x = x; this.y = y;}
+  def setLocation(x: BigInt, y: BigInt) {this.X = x; this.Y = y;}
 
   /** Observers */
   val name = mkSensitiveObject(level(nameL), nameV)
@@ -49,7 +49,7 @@ extends JeevesRecord {
   def location() = {
     val l = mkLevel();
     policy(l, () => DISTANCE(CONTEXT, this) < 10)
-    (mkSensitiveInt(l, x), mkSensitiveInt(l, y))
+    (mkSensitiveInt(l, Y), mkSensitiveInt(l, X))
   }
 
   /** Helpers */
@@ -68,5 +68,5 @@ extends JeevesRecord {
   }
 
   private def DISTANCE(a: Symbolic, b: Symbolic) = 
-    ABS(a~'x - b~'x) + ABS(a~'y - b~'y) 
+    ABS(a.X - b.X) + ABS(a.Y - b.Y) 
 }
