@@ -2,6 +2,7 @@ package cap.scalasmt
 
 /* 
  * Translator to SMT-LIB2.
+ * @author kuat
  */
 object UnsatException extends RuntimeException("inconsistent model")
 

@@ -4,6 +4,7 @@ import cap.scalasmt.{Environment => Env}
 
 /** 
  * Constraint environment for Sceeves.
+ * @author kuat
  */
 
 trait Sceeves {

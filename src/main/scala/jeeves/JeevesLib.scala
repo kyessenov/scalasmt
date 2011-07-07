@@ -3,7 +3,7 @@ package cap.jeeves
 /*
  * A library for using ScalaSMT for privacy, using symbolic varaibles to
  * represent sensitive values.
- * @author jeanyang
+ * @author jeanyang, kuat
  */
 
 import cap.scalasmt._

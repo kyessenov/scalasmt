@@ -5,6 +5,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+/**
+ * Persistence of symbolic expressions.
+ * @author kuat
+ */ 
 object Persistence {
   def serialize(e : AnyRef) : Array[Byte] = {
     val baos = new ByteArrayOutputStream(1024);
