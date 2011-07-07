@@ -29,17 +29,17 @@ class PaperRecord( val id : Int
                  , _name : Title, _authors : List[ConfUser]
                  , _papertags : List[PaperTag] ) extends JeevesRecord {
   private def isPublic (curtags : List[Symbolic]) : Formula =
-    (CONTEXT/'stage === Public) && CONTAINS(curtags, Accepted)
+    (CONTEXT.stage === Public) && CONTAINS(curtags, Accepted)
 
   // Some predicates...
-  private val isAuthor : Formula = CONTAINS(_authors, CONTEXT/'viewer);
-  private val isInternal : Formula = CONTEXT~'STATUS >= UserStatus.reviewerL
+  private val isAuthor : Formula = CONTAINS(_authors, CONTEXT.viewer);
+  private val isInternal : Formula = CONTEXT.STATUS >= UserStatus.reviewerL
 
   // The name of the paper is always visible to the authors.
   val nameLevel: LevelVar = mkLevel ();
   val name : Symbolic = {
     policy (nameLevel, isAuthor);
-    policy (nameLevel, CONTEXT~'status >= UserStatus.reviewerL)
+    policy (nameLevel, CONTEXT.STATUS >= UserStatus.reviewerL)
     policy (nameLevel, () => isPublic(getTags ()))
     mkSensitiveObject(nameLevel, _name, Title(""))
   }
@@ -47,8 +47,8 @@ class PaperRecord( val id : Int
   val authorLevel: LevelVar = mkLevel ();
   val authors : List[Symbolic] = {
     policy (authorLevel, isAuthor);
-    policy (authorLevel, (CONTEXT~'status >= UserStatus.reviewerL) &&
-                    (CONTEXT/'stage === Decision));
+    policy (authorLevel, (CONTEXT.STATUS >= UserStatus.reviewerL) &&
+                    (CONTEXT.stage === Decision));
     policy (authorLevel, () => isPublic(getTags ()))
     _authors.map(a => mkSensitiveObject(authorLevel, a, NULL))
   }
@@ -59,14 +59,14 @@ class PaperRecord( val id : Int
     tag match {
       case NeedsReview =>
         policy ( level
-               , isInternal && (CONTEXT/'stage === Review) )
+               , isInternal && (CONTEXT.stage === Review) )
       case ReviewedBy (reviewer) => policy ( level, isInternal )
       // Can see the "Accepted" tag if is an internal user at the decision
       // stage or if all information is visible.
       case Accepted =>
         policy ( level
-               , isInternal && (CONTEXT/'stage === Decision) )
-        policy ( level, CONTEXT/'stage === Public )
+               , isInternal && (CONTEXT.stage === Decision) )
+        policy ( level, CONTEXT.stage === Public )
     }
     mkSensitiveObject(level, tag, NULL)
   }
@@ -101,15 +101,15 @@ class PaperRecord( val id : Int
                 reviewId, reviewer, rtext, score, confidence, isAuthor);
       policy(level, isInternal);
       policy(level, isAuthor &&
-                    ((CONTEXT/'stage === Rebuttal) ||
-                      (CONTEXT/'stage === Decision)));
+                    ((CONTEXT.stage === Rebuttal) ||
+                      (CONTEXT.stage === Decision)));
       // The public can't see the reviews if they can see the paper name or
       // authors.
       policy(level, () => (!(nameLevel || authorLevel)) && isPublic(getTags ()));
       mkSensitiveObject(level, s, dummyReview)
     }
     reviews + (reviewId -> r);
-    addTag (ReviewedBy(r/'reviewer))
+    addTag (ReviewedBy(r.reviewer))
     r
   }
 }
