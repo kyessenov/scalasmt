@@ -220,6 +220,8 @@ object SMT {
       cur
   }
 
+  private def classId(o: Atom) = if (o == null) "Null" else 
+    "C" + o.getClass.getName.replace(".","").replace("$", "")
 
   /**
    * SMT-LIB 2 translation.
@@ -243,6 +245,12 @@ object SMT {
         case _: ObjectVar[_] => " () Object)"
         case _: ObjectSetVar => " (Object) Bool)"
     }}}.toList :::
+    // declare types
+    "(declare-datatypes ((Type " + objects.toSet.map{
+      (o: Atom) => "(" + classId(o) + ")"
+    }.mkString(" ") + ")))" ::
+    "(declare-fun $type (Object) Type)" ::
+    {for (o <- objects) yield "(assert (= ($type " + sc.encode(o) + ") " + classId(o) + "))"}.toList :::
     // declare field values
     {for (o <- objects; f <- fields) yield "(assert (= (" + f + " " + sc.encode(o) + ") " + {f match {
       case f: ObjectFieldDesc => atom(f(o))
