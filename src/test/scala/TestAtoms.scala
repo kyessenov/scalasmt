@@ -54,7 +54,7 @@ class ExampleAtoms extends FunSuite {
     val a = Node(null)
     val b = Dummy(1)
     val c = Node(b)
-    expect(Set(b)) {eval((a ++ c).sub)}
+    expect(Set(b, null)) {eval((a ++ c).sub)}
   }
 
   test ("object int field") {
