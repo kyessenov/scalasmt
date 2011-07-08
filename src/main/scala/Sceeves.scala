@@ -75,11 +75,8 @@ trait Sceeves {
     e.eval(ENV)
   }
     
-  def concretize[T](f: Formula, e: Expr[T]): T = {
-    val v = e.eval(solve(f :: CONSTRAINTS));
-//    usually(f ==> ((e === e.constant(v)) match {case f: Formula => f}));
-    v
-  }
+  def concretize[T](f: Formula, e: Expr[T]): T = 
+    e.eval(solve(f :: CONSTRAINTS));
 }
 
 
