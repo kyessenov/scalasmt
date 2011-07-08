@@ -120,13 +120,13 @@ object SMT {
     case v: IntVar => variable(v) 
   }
 
-  private def atom(e: Expr[Atom])(implicit env: Environment, fp: Scope): String = e match {
+  private def atom(e: Expr[Atom])(implicit env: Environment, sc: Scope): String = e match {
     case ObjectConditional(cond, thn, els) => "(if " + formula(cond) + " " + atom(thn) + " " + atom(els) + ")"
-    case Object(o) => fp.encode(o)
+    case Object(o) => sc.encode(o)
     case ObjectField(root, f) => "(" + f + " " + atom(root) + ")"
-    case v: ObjectVar =>  
+    case v: ObjectVar[_] =>  
       if (env.has(v)) 
-        fp.encode(env(v))
+        sc.encode(env(v))
       else
         v.toString
   }
@@ -167,7 +167,6 @@ object SMT {
       this.fields ++ that.fields, 
       this.vars ++ that.vars
     )
-    def size = objects.size + fields.size + vars.size
 
     lazy val uniq = objects.toList
     def encode(o: Atom): String = 
@@ -183,6 +182,8 @@ object SMT {
       else 
         uniq(s.substring(1).toInt)
 
+    def size = objects.size + fields.size + vars.size
+    override def toString = objects.size + " objects; " + fields.size + " fields; " +  vars.size + " vars"
   }
  
   private def univ(f: Expr[_])(implicit env: Environment): Scope = (f: @unchecked) match {
@@ -203,7 +204,7 @@ object SMT {
     val fields = for (o <- cur.objects; f <- cur.fields) yield f(o)
 
     val variables = {for (v <- cur.vars; if env.has(v)) yield v match {
-      case v: ObjectVar => Set(env(v))
+      case v: ObjectVar[_] => Set(env(v))
       case v: ObjectSetVar => env(v)
       case _ => Set[Atom]()
     }}.flatten
@@ -224,11 +225,11 @@ object SMT {
    * SMT-LIB 2 translation.
    */
 
-  private def prelude(implicit env: Environment, fp: Scope): List[String] = {
-    val Scope(objects, fields, vars) = fp;
+  private def prelude(implicit env: Environment, sc: Scope): List[String] = {
+    val Scope(objects, fields, vars) = sc;
 
     // declare all objects
-    "(declare-datatypes ((Object " + objects.map("(" + fp.encode(_) + ")").mkString(" ") + ")))" :: 
+    "(declare-datatypes ((Object " + objects.map("(" + sc.encode(_) + ")").mkString(" ") + ")))" :: 
     // declare all fields
     {for (f <- fields) yield "(declare-fun " + f + {f match {
       case _: ObjectFieldDesc => " (Object) Object)"
@@ -239,11 +240,11 @@ object SMT {
       yield "(declare-fun " + v + {v match {
         case _: IntVar =>  " () Int) "
         case _: BoolVar => " () Bool)"
-        case _: ObjectVar => " () Object)"
+        case _: ObjectVar[_] => " () Object)"
         case _: ObjectSetVar => " (Object) Bool)"
     }}}.toList :::
     // declare field values
-    {for (o <- objects; f <- fields) yield "(assert (= (" + f + " " + fp.encode(o) + ") " + {f match {
+    {for (o <- objects; f <- fields) yield "(assert (= (" + f + " " + sc.encode(o) + ") " + {f match {
       case f: ObjectFieldDesc => atom(f(o))
       case f: IntFieldDesc => integer(f(o))
     }} + "))"}.toList :::
@@ -262,6 +263,8 @@ object SMT {
   def solve(f: Formula, defaults: List[Formula] = Nil, initial: Set[Atom] = Set(), checkNext: Boolean = true)
     (implicit env: Environment = DefaultEnv) = {
     implicit val scope = closure(univ(f :: defaults) ++ initial)
+
+    println(scope)
 
     val solver = new Z3// with Logging
   
@@ -300,7 +303,7 @@ object SMT {
         v match {
           case v: IntVar => result = result + (v -> BigInt(value))
           case v: BoolVar => result = result + (v -> value.toBoolean)
-          case v: ObjectVar => result = result + (v -> sc.decode(value))
+          case v: ObjectVar[_] => result = result + (v -> sc.decode(value))
           case v: ObjectSetVar => 
             // TODO: better S-expression parsing
             throw new RuntimeException("not implemented")
