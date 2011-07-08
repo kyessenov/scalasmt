@@ -1,5 +1,7 @@
 package cap.scalasmt
 
+import Zeros._
+
 /*
  * A DSL for logical constraints.
  * @author kuat
@@ -12,7 +14,7 @@ sealed trait Expr[T] extends Serializable {
   def vars: Set[Var[_]]
   def eval(implicit env: Environment = EmptyEnv): T
   def ===(that: Expr[T]): Expr[Boolean]
-  def constant(t: T): Constant[T]
+  def default: T
 }
 sealed trait Ite[T] extends Expr[T] {
   def cond: Expr[Boolean]
@@ -23,7 +25,6 @@ sealed trait Ite[T] extends Expr[T] {
 }
 sealed trait Var[T] extends Expr[T] {
   def id: String
-  def default: T
   def vars: Set[Var[_]] = Set(this)
   def eval(implicit env: Environment) = env(this)
 }
@@ -63,6 +64,7 @@ sealed abstract class Formula extends Expr[Boolean] {
   def ===(that: Expr[Boolean]): Formula = 
     that match {case that: Formula => BoolEq(this, that)}
   def constant(t: Boolean) = BoolVal(t)
+  def default = zero[Boolean]
   def &&(that: Formula) = And(this, that)
   def ||(that: Formula) = Or(this, that)
   def ==> (that: Formula) = Or(Not(this), that)
@@ -111,7 +113,6 @@ case class RelSub(left: RelExpr, right: RelExpr) extends RelFormula {
 }
 case class BoolVal(v: Boolean) extends Formula with Constant[Boolean]
 case class BoolVar(id: String) extends Formula with Var[Boolean] {
-  def default = true
   override def toString = "b" + id
 }
 
@@ -130,6 +131,7 @@ sealed abstract class IntExpr extends Expr[BigInt] {
   def ===(that: Expr[BigInt]): Formula = 
     that match {case that: IntExpr => IntEq(this, that)}
   def constant(t: BigInt) = IntVal(t)
+  def default = zero[BigInt]
   def !==(that: IntExpr) = ! (this === that)
   def <=(that: IntExpr) = Leq(this, that)
   def >=(that: IntExpr) = Geq(this, that)
@@ -153,99 +155,70 @@ case class Times(left: IntExpr, right: IntExpr) extends BinaryIntExpr {
 case class IntConditional(cond: Formula, thn: IntExpr, els: IntExpr) extends IntExpr with Ite[BigInt]
 case class IntVal(v: BigInt) extends IntExpr with Constant[BigInt]
 case class IntVar(id: String) extends IntExpr with Var[BigInt] {
-  def default = 0
   override def toString = "i" + id
 }
-case class ObjectIntField(root: ObjectExpr[Atom], f: IntFieldDesc) extends IntExpr {
-  def vars = root.vars + IntVar("global" + f.name)
-  def eval(implicit env: Environment) = f(root.eval) match {
-    case Some(e: IntExpr) => e.eval
-    case None => 0
-  }
+case class ObjectIntField(root: ObjectExpr[Atom], f: FieldDesc[BigInt]) extends IntExpr {
+  def vars = root.vars + IntVar("global" + f)
+  def eval(implicit env: Environment) = f(root.eval).eval
 }
 
 /**
  * Object and field expressions.
  */
-trait Atom extends AnyRef {
-  // Must respect equality but uniquely identify the object
-  def uniq = toString.hashCode
-}
+trait Atom extends AnyRef
 sealed abstract class ObjectExpr[+T >: Null <: Atom] extends Expr[Atom] with Dynamic { 
   def ===(that: Expr[Atom]): Formula = 
     that match {case that: ObjectExpr[_] => ObjectEq(this, that)}
   def constant(t: Atom) = Object(t)
+  def default = zero[Atom]
   def applyDynamic(name: String)(args: Any*) = {
     assert(args.length == 0)
     ObjectField(this, ObjectFieldDesc(name))
   }
-  override def eval(implicit env: Environment): T
 }
-case class ObjectConditional[+T >: Null <: Atom](cond: Formula, thn: ObjectExpr[T], els: ObjectExpr[T]) extends ObjectExpr[T] with Ite[Atom] {
-  override def eval(implicit env: Environment): T = if (cond.eval) thn.eval else els.eval
-}
-case class Object[+T >: Null <: Atom](v: T) extends ObjectExpr[T] with Constant[Atom] {
-  override def eval(implicit env: Environment): T = v
-}
+case class ObjectConditional[+T >: Null <: Atom](cond: Formula, thn: ObjectExpr[T], els: ObjectExpr[T]) extends ObjectExpr[T] with Ite[Atom] 
+case class Object[+T >: Null <: Atom](v: T) extends ObjectExpr[T] with Constant[Atom] 
 case class ObjectVar(id: String) extends ObjectExpr[Atom] with Var[Atom] {
-  def default = null
   override def toString = "a" + id
 }
-case class ObjectField(root: ObjectExpr[Atom], f: ObjectFieldDesc) extends ObjectExpr[Atom] {
-  def vars = root.vars + ObjectVar("global" + f.name)
-  def eval(implicit env: Environment) = f(root.eval) match {
-    case Some(o: ObjectExpr[_]) => o.eval
-    case None => null
-  }
+case class ObjectField(root: ObjectExpr[Atom], f: FieldDesc[Atom]) extends ObjectExpr[Atom] {
+  def vars = root.vars + ObjectVar("global" + f)
+  def eval(implicit env: Environment) = f(root.eval).eval
 }
 
 /**
  * Object fields.
  */
-sealed trait FieldDesc[U] {
-  def name: String
-  /** Evaluate to an expression */
-  def apply(o: Atom): Option[Expr[U]]
-  /** Value for elements not in the domain */
-  def default: U
+sealed trait FieldDesc[T] {
+  def id: String
+  def apply(o: Atom): Expr[T]
   /** Read from the heap.*/
-  protected def read(o: Atom) = if (o == null) None else
-    try {
-      val fid = o.getClass.getDeclaredField(name);
-      try {
-        fid.setAccessible(true);
-        Some(fid.get(o)) 
-      } finally 
-        fid.setAccessible(false);
+  def read(o: Atom): Option[AnyRef] = 
+    if (o == null) None 
+    else try {
+      val fid = o.getClass.getDeclaredField(id);
+      fid.setAccessible(true);
+      try Some(fid.get(o))  
+      finally fid.setAccessible(false);
     } catch {
       case _: NoSuchFieldException => None 
     }
-  /** Check if field is immutable. */
-  def immutable(o: Atom) = if (o == null) true else 
-    try {
-      val fid = o.getClass.getDeclaredField(name);
-      java.lang.reflect.Modifier.isFinal(fid.getModifiers);
-    } catch {
-      case _: NoSuchFieldException => true
-    }
 }
-case class IntFieldDesc(name: String) extends FieldDesc[BigInt] {
-  override def default = 0
-  override def apply(o: Atom) = read(o) match {
-    case Some(e: IntExpr) => Some(e)    
-    // implicit conversions
-    case Some(e: BigInt) => Some(IntVal(e))
-    case _ => None
+case class ObjectFieldDesc(id: String) extends FieldDesc[Atom] {
+  def apply(o: Atom) = read(o) match {
+    case Some(t: Atom) => Object(t)
+    case Some(o: ObjectExpr[_]) => o
+    case _ => Object(zero[Atom])
   }
+  override def toString = "O" + id
 }
-case class ObjectFieldDesc(name: String) extends FieldDesc[Atom] {
-  override def default = null
-  override def apply(o: Atom) = read(o) match {
-    case Some(o: ObjectExpr[_]) => Some(o: ObjectExpr[Atom])
-    // implicit conversions
-    case Some(o: Atom) => Some(Object(o))
-    case _ => None
+case class IntFieldDesc(id: String) extends FieldDesc[BigInt] {
+  def apply(o: Atom) = read(o) match {
+    case Some(t: BigInt) => IntVal(t)
+    case Some(e: IntExpr) => e
+    case _ => IntVal(zero[BigInt])
   }
+  override def toString = "I" + id
 }
 
 /**
@@ -255,6 +228,7 @@ sealed abstract class RelExpr extends Expr[Set[Atom]] with Dynamic {
   def ===(that: Expr[Set[Atom]]): Formula = 
     that match {case that: RelExpr => RelEq(this, that)}
   def constant(t: Set[Atom]) = ObjectSet(t)
+  def default = zero[Set[Atom]]
   def in(that: RelExpr) = RelSub(this, that)
   def &(that: RelExpr) = Intersect(this, that)
   def ++(that: RelExpr) = Union(this, that)
@@ -269,12 +243,11 @@ case class Singleton(sub: ObjectExpr[Atom]) extends RelExpr with UnaryExpr[Objec
 }
 case class ObjectSet(v: Set[Atom]) extends RelExpr with Constant[Set[Atom]] 
 case class ObjectSetVar(id: String) extends RelExpr with Var[Set[Atom]] {
-  def default = Set()
   override def toString = "s" + id
 }
-case class RelJoin(root: RelExpr, f: ObjectFieldDesc) extends RelExpr {
+case class RelJoin(root: RelExpr, f: FieldDesc[Atom]) extends RelExpr {
   def vars = root.vars
-  def eval(implicit env: Environment) = (for (o <- root.eval) yield f(o)).flatten.map(_.eval)
+  def eval(implicit env: Environment) = (for (o <- root.eval) yield f(o).eval)
 }
 sealed abstract class BinaryRelExpr extends RelExpr with BinaryExpr[RelExpr]
 case class Union(left: RelExpr, right: RelExpr) extends BinaryRelExpr {
