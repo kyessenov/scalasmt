@@ -33,7 +33,7 @@ object Var {
   private def inc() = {COUNTER = COUNTER + 1; COUNTER.toString}
   def makeInt = IntVar(inc())
   def makeBool = BoolVar(inc())
-  def makeObject = ObjectVar(inc())
+  def makeObject[T >: Null <: Atom: Manifest] = ObjectVar[T](inc())
   def makeObjectSet = ObjectSetVar(inc())
 } 
 sealed trait BinaryExpr[T <: Expr[_]] {
@@ -178,11 +178,12 @@ sealed abstract class ObjectExpr[+T >: Null <: Atom] extends Expr[Atom] with Dyn
 }
 case class ObjectConditional[+T >: Null <: Atom](cond: Formula, thn: ObjectExpr[T], els: ObjectExpr[T]) extends ObjectExpr[T] with Ite[Atom] 
 case class Object[+T >: Null <: Atom](v: T) extends ObjectExpr[T] with Constant[Atom] 
-case class ObjectVar(id: String) extends ObjectExpr[Atom] with Var[Atom] {
+case class ObjectVar[T >: Null <: Atom: Manifest](id: String) extends ObjectExpr[T] with Var[Atom] {
+  def mayAssign(a: Atom) = a == null || a.getClass == manifest[T].erasure
   override def toString = "a" + id
 }
 case class ObjectField(root: ObjectExpr[Atom], f: FieldDesc[Atom]) extends ObjectExpr[Atom] {
-  def vars = root.vars + ObjectVar("global" + f)
+  def vars = root.vars + ObjectVar[Atom]("global" + f)
   def eval(implicit env: Environment) = f(root.eval).eval
 }
 
