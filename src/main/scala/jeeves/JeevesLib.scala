@@ -28,33 +28,35 @@ trait JeevesLib extends Sceeves {
 
   val CONTEXT: Symbolic = pickObject();
   
-  private var POLICIES: List[(LevelVar, () => Formula)] = Nil
+  private var POLICIES: List[(LevelVar, Level, () => Formula)] = Nil
 
-  def mkLevel(): LevelVar = pickBool(_ => true, LOW)
+  def mkLevel(): LevelVar = pickBool(_ => true, HIGH)
 
   def mkSensitiveInt(lvar: LevelVar, high: IntExpr, low: IntExpr = -1): IntVar = {
-    val v = pick(_ => true, low);
-    assume(lvar ==> (v === high));
+    val v = pick();;
+    assume(v === (lvar ? high ! low));
     v;
   }
 
   def mkSensitiveObject(lvar: LevelVar, high: Symbolic, low: Symbolic = NULL): Symbolic = {
-    val v = pickObject(_ => true,low);
-    assume(lvar ==> (v === high));
+    val v = pickObject()
+    assume(v === (lvar ? high ! low));
     v;
   } 
 
-  def policy(lvar: LevelVar, f: Formula, value: Level = HIGH) {
+  def policy(lvar: LevelVar, f: Formula, value: Level = LOW) {
     assume(f ==> (lvar === value));
   }
   def policy(lvar: LevelVar, f: () => Formula) {
-    POLICIES = (lvar, f) :: POLICIES
+    POLICIES = (lvar, LOW, f) :: POLICIES
   }
   
   override def assume(f: Formula) = super.assume(Partial.eval(f)(EmptyEnv))
 
   def concretize[T](ctx: Symbolic, e: Expr[T]) = {
-    val context = (CONTEXT === ctx) && AND(POLICIES.map{case (lvar, f) => f() ==> lvar})
+    val context = (CONTEXT === ctx) && AND(POLICIES.map{
+        case (lvar, level, f) => f() ==> (lvar === level)
+      })
     super.concretize(context, e);
   }
 
