@@ -14,13 +14,13 @@ class PaperReview( id : Int
                  , val body: String, val score: Int) extends JeevesRecord {
   private val Anonymous = new ConfUser(Name("Anonymous"), ReviewerStatus)
 
-  private val isInternal : Formula =
-    (CONTEXT.viewer.status === ReviewerStatus) || 
-    (CONTEXT.viewer.status === PCStatus)
-
   // Restrict reviewer to only be seen by internal people.
   val reviewer = {
     val level = mkLevel();
+    val isInternal : Formula = {
+      val vrole = CONTEXT.viewer.role;
+      (vrole === ReviewerStatus) || (vrole === PCStatus)
+    }
     policy(level, isInternal, HIGH);
     policy(level, !isInternal, LOW);
     mkSensitiveObject(level, _reviewer, Anonymous);

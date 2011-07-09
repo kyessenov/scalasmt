@@ -34,8 +34,8 @@ class PaperRecord( val id : Int
   // Some predicates...
   private val isAuthor : Formula = CONTAINS(_authors, CONTEXT.viewer);
   private val isInternal : Formula =
-    (CONTEXT.viewer.status === ReviewerStatus) ||
-    (CONTEXT.viewer.status === PCStatus)
+    (CONTEXT.viewer.role === ReviewerStatus) ||
+    (CONTEXT.viewer.role === PCStatus)
 
   // The name of the paper is always visible to the authors.
   val name : Symbolic = {
