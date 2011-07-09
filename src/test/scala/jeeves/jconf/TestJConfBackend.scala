@@ -18,21 +18,21 @@ class ExampleJConfBackend extends FunSuite {
   // jconf users.
   val author0 = mkUser("author0", UserStatus.authorL)
   private def getAuthorCtxt0 (stage : PaperStage = Submission)
-  : ConfContext = new ConfContext(author0, UserStatus.authorL, stage);
+  : ConfContext = new ConfContext(author0, stage);
   val author1 = mkUser("author1", UserStatus.authorL);
   private def getAuthorCtxt1 (stage : PaperStage = Submission)
-  : ConfContext = new ConfContext(author1, UserStatus.authorL, stage);
+  : ConfContext = new ConfContext(author1, stage);
   val author2 = mkUser("author2", UserStatus.authorL)
   private def getAuthorCtxt2 (stage : PaperStage = Submission)
-  : ConfContext = new ConfContext(author2, UserStatus.authorL, stage);
+  : ConfContext = new ConfContext(author2, stage);
 
   val reviewer0 = mkUser("reviewer0", UserStatus.reviewerL);
   private def getReviewerCtxt0 (stage : PaperStage = Submission)
-  : ConfContext = new ConfContext(reviewer0, UserStatus.reviewerL, stage);
+  : ConfContext = new ConfContext(reviewer0, stage);
 
   val pc0 = mkUser("pc0", UserStatus.pcL);
   private def getPcCtxt0 (stage : PaperStage = Submission)
-  : ConfContext = new ConfContext(pc0, UserStatus.pcL, stage);
+  : ConfContext = new ConfContext(pc0, stage);
 
   // papers.
   val emptyName = Title("")
@@ -70,7 +70,8 @@ class ExampleJConfBackend extends FunSuite {
       concretize(getAuthorCtxt1(), CONTAINS(paper0.authors, author0))
     }
     expect (false) {
-      concretize(getReviewerCtxt0(), CONTAINS(paper0.authors, author0));
+      concretize( getReviewerCtxt0(Submission)
+                , CONTAINS(paper0.authors, author0));
     }
     expect (true) {
       concretize(getReviewerCtxt0(Decision), CONTAINS(paper0.authors, author0));
