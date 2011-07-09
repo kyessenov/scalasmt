@@ -26,20 +26,19 @@ trait JeevesLib extends Sceeves {
     case LOW => false
   }
 
-  val CONTEXT: Symbolic = pickObject();
+  val CONTEXT: Symbolic = pickObject[JeevesRecord];
   
   private var POLICIES: List[(LevelVar, Level, () => Formula)] = Nil
 
   def mkLevel(): LevelVar = pickBool(_ => true, HIGH)
 
   def mkSensitiveInt(lvar: LevelVar, high: IntExpr, low: IntExpr = -1): IntVar = {
-    val v = pick();;
-    assume(v === (lvar ? high ! low));
+    val v = pick(_ === (lvar ? high ! low));
     v;
   }
 
-  def mkSensitiveObject(lvar: LevelVar, high: Symbolic, low: Symbolic = NULL): Symbolic = {
-    val v = pickObject()
+  def mkSensitive[T >: Null <: JeevesRecord : Manifest](lvar: LevelVar, high: Symbolic, low: Symbolic = NULL): Symbolic = {
+    val v = pickObject[T]
     assume(v === (lvar ? high ! low));
     v;
   } 
