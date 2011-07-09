@@ -48,7 +48,7 @@ extends JeevesRecord {
   def isFriends(u: UserRecord) = CONTAINS(getFriends, u)
   def location() = {
     val l = mkLevel();
-    policy(l, () => DISTANCE(CONTEXT, this) >= 10)
+    policy(l, () => DISTANCE(CONTEXT, this) >= 10, LOW)
     (mkSensitiveInt(l, Y), mkSensitiveInt(l, X))
   }
 
@@ -58,9 +58,9 @@ extends JeevesRecord {
     l match {
       case Anyone => 
       case Self => 
-        policy(level, ! (CONTEXT === this))
+        policy(level, ! (CONTEXT === this), LOW)
       case Friends => 
-        policy(level, () => ! CONTAINS(friends, CONTEXT) && ! (CONTEXT === this));
+        policy(level, () => ! CONTAINS(friends, CONTEXT) && ! (CONTEXT === this),  LOW);
     }
     level
   }
