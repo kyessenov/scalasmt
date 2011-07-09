@@ -15,7 +15,7 @@ class ReviewBody ( _body: Body
                  , _confidence: BigInt
                  , _isAuthor: Formula)
   extends JeevesRecord {
-  private val isInternal : Formula = CONTEXT.STATUS >= UserStatus.reviewerL
+  private val isInternal : Formula = CONTEXT.status >= UserStatus.reviewerL
 
   val rlevel = mkLevel();
   policy(rlevel, isInternal);
@@ -33,7 +33,7 @@ class PaperReview( id : Int
   private val Anonymous = new ConfUser(Name("Anonymous"), UserStatus.reviewerL)
   private val DefaultBody = new ReviewBody(null, -1, -1, _isAuthor)
 
-  private val isInternal : Formula = CONTEXT.STATUS >= UserStatus.reviewerL
+  private val isInternal : Formula = CONTEXT.status >= UserStatus.reviewerL
 
   // Restrict reviewer to only be seen by internal people.
   val reviewer = {

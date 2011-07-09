@@ -18,4 +18,4 @@ object UserStatus {
 
 /* Conference User */
 case class Name (name : String) extends JeevesRecord
-case class ConfUser( val name : Name, val STATUS : BigInt ) extends JeevesRecord
+case class ConfUser( val name : Name, val status : BigInt ) extends JeevesRecord
