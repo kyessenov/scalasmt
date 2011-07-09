@@ -31,11 +31,8 @@ trait Sceeves {
     x
   }
 
-  def pickObject(spec: ObjectVar[_] => Formula = _ => true): ObjectVar[Atom] = {
-    val x = Var.makeObject[Atom]; 
-    assume(spec(x)); 
-    x
-  }
+  def pickObject[T >: Null <: Atom : Manifest](): ObjectVar[T] = 
+    Var.makeObject[T]; 
 
   def pick(spec: IntVar => Formula, default: IntExpr): IntVar = {
     val x = pick(spec); 
@@ -49,8 +46,8 @@ trait Sceeves {
     x
   }
 
-  def pickObject(spec: ObjectVar[_] => Formula, default: ObjectExpr[Atom]): ObjectVar[Atom] = {
-    val x = pickObject(spec); 
+  def pickObject[T >: Null <: Atom : Manifest](default: ObjectExpr[T]): ObjectVar[T] = {
+    val x = pickObject[T]();
     usually(x === default); 
     x
   }
