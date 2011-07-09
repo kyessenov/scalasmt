@@ -38,7 +38,7 @@ class PaperRecord( val id : Int
     (CONTEXT.viewer.role === PCStatus)
 
   // The name of the paper is always visible to the authors.
-  val name : Symbolic = {
+  def updateName(_name: Title) : Symbolic = {
     val level = mkLevel ();
     val canSee: () => Formula =
       () => isAuthor || isInternal || isPublic(getTags ())
@@ -46,6 +46,7 @@ class PaperRecord( val id : Int
     policy (level, () => !(canSee ()), LOW);
     mkSensitive[Title](level, _name, Title(""))
   }
+  var name = updateName(_name);
 
   val authors : List[Symbolic] = {
     val level = mkLevel ();
