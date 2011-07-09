@@ -181,6 +181,12 @@ object SMT {
         null
       else 
         uniq(s.substring(1).toInt)
+    
+    def classId(klas: Class[_]): String = 
+      if (klas == null) "Null" else klas.getName.replace(".","").replace("$","")
+   
+    def atomId(o: Atom): String = 
+      if (o == null) classId(null) else classId(o.getClass)
 
     def size = objects.size + fields.size + vars.size
     override def toString = objects.size + " objects; " + fields.size + " fields; " +  vars.size + " vars"
@@ -220,9 +226,6 @@ object SMT {
       cur
   }
 
-  private def classId(o: Atom) = if (o == null) "Null" else 
-    "C" + o.getClass.getName.replace(".","").replace("$", "")
-
   /**
    * SMT-LIB 2 translation.
    */
@@ -238,7 +241,7 @@ object SMT {
       case _: IntFieldDesc => " (Object) Int)"
     }}}.toList :::
     // declare all variables
-    {for (v <- vars.toList; if ! env.has(v))
+    {for (v <- vars; if ! env.has(v))
       yield "(declare-fun " + v + {v match {
         case _: IntVar =>  " () Int) "
         case _: BoolVar => " () Bool)"
@@ -246,16 +249,22 @@ object SMT {
         case _: ObjectSetVar => " (Object) Bool)"
     }}}.toList :::
     // declare types
-    "(declare-datatypes ((Type " + objects.toSet.map{
-      (o: Atom) => "(" + classId(o) + ")"
-    }.mkString(" ") + ")))" ::
+    "(declare-datatypes ((Type " + objects.map("(" + sc.atomId(_) + ")").mkString(" ") + ")))" ::
     "(declare-fun $type (Object) Type)" ::
-    {for (o <- objects) yield "(assert (= ($type " + sc.encode(o) + ") " + classId(o) + "))"}.toList :::
+    {for (o <- objects) yield "(assert (= ($type " + sc.encode(o) + ") " + sc.atomId(o) + "))"}.toList:::
+    {for (v <- vars.collect{case v: ObjectVar[_] => v}; if ! env.has(v)) 
+      yield "(assert (or " + 
+      {for (klas <- objects.map(a => if (a == null) null else a.getClass); 
+          if (klas == null) || v.mayAssign(klas)) 
+          yield "(= ($type " + v + ") " + sc.classId(klas) + ")"}.mkString(" ") +
+    "))"}.toList :::
     // declare field values
-    {for (o <- objects; f <- fields) yield "(assert (= (" + f + " " + sc.encode(o) + ") " + {f match {
-      case f: ObjectFieldDesc => atom(f(o))
-      case f: IntFieldDesc => integer(f(o))
-    }} + "))"}.toList :::
+    {for (o <- objects; f <- fields) 
+      yield "(assert (= (" + f + " " + sc.encode(o) + ") " + {f match {
+        case f: ObjectFieldDesc => atom(f(o))
+        case f: IntFieldDesc => integer(f(o))
+      }} + 
+    "))"}.toList :::
     Nil
   }
 
@@ -274,7 +283,7 @@ object SMT {
 
     println(scope)
 
-    val solver = new Z3// with Logging
+    val solver = new Z3 //with Logging
   
     for (s <- prelude) solver.command(s)  
     for (clause <- f.clauses) 
