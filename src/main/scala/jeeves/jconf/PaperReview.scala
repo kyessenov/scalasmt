@@ -12,8 +12,6 @@ import JConfBackend._
 class PaperReview( id : Int
                  , _reviewer: ConfUser
                  , val body: String, val score: Int) extends JeevesRecord {
-  private val Anonymous = new ConfUser(Name("Anonymous"), ReviewerStatus)
-
   // Restrict reviewer to only be seen by internal people.
   val reviewer = {
     val level = mkLevel();
@@ -23,6 +21,6 @@ class PaperReview( id : Int
     }
     policy(level, isInternal, HIGH);
     policy(level, !isInternal, LOW);
-    mkSensitive[PaperReview](level, _reviewer, Anonymous);
+    mkSensitive[ConfUser](level, _reviewer, NULL)
   }
 }
