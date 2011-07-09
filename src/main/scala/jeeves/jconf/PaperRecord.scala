@@ -20,7 +20,7 @@ object Public extends PaperStage
 
 sealed trait PaperTag extends JeevesRecord
 object NeedsReview extends PaperTag
-case class ReviewedBy (name : Symbolic) extends PaperTag
+case class ReviewedBy (reviewer: ConfUser) extends PaperTag
 object Accepted extends PaperTag
 
 case class Title (name : String) extends JeevesRecord
@@ -101,8 +101,8 @@ class PaperRecord( val id : Int
     reviewIds = reviewIds + 1;
     id
   }
-  private def dummyReview = new PaperReview(-1, null, "", -1)
-  val reviews : Map[Int, Symbolic] = Map[Int, Symbolic]()
+  
+  var reviews : List[Symbolic] = Nil
   def addReview (reviewer: ConfUser, rtext: String, score: Int)
   : Symbolic = {
     val reviewId = getReviewId ();
@@ -110,14 +110,15 @@ class PaperRecord( val id : Int
       val level = mkLevel();
       val s = new PaperReview(reviewId, reviewer, rtext, score);
       val canSee =
-        isAuthor &&
-          ((CONTEXT.stage === Rebuttal) || (CONTEXT.stage === Decision));
+        isInternal ||
+        (isAuthor &&
+          ((CONTEXT.stage === Rebuttal) || (CONTEXT.stage === Decision)));
       policy(level, canSee, HIGH);
       policy(level, !canSee, LOW);
-      mkSensitive[PaperReview](level, s, dummyReview)
+      mkSensitive[PaperReview](level, s, NULL)
     }
-    reviews + (reviewId -> r);
-    addTag (ReviewedBy(r.reviewer))
+    reviews = r::reviews;
+    addTag (ReviewedBy(reviewer))
     r
   }
 }
