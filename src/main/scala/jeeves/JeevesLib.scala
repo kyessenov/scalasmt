@@ -44,11 +44,11 @@ trait JeevesLib extends Sceeves {
     v;
   } 
 
-  def policy(lvar: LevelVar, f: Formula, value: Level = LOW) {
+  def policy(lvar: LevelVar, f: Formula, value: Level) {
     assume(f ==> (lvar === value));
   }
-  def policy(lvar: LevelVar, f: () => Formula) {
-    POLICIES = (lvar, LOW, f) :: POLICIES
+  def policy(lvar: LevelVar, f: () => Formula, value: Level) {
+    POLICIES = (lvar, value, f) :: POLICIES
   }
   
   override def assume(f: Formula) = super.assume(Partial.eval(f)(EmptyEnv))
