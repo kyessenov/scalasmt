@@ -16,6 +16,10 @@ class ExampleJConfBackend extends FunSuite {
     new ConfUser(Name (userName), userStatus);
 
   // jconf users.
+  val public0 = mkUser("public0", PublicStatus)
+  private def getPublicCtxt0 (stage: PaperStage = Submission) : ConfContext =
+    ConfContext(public0, AuthorStatus, stage)
+
   val author0 = mkUser("author0", AuthorStatus)
   private def getAuthorCtxt0 (stage : PaperStage = Submission)
   : ConfContext = new ConfContext(author0, AuthorStatus, stage);
@@ -45,16 +49,24 @@ class ExampleJConfBackend extends FunSuite {
 
   // Name visibility
   test ("name visibility") {
-    expect(paper0Name) { concretize(getAuthorCtxt0(), paper0.name); }
-    expect(emptyName) { concretize(getAuthorCtxt2(), paper0.name); }
+    // Only author on paper can see paper that hasn't been accepted.
+    expect (paper0Name) { concretize(getAuthorCtxt0(), paper0.name); }
+    expect (emptyName) { concretize(getAuthorCtxt2(), paper0.name); }
+    expect (emptyName) { concretize(getPublicCtxt0(Public), paper0.name); }
 
     val viewMap =
-      Map((Submission, paper0Name), (Review, paper0Name), (Decision, paper0Name));
+      Map( (Submission, paper0Name)
+         , (Review, paper0Name)
+         , (Decision, paper0Name));
     viewMap.foreach {
       case (stage, r) =>
         expect (r) { concretize(getReviewerCtxt0(stage), paper0.name) };
         expect (r) { concretize(getPcCtxt0(stage), paper0.name); }
     }
+
+    // Public user should be able to see paper that has been accepted.
+    expect (emptyName) { concretize(getPublicCtxt0(Decision), paper1.name); }
+    expect (paper1Name) { concretize(getPublicCtxt0(Public), paper1.name); }
   }
 
   // Author list visibility
@@ -96,9 +108,9 @@ class ExampleJConfBackend extends FunSuite {
     expect (false) {
       concretize(getAuthorCtxt0(Public), paper0.hasTag(Accepted));
     }
-
   }
 
-  /*
-  */
+  test ("review visibility") {
+    /* TODO */
+  }
 }
