@@ -23,6 +23,6 @@ class PaperReview( id : Int
     }
     policy(level, isInternal, HIGH);
     policy(level, !isInternal, LOW);
-    mkSensitiveObject(level, _reviewer, Anonymous);
+    mkSensitive[PaperReview](level, _reviewer, Anonymous);
   }
 }
