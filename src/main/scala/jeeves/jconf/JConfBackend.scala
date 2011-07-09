@@ -3,7 +3,12 @@ package cap.jeeves.jconf
 import cap.scalasmt._
 import cap.jeeves._
 
+import scala.collection.mutable.Map
+import scala.collection.mutable.Set
+
 object JConfBackend extends JeevesLib {
+  // We do not delegate integrity checking to Jeeves.
+  var assignments : Map[Int, Set[ConfUser]] = Map[Int, Set[ConfUser]]()
   private var papers : List[PaperRecord] = Nil
 
   /* Making papers. */
@@ -20,12 +25,29 @@ object JConfBackend extends JeevesLib {
     paper
   }
  
-  /* Updating papers. */
-  def addTag (p: PaperRecord, tag: PaperTag) : Unit = p.addTag(tag)
+  /* Reviews. */
+  def assignReview (p: PaperRecord, reviewer: ConfUser): Unit = {
+    if (!((reviewer.role == ReviewerStatus) || (reviewer.role == PCStatus)))
+      return;
+    assignments.get(p.id) match {
+      case Some(reviewers) => reviewers += reviewer
+      case None =>
+        val reviewers = Set[ConfUser]();
+        reviewers += reviewer;
+        assignments += (p.id -> reviewers)
+    };
+  }
+  def isAssigned (p: PaperRecord, reviewer: ConfUser): Boolean = {
+    assignments.get(p.id) match {
+      case Some(reviewers) => reviewers.contains(reviewer)
+      case None => false
+    }
+  }
   def addReview
     (p: PaperRecord, reviewer: ConfUser, rtext: String, score: Int)
     : Unit = {
-      p.addReview(reviewer, rtext, score)
+      if (isAssigned (p, reviewer))
+          p.addReview(reviewer, rtext, score)
   }
 
   /* Searching. */
