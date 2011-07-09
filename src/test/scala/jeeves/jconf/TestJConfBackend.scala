@@ -12,31 +12,27 @@ import scala.collection.mutable.Set
 import scala.util.Random
 
 class ExampleJConfBackend extends FunSuite {
-  def mkUser(userName : String, userStatus : UserStatus) : ConfUser =
+  def mkUser(userName : String, userStatus : BigInt) : ConfUser =
     new ConfUser(Name (userName), userStatus);
 
   // jconf users.
-  val public0 = mkUser("public0", PublicStatus)
-  private def getPublicCtxt0 (stage: PaperStage = Submission) : ConfContext =
-    ConfContext(public0, AuthorStatus, stage)
-
-  val author0 = mkUser("author0", AuthorStatus)
+  val author0 = mkUser("author0", UserStatus.authorL)
   private def getAuthorCtxt0 (stage : PaperStage = Submission)
-  : ConfContext = new ConfContext(author0, AuthorStatus, stage);
-  val author1 = mkUser("author1", AuthorStatus);
+  : ConfContext = new ConfContext(author0, UserStatus.authorL, stage);
+  val author1 = mkUser("author1", UserStatus.authorL);
   private def getAuthorCtxt1 (stage : PaperStage = Submission)
-  : ConfContext = new ConfContext(author1, AuthorStatus, stage);
-  val author2 = mkUser("author2", AuthorStatus)
+  : ConfContext = new ConfContext(author1, UserStatus.authorL, stage);
+  val author2 = mkUser("author2", UserStatus.authorL)
   private def getAuthorCtxt2 (stage : PaperStage = Submission)
-  : ConfContext = new ConfContext(author2, AuthorStatus, stage);
+  : ConfContext = new ConfContext(author2, UserStatus.authorL, stage);
 
-  val reviewer0 = mkUser("reviewer0", ReviewerStatus);
+  val reviewer0 = mkUser("reviewer0", UserStatus.reviewerL);
   private def getReviewerCtxt0 (stage : PaperStage = Submission)
-  : ConfContext = new ConfContext(reviewer0, ReviewerStatus, stage);
+  : ConfContext = new ConfContext(reviewer0, UserStatus.reviewerL, stage);
 
-  val pc0 = mkUser("pc0", PCStatus);
+  val pc0 = mkUser("pc0", UserStatus.pcL);
   private def getPcCtxt0 (stage : PaperStage = Submission)
-  : ConfContext = new ConfContext(pc0, PCStatus, stage);
+  : ConfContext = new ConfContext(pc0, UserStatus.pcL, stage);
 
   // papers.
   val emptyName = Title("")
@@ -49,24 +45,20 @@ class ExampleJConfBackend extends FunSuite {
 
   // Name visibility
   test ("name visibility") {
-    // Only author on paper can see paper that hasn't been accepted.
-    expect (paper0Name) { concretize(getAuthorCtxt0(), paper0.name); }
-    expect (emptyName) { concretize(getAuthorCtxt2(), paper0.name); }
-    expect (emptyName) { concretize(getPublicCtxt0(Public), paper0.name); }
+    expect(paper0Name) { concretize(getAuthorCtxt0(), paper0.name); }
+    expect(emptyName) { concretize(getAuthorCtxt2(), paper0.name); }
 
     val viewMap =
-      Map( (Submission, paper0Name)
-         , (Review, paper0Name)
-         , (Decision, paper0Name));
+      Map((Submission, paper0Name), (Review, paper0Name), (Decision, paper0Name));
     viewMap.foreach {
       case (stage, r) =>
-        expect (r) { concretize(getReviewerCtxt0(stage), paper0.name) };
-        expect (r) { concretize(getPcCtxt0(stage), paper0.name); }
+        expect (r) {
+          concretize(getReviewerCtxt0(stage), paper0.name)
+        };
+        expect (r) {
+          concretize(getPcCtxt0(stage), paper0.name);
+        }
     }
-
-    // Public user should be able to see paper that has been accepted.
-    expect (emptyName) { concretize(getPublicCtxt0(Decision), paper1.name); }
-    expect (paper1Name) { concretize(getPublicCtxt0(Public), paper1.name); }
   }
 
   // Author list visibility
@@ -108,9 +100,49 @@ class ExampleJConfBackend extends FunSuite {
     expect (false) {
       concretize(getAuthorCtxt0(Public), paper0.hasTag(Accepted));
     }
+
   }
 
-  test ("review visibility") {
-    /* TODO */
+  /*
+  test ("getUser using default user") {
+    val otherUser0 = getUser(uid0);
+    expect (true) { user0.equals(otherUser0) };
   }
+
+  test ("isFriends") {
+    expect (true) { getBool(uid0, isFriends(uid0, uid1)) };
+    expect (true) { getBool(uid1, isFriends(uid0, uid1)) };
+  }
+
+  test ("friends") {
+    val friends = getFriends(uid0);
+    val friendStrs = printStringList(uid1, friends);
+    expect (true) { friendStrs.contains("kuaty") };
+  }
+
+  test ("view sensitive data non-friend") {
+    expect (false) { concretize(snbContext, user0, isFriends(uid0, uid2)) };
+    expect (-1) { concretize(snbContext, user0, user2.network) };
+    expect (fromString("MIT")) {
+      concretize(snbContext, user1, user1.network)
+    };
+  }
+
+  test ("getFriendNetworks") {
+    val networks = getFriendNetworks(uid0);
+    val networkStrs = printStringList(uid1, networks);
+    expect (true) { networkStrs.contains("MIT") } ;
+  }
+
+  test("getUsersByNetworks view by friend") {
+    val friends = getUsersByNetwork("MIT");
+    val concreteFriends = getConcreteRecordList(uid0, friends);
+    concreteFriends.foreach(x => println(x.id));
+    expect (2) { concreteFriends.length };
+    expect (true)
+      { concreteFriends.exists(x => x.id == fromString("jeanyang")) };
+    expect (true)
+      { concreteFriends.exists(x => x.id == fromString("kuaty")) };
+  }
+  */
 }
