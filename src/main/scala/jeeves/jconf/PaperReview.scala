@@ -10,24 +10,38 @@ import cap.scalasmt._
 import JConfBackend._
 
 case class Body(val text: String) extends JeevesRecord;
-case class ReviewBody (val body: Body, val score: BigInt)
-  extends JeevesRecord;
+class ReviewBody ( _body: Body
+                 , val score: BigInt
+                 , _confidence: BigInt
+                 , _isAuthor: Formula)
+  extends JeevesRecord {
+  private val isInternal : Formula = CONTEXT.STATUS >= UserStatus.reviewerL
+
+  val rlevel = mkLevel();
+  policy(rlevel, isInternal);
+  policy(rlevel, _isAuthor &&
+                (CONTEXT.stage === Rebuttal || CONTEXT.stage === Decision));
+
+  val body = mkSensitiveObject(rlevel, _body, NULL)
+  val confidence = mkSensitiveInt(rlevel, _confidence, -1);
+}
 
 class PaperReview( id : Int
                  , _reviewer: ConfUser
-                 , _rtext: String, _score: Int
+                 , _rtext: String, _score: Int, _conf: Int
                  , _isAuthor : Formula ) extends JeevesRecord {
-  private val Anonymous = new ConfUser(Name("Anonymous"), ReviewerStatus)
-  private val DefaultBody = ReviewBody(null, -1)
+  private val Anonymous = new ConfUser(Name("Anonymous"), UserStatus.reviewerL)
+  private val DefaultBody = new ReviewBody(null, -1, -1, _isAuthor)
+
+  private val isInternal : Formula = CONTEXT.STATUS >= UserStatus.reviewerL
 
   // Restrict reviewer to only be seen by internal people.
   val reviewer = {
     val level = mkLevel();
-    policy( level
-          , (CONTEXT/'status === ReviewerStatus) ||
-            (CONTEXT/'status === PCStatus));
+    policy(level, isInternal);
     mkSensitiveObject(level, _reviewer, Anonymous);
   }
 
-  val review : ReviewBody = ReviewBody(Body(_rtext), _score)
+  val review : ReviewBody =
+    new ReviewBody(Body(_rtext), _score, _conf, _isAuthor)
 }

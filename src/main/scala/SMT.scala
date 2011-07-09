@@ -1,7 +1,10 @@
 package cap.scalasmt
 
+import Zeros._
+
 /* 
  * Translator to SMT-LIB2.
+ * @author kuat
  */
 object UnsatException extends RuntimeException("inconsistent model")
 
@@ -86,7 +89,7 @@ object SMT {
     else
       v.toString
 
-  private def formula(f: Expr[Boolean])(implicit env: Environment): String = f match {
+  private def formula(f: Expr[Boolean])(implicit env: Environment, sc: Scope): String = f match {
     case And(a,b) => "(and " + formula(a) + " " + formula(b) + ")"
     case Or(a,b) => "(or " + formula(a) + " " + formula(b) + ")"
     case Not(a) => "(not " + formula(a) + ")"
@@ -101,43 +104,43 @@ object SMT {
       formula(a) + " " + formula(b) + ")" 
     case ObjectEq(a,b) => "(= " +  atom(a) + " " + atom(b) + ")"
     case RelEq(a,b) => "(forall (x Object) (iff " + 
-      set(a)("x", env) + " " + set(b)("x", env) + "))"
+      set(a)("x", env, sc) + " " + set(b)("x", env, sc) + "))"
     case RelSub(a,b) => "(forall (x Object) (=> " + 
-      set(a)("x", env) + " " + set(b)("x", env) + "))"
+      set(a)("x", env, sc) + " " + set(b)("x", env, sc) + "))"
     case v: BoolVar => variable(v)
   }
 
-  private def integer(e: Expr[BigInt])(implicit env: Environment): String = e match {
+  private def integer(e: Expr[BigInt])(implicit env: Environment, sc: Scope): String = e match {
     case Plus(a,b) => "(+ " + integer(a) + " " + integer(b) + ")"
     case Minus(a,b) => "(- " + integer(a) + " " + integer(b) + ")"
     case Times(a,b) => "(* " + integer(a) + " " + integer(b) + ")"
     case IntConditional(c,a,b) => "(if " + formula(c) + " " + integer(a) + " " + integer(b) + ")"
     case IntVal(i) => i.toString
-    case ObjectIntField(root, f) => "(" + f.name + " " + atom(root) + ")"
+    case ObjectIntField(root, f) => "(" + f + " " + atom(root) + ")"
     case v: IntVar => variable(v) 
   }
 
-  private def atom(e: Expr[Atom])(implicit env: Environment): String = e match {
+  private def atom(e: Expr[Atom])(implicit env: Environment, sc: Scope): String = e match {
     case ObjectConditional(cond, thn, els) => "(if " + formula(cond) + " " + atom(thn) + " " + atom(els) + ")"
-    case Object(o) => uniq(o)
-    case ObjectField(root, f) => "(" + f.name + " " + atom(root) + ")"
-    case v: ObjectVar =>  
+    case Object(o) => sc.encode(o)
+    case ObjectField(root, f) => "(" + f + " " + atom(root) + ")"
+    case v: ObjectVar[_] =>  
       if (env.has(v)) 
-        uniq(env(v))
+        sc.encode(env(v))
       else
         v.toString
   }
 
-  private def set(e: Expr[Set[Atom]])(implicit q: String, env: Environment): String = e match {
+  private def set(e: Expr[Set[Atom]])(implicit q: String, env: Environment, sc: Scope): String = e match {
     case Union(a,b) => "(or " + set(a) + " " + set(b) + ")"
     case Diff(a,b) => "(and " + set(a) + " (not " + set(b) + "))"
     case Intersect(a,b) => "(and " + set(a) + " " + set(b) + ")"
     case Singleton(o) => "(= " + q + " " + atom(o) + ")"
-    case ObjectSet(os) => if (os.size == 0) "false" else "(or " + os.map("(= " + q + " " + uniq(_) + ")").mkString(" ") + ")"
+    case ObjectSet(os) => if (os.size == 0) "false" else "(or " + os.map("(= " + q + " " + sc.encode(_) + ")").mkString(" ") + ")"
     case RelJoin(root, f) => 
       val r = q + "0";
       "(exists (" + r + " Object) (and (= " + q + 
-        " (" + f.name + " " + r + ")) " + set(root)(r, env) + "))"
+        " (" + f + " " + r + ")) " + set(root)(r, env, sc) + "))"
     case v: ObjectSetVar => 
       if (env.has(v))
         set(ObjectSet(env(v)))
@@ -149,8 +152,6 @@ object SMT {
    * Bounded universe of atoms (and their fields)   
    */
 
-  private def uniq(o: Atom) = "o" + (if (o == null) "0" else o.uniq)
-  
   private object Scope {
     implicit def fromField(f: FieldDesc[_]) = Scope(fields = Set(f))
     implicit def fromVar(v: Var[_]) = Scope(vars = Set(v))
@@ -166,7 +167,23 @@ object SMT {
       this.fields ++ that.fields, 
       this.vars ++ that.vars
     )
+
+    lazy val uniq = objects.toList
+    def encode(o: Atom): String = 
+      if (o == null) 
+        "null"
+      else {
+        assert(uniq.contains(o))
+        "o" + uniq.indexOf(o)
+      }
+    def decode(s: String): Atom = 
+      if (s == "null")
+        null
+      else 
+        uniq(s.substring(1).toInt)
+
     def size = objects.size + fields.size + vars.size
+    override def toString = objects.size + " objects; " + fields.size + " fields; " +  vars.size + " vars"
   }
  
   private def univ(f: Expr[_])(implicit env: Environment): Scope = (f: @unchecked) match {
@@ -184,13 +201,10 @@ object SMT {
 
   @annotation.tailrec 
   private def closure(cur: Scope)(implicit env: Environment): Scope = {
-    val fields = {for (o <- cur.objects; f <- cur.fields) yield f match {
-      case f: ObjectFieldDesc => f(o)
-      case f: IntFieldDesc => f(o)
-    }}.flatten
+    val fields = for (o <- cur.objects; f <- cur.fields) yield f(o)
 
     val variables = {for (v <- cur.vars; if env.has(v)) yield v match {
-      case v: ObjectVar => Set(env(v))
+      case v: ObjectVar[_] => Set(env(v))
       case v: ObjectSetVar => env(v)
       case _ => Set[Atom]()
     }}.flatten
@@ -206,18 +220,20 @@ object SMT {
       cur
   }
 
+  private def classId(o: Atom) = if (o == null) "Null" else 
+    "C" + o.getClass.getName.replace(".","").replace("$", "")
 
   /**
    * SMT-LIB 2 translation.
    */
 
-  private def prelude(implicit env: Environment, fp: Scope): List[String] = {
-    val Scope(objects, fields, vars) = fp;
+  private def prelude(implicit env: Environment, sc: Scope): List[String] = {
+    val Scope(objects, fields, vars) = sc;
 
     // declare all objects
-    "(declare-datatypes ((Object " + objects.map("(" + uniq(_) + ")").mkString(" ") + ")))" :: 
+    "(declare-datatypes ((Object " + objects.map("(" + sc.encode(_) + ")").mkString(" ") + ")))" :: 
     // declare all fields
-    {for (f <- fields) yield "(declare-fun " + f.name + {f match {
+    {for (f <- fields) yield "(declare-fun " + f + {f match {
       case _: ObjectFieldDesc => " (Object) Object)"
       case _: IntFieldDesc => " (Object) Int)"
     }}}.toList :::
@@ -226,19 +242,19 @@ object SMT {
       yield "(declare-fun " + v + {v match {
         case _: IntVar =>  " () Int) "
         case _: BoolVar => " () Bool)"
-        case _: ObjectVar => " () Object)"
+        case _: ObjectVar[_] => " () Object)"
         case _: ObjectSetVar => " (Object) Bool)"
     }}}.toList :::
+    // declare types
+    "(declare-datatypes ((Type " + objects.toSet.map{
+      (o: Atom) => "(" + classId(o) + ")"
+    }.mkString(" ") + ")))" ::
+    "(declare-fun $type (Object) Type)" ::
+    {for (o <- objects) yield "(assert (= ($type " + sc.encode(o) + ") " + classId(o) + "))"}.toList :::
     // declare field values
-    {for (o <- objects; f <- fields) yield "(assert (= (" + f.name + " " + uniq(o) + ") " + {f match {
-      case f: ObjectFieldDesc => f(o) match {
-        case Some(a) => atom(a)
-        case None => /* function is total */ uniq(f.default)
-      }
-      case f: IntFieldDesc => f(o) match {
-        case Some(i) => integer(i)
-        case None => /* function is total */ f.default
-      }
+    {for (o <- objects; f <- fields) yield "(assert (= (" + f + " " + sc.encode(o) + ") " + {f match {
+      case f: ObjectFieldDesc => atom(f(o))
+      case f: IntFieldDesc => integer(f(o))
     }} + "))"}.toList :::
     Nil
   }
@@ -256,6 +272,8 @@ object SMT {
     (implicit env: Environment = DefaultEnv) = {
     implicit val scope = closure(univ(f :: defaults) ++ initial)
 
+    println(scope)
+
     val solver = new Z3// with Logging
   
     for (s <- prelude) solver.command(s)  
@@ -270,7 +288,7 @@ object SMT {
       if (! solver.check) solver.pop;
     }
     assert (solver.check)
-    val result = model(solver.model, scope)
+    val result = model(solver.model)
     
     if (checkNext && solver.next) 
       println("Warning: multiple assignments") 
@@ -280,8 +298,7 @@ object SMT {
     result;
   }
 
-  private def model(model: String, scope: Scope)
-    (implicit env: Environment) = {
+  private def model(model: String)(implicit env: Environment, sc: Scope) = {
     // parse model
     var result = env;
     val PREFIX = "((\"model\" \"";
@@ -290,12 +307,11 @@ object SMT {
     val defs = defines.split("\\(define ");
     for (d <- defs; if d.size > 0 && ! d.startsWith("(")) {
       val List(name, value) = d.split("\\)|\\s").toList;
-      for (v <- scope.vars; if name == v.toString)
+      for (v <- sc.vars; if name == v.toString)
         v match {
           case v: IntVar => result = result + (v -> BigInt(value))
           case v: BoolVar => result = result + (v -> value.toBoolean)
-          case v: ObjectVar => result = result + 
-            (v -> scope.objects.find(o => uniq(o) == value).get)
+          case v: ObjectVar[_] => result = result + (v -> sc.decode(value))
           case v: ObjectSetVar => 
             // TODO: better S-expression parsing
             throw new RuntimeException("not implemented")

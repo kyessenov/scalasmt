@@ -2,6 +2,7 @@ package cap.scalasmt
 
 /**
  * AST transformers.
+ * @author kuat
  */
 
 /**
@@ -12,8 +13,8 @@ object Partial {
   def eqs(f: Formula)(implicit env: Environment) = {
     var out = env;
     for (c <- f.clauses) c match {    
-      case ObjectEq(v: ObjectVar, Object(o)) => out = out + (v -> o)
-      case ObjectEq(Object(o), v: ObjectVar) => out = out + (v -> o)
+      case ObjectEq(v: ObjectVar[_], Object(o)) => out = out + (v -> o)
+      case ObjectEq(Object(o), v: ObjectVar[_]) => out = out + (v -> o)
       case IntEq(v: IntVar, IntVal(i)) => out = out + (v -> i)
       case IntEq(IntVal(i), v: IntVar) => out = out + (v -> i)
       case _ =>
@@ -81,7 +82,7 @@ object Partial {
       case e => e
     }
 
-  def eval[T >: Null <: Atom](e: ObjectExpr[T])(implicit env: Environment): ObjectExpr[T] =
+  def eval[T >: Null <: Atom](e: ObjectExpr[T])(implicit env: Environment): ObjectExpr[Atom] =
     {e match {
       case ObjectConditional(a, b, c) => 
         val sa = eval(a)

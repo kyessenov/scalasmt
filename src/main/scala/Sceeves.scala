@@ -4,6 +4,7 @@ import cap.scalasmt.{Environment => Env}
 
 /** 
  * Constraint environment for Sceeves.
+ * @author kuat
  */
 
 trait Sceeves {
@@ -30,8 +31,8 @@ trait Sceeves {
     x
   }
 
-  def pickObject(spec: ObjectVar => Formula = _ => true): ObjectVar = {
-    val x = Var.makeObject; 
+  def pickObject(spec: ObjectVar[_] => Formula = _ => true): ObjectVar[Atom] = {
+    val x = Var.makeObject[Atom]; 
     assume(spec(x)); 
     x
   }
@@ -48,7 +49,7 @@ trait Sceeves {
     x
   }
 
-  def pickObject(spec: ObjectVar => Formula, default: ObjectExpr[Atom]): ObjectVar = {
+  def pickObject(spec: ObjectVar[_] => Formula, default: ObjectExpr[Atom]): ObjectVar[Atom] = {
     val x = pickObject(spec); 
     usually(x === default); 
     x
@@ -74,11 +75,8 @@ trait Sceeves {
     e.eval(ENV)
   }
     
-  def concretize[T](f: Formula, e: Expr[T]): T = {
-    val v = e.eval(solve(f :: CONSTRAINTS));
-//    usually(f ==> ((e === e.constant(v)) match {case f: Formula => f}));
-    v
-  }
+  def concretize[T](f: Formula, e: Expr[T]): T = 
+    e.eval(solve(f :: CONSTRAINTS));
 }
 
 

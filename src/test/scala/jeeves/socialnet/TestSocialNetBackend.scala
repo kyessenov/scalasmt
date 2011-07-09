@@ -10,9 +10,21 @@ import scala.collection.immutable.Map
 
 class ExampleSocialNetBackend extends FunSuite {
   val MIT = Network("MIT");
-  val jean = new UserRecord(Name("Jean Yang"), Friends, MIT, Friends, Friends)
-  val kuat = new UserRecord(Name("Kuat Yessenov"), Friends, MIT, Self, Friends)
-  val joe = new UserRecord(Name("Joe Near"), Self, MIT, Friends, Self)
+  val jean = new UserRecord(
+    Name("Jean Yang"), Friends, 
+    Email("jean@mit.edu"), Friends,
+    MIT, Friends, 
+    Friends)
+  val kuat = new UserRecord(
+    Name("Kuat Yessenov"), Friends, 
+    Email("kuat@mit.edu"), Self,
+    MIT, Self, 
+    Friends)
+  val joe = new UserRecord(
+    Name("Joe Near"), Self, 
+    Email("jnear@mit.edu"), Self,
+    MIT, Friends, 
+    Self)
 
   addUser(jean);
   addUser(kuat);
@@ -21,15 +33,15 @@ class ExampleSocialNetBackend extends FunSuite {
   addFriend(joe, kuat);
 
   test ("name") {
-    expect(null) { concretize(kuat, joe.name) }
-    expect(null) { concretize(joe, jean.name) }
-    expect(Name("Kuat Yessenov")) { concretize(jean, kuat.name) }
+    expect (null) { concretize(kuat, joe.name) }
+    expect (null) { concretize(joe, jean.name) }
+    expect (Name("Kuat Yessenov")) { concretize(jean, kuat.name) }
   }
 
   test ("getFriends") {
-    expect(kuat :: Nil) {concretize(kuat, jean.getFriends())}
-    expect(Nil) {concretize(joe, jean.getFriends())}
-    expect(Nil) {concretize(kuat, joe.getFriends())}
+    expect (kuat :: Nil) {concretize(kuat, jean.getFriends())}
+    expect (Nil) {concretize(joe, jean.getFriends())}
+    expect (Nil) {concretize(kuat, joe.getFriends())}
   }
 
   test ("isFriends") {
@@ -45,9 +57,19 @@ class ExampleSocialNetBackend extends FunSuite {
     expect (null) {concretize(jean, kuat.network)}
     expect (jean :: Nil) {concretize(jean, getUsersByNetwork(MIT))}
   }
+
+  test ("email") {
+    expect (null) {concretize(kuat, joe.email)}
+    expect (null) {concretize(joe, jean.email)}
+    expect (Email("kuat@mit.edu")) {concretize(kuat, kuat.email)}
+  }
   
   test ("state change") {
-    val eunsuk = new UserRecord(Name("Eunsuk Kang"), Anyone, MIT, Anyone, Anyone);
+    val eunsuk = new UserRecord(
+      Name("Eunsuk Kang"), Anyone, 
+      Email("eskang@mit.edu"), Anyone,
+      MIT, Anyone, 
+      Anyone);
     expect (null) { concretize(eunsuk, joe.network)}
     addFriend(joe, eunsuk)
     expect (MIT) { concretize(eunsuk, joe.network)}
