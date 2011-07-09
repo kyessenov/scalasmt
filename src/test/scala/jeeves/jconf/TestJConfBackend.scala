@@ -29,6 +29,7 @@ class ExampleJConfBackend extends FunSuite {
   val reviewer0 = mkUser("reviewer0", ReviewerStatus);
   private def getReviewerCtxt0 (stage : PaperStage = Submission)
   : ConfContext = new ConfContext(reviewer0, stage);
+  val reviewer1 = mkUser("reviewer1", ReviewerStatus);
 
   val pc0 = mkUser("pc0", PCStatus);
   private def getPcCtxt0 (stage : PaperStage = Submission)
@@ -43,6 +44,8 @@ class ExampleJConfBackend extends FunSuite {
 
   val paper0Name = Title("my paper")
   val paper0 = addPaper(paper0Name, List(author0, author1), Nil);
+  assignReview(paper0, reviewer1);
+  assignReview(paper0, reviewer0);
   val paper0Review = paper0.addReview(reviewer0, "very nice", 3);
 
   val paper1Name = Title("hello world")
@@ -110,6 +113,16 @@ class ExampleJConfBackend extends FunSuite {
       concretize(getAuthorCtxt0(Public), paper0.hasTag(Accepted));
     }
 
+  }
+
+  test ("review assignment") {
+    expect (true) { isAssigned(paper0, reviewer0); }
+    expect (true) { isAssigned(paper0, reviewer1); }
+    expect (false) { isAssigned(paper1, reviewer0); }
+    expect (false) { isAssigned(paper1, reviewer1); }
+
+    assignReview(paper1, author0);
+    expect (false) { isAssigned(paper1, author0); }
   }
 
   test ("review tag visibility") {
