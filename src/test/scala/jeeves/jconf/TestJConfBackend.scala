@@ -42,10 +42,11 @@ class ExampleJConfBackend extends FunSuite {
   val emptyName = Title("")
 
   val paper0Name = Title("my paper")
-  val paper0 = mkPaper(paper0Name, List(author0, author1), Nil);
+  val paper0 = addPaper(paper0Name, List(author0, author1), Nil);
+  val paper0Review = paper0.addReview(reviewer0, "very nice", 3);
 
   val paper1Name = Title("hello world")
-  val paper1 = mkPaper(paper1Name, List(author2), List(Accepted));
+  val paper1 = addPaper(paper1Name, List(author2), List(Accepted));
 
   // Name visibility
   test ("name visibility") {
@@ -111,7 +112,44 @@ class ExampleJConfBackend extends FunSuite {
 
   }
 
+  test ("review tag visibility") {
+    expect (false) {
+      concretize(getAuthorCtxt0(Review), paper0.hasTag(ReviewedBy(reviewer0)));
+    }
+    expect (true) {
+      concretize(getReviewerCtxt0(Review), paper0.hasTag(ReviewedBy(reviewer0)));
+    }
+    expect (true) {
+      concretize(getPcCtxt0(Review), paper0.hasTag(ReviewedBy(reviewer0)));
+    }
+  }
+
   test ("review visibility") {
+    expect(null) {
+      concretize(getAuthorCtxt1(Review), paper0Review);
+    }
+    expect(null) {
+      concretize(getAuthorCtxt0(Review), paper0Review.reviewer);
+    }
+    expect(reviewer0) {
+      concretize(getReviewerCtxt0(Review), paper0Review.reviewer);
+    }
+  }
+
+  test ("back end functionality") {
+    expect(Some(paper0)) { getById(paper0.id); }
+    expect(false) {
+      concretize( getPublicCtxt0(Public)
+                , CONTAINS(searchByName("my paper"), paper0) );
+    }
+    expect(true) {
+      concretize( getPublicCtxt0(Public)
+                , CONTAINS(searchByName("hello world"), paper1) );
+    }
+    expect(true) {
+      concretize( getPublicCtxt0(Public)
+                , CONTAINS(searchByAuthor(author2), paper1) );
+    }
 
   }
 }
