@@ -1,0 +1,80 @@
+package cap.jeeves
+
+/*
+ * A library for using ScalaSMT for privacy, using symbolic varaibles to
+ * represent sensitive values.
+ * @author jeanyang, kuat
+ */
+
+import cap.scalasmt._
+import scala.collection.immutable.Map;
+import scala.collection.mutable.{Map => MMap};
+import scala.collection.mutable.HashMap;
+
+trait JeevesLib extends Sceeves {
+  trait JeevesRecord extends Atom {
+    register(this)
+  }
+  type LevelVar = BoolVar;
+  type Symbolic = ObjectExpr[Atom];
+  
+  sealed trait Level
+  object HIGH extends Level
+  object LOW extends Level
+  implicit def level2sym(l: Level): Formula = l match {
+    case HIGH => true
+    case LOW => false
+  }
+
+  val CONTEXT: Symbolic = pickObject[JeevesRecord];
+  
+  private var POLICIES: List[(LevelVar, Level, () => Formula)] = Nil
+
+  def mkLevel(): LevelVar = pickBool(_ => true, HIGH)
+
+  def mkSensitiveInt(lvar: LevelVar, high: IntExpr, low: IntExpr = -1): IntVar = {
+    val v = pick(_ === (lvar ? high ! low));
+    v;
+  }
+
+  def mkSensitive[T >: Null <: JeevesRecord : Manifest](lvar: LevelVar, high: Symbolic, low: Symbolic = NULL): Symbolic = {
+    val v = pickObject[T]
+    assume(v === (lvar ? high ! low));
+    v;
+  } 
+
+  def policy(lvar: LevelVar, f: Formula, value: Level) {
+    assume(f ==> (lvar === value));
+  }
+
+  def policy(lvar: LevelVar, f: () => Formula, value: Level) {
+    POLICIES = (lvar, value, f) :: POLICIES
+  }
+  
+  override def assume(f: Formula) = super.assume(Partial.eval(f)(EmptyEnv))
+
+  def concretize[T](ctx: Symbolic, e: Expr[T]) = {
+    val context = (CONTEXT === ctx) && 
+      AND(POLICIES.map{
+        case (lvar, level, f) => f() ==> (lvar === level)
+      })
+    super.concretize(context, e);
+  }
+
+  /**
+   * Collections of symbolic values.
+   */ 
+
+  def concretize[T](ctx: Symbolic, e: (Expr[T], Expr[T])): (T, T) = 
+    (concretize(ctx, e._1), concretize(ctx, e._2))
+
+  def concretize[T >: Null <: JeevesRecord](ctx: Symbolic, lst: List[Symbolic]): List[T] = 
+    for (o <- lst;
+      t = concretize(ctx, o).asInstanceOf[T];
+      if (t != null))
+      yield t;
+
+  def filter[T >: Null <: JeevesRecord](lst: List[T], filter: T => Formula) : List[Symbolic] = 
+    lst.map(o => IF (filter(o)) {o} ELSE {NULL})
+}
+
