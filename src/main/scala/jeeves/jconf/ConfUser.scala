@@ -17,5 +17,5 @@ object PCStatus extends UserStatus
 
 /* Conference User */
 case class Name (name : String) extends JeevesRecord
-case class ConfUser( val name : Name, val status : UserStatus )
+case class ConfUser( val name : Name, val role : UserStatus )
   extends JeevesRecord
