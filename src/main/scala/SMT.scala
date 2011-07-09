@@ -281,7 +281,7 @@ object SMT {
     (implicit env: Environment = DefaultEnv) = {
     implicit val scope = closure(univ(f :: defaults) ++ initial)
 
-    println(scope)
+    //println(scope)
 
     val solver = new Z3 //with Logging
   
