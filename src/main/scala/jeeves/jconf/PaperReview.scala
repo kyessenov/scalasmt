@@ -22,7 +22,7 @@ class ReviewBody ( _body: Body
   // policy(rlevel, _isAuthor &&
   //              (CONTEXT.stage === Rebuttal || CONTEXT.stage === Decision));
 
-  val body = mkSensitiveObject(rlevel, _body, NULL)
+  val body = mkSensitive[Body](rlevel, _body, NULL)
   val confidence = mkSensitiveInt(rlevel, _confidence, -1);
 }
 
@@ -39,7 +39,7 @@ class PaperReview( id : Int
   val reviewer = {
     val level = mkLevel();
     // policy(level, isInternal);
-    mkSensitiveObject(level, _reviewer, Anonymous);
+    mkSensitive[ConfUser](level, _reviewer, Anonymous);
   }
 
   val review : ReviewBody =

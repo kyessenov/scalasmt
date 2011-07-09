@@ -43,7 +43,7 @@ class PaperRecord( val id : Int
       () => isAuthor || isInternal || isPublic(getTags ())
     policy (level, canSee, HIGH);
     policy (level, () => !(canSee ()), LOW);
-    mkSensitiveObject(level, _name, Title(""))
+    mkSensitive[Title](level, _name, Title(""))
   }
 
   val authors : List[Symbolic] = {
@@ -55,7 +55,7 @@ class PaperRecord( val id : Int
     }
     policy (level, canSee, HIGH);
     policy (level, () => !(canSee ()), LOW);
-    _authors.map(a => mkSensitiveObject(level, a, NULL))
+    _authors.map(a => mkSensitive[ConfUser](level, a, NULL))
   }
 
   /* Managing tags. */
@@ -78,7 +78,7 @@ class PaperRecord( val id : Int
         policy (level, canSee, HIGH);
         policy (level, !canSee, LOW);
     }
-    mkSensitiveObject(level, tag, NULL)
+    mkSensitive[PaperTag](level, tag, NULL)
   }
 
   private var actualTags : Map[PaperTag, Symbolic] = {
@@ -115,7 +115,7 @@ class PaperRecord( val id : Int
       // The public can't see the reviews if they can see the paper name or
       // authors.
       // policy(level, () => (!(nameLevel || authorLevel)) && isPublic(getTags ()));
-      mkSensitiveObject(level, s, dummyReview)
+      mkSensitive[PaperReview](level, s, dummyReview)
     }
     reviews + (reviewId -> r);
     addTag (ReviewedBy(r.reviewer))

@@ -19,7 +19,7 @@ class ExampleJeevesLib extends FunSuite with JeevesLib {
     val l = mkLevel();
     val t = Test(1);
 
-    val x = mkSensitiveObject(l, t, NULL);
+    val x = mkSensitive[Test](l, t, NULL);
     
     expect(t) {concretize(l === HIGH, x)};
     expect(null) {concretize(l === LOW, x)};
@@ -28,14 +28,15 @@ class ExampleJeevesLib extends FunSuite with JeevesLib {
   case class Test(id: Int) extends JeevesRecord
   
   test ("concretizeList non-null") {
-    val x = pickObject(x => x === Test(0));
+    val x = pickObject[Test];
+    assume(x === Test(0));
     val symList = List(x);
     val cList : List[Test] = concretize(NULL, symList);
     expect(List(Test(0))) {cList};
   }
 
   test ("concretizeList null") {
-    val x = pickObject(_ => true, NULL);
+    val x = pickObject[Test](NULL);
     val symList = List(x);
     val cList : List[Test] = concretize(NULL, symList);
     expect(Nil) {cList};
