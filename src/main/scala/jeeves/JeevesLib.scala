@@ -47,6 +47,7 @@ trait JeevesLib extends Sceeves {
   def policy(lvar: LevelVar, f: Formula, value: Level) {
     assume(f ==> (lvar === value));
   }
+
   def policy(lvar: LevelVar, f: () => Formula, value: Level) {
     POLICIES = (lvar, value, f) :: POLICIES
   }
