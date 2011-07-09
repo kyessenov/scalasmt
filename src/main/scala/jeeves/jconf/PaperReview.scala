@@ -18,9 +18,9 @@ class ReviewBody ( _body: Body
   private val isInternal : Formula = CONTEXT.status >= UserStatus.reviewerL
 
   val rlevel = mkLevel();
-  policy(rlevel, isInternal);
-  policy(rlevel, _isAuthor &&
-                (CONTEXT.stage === Rebuttal || CONTEXT.stage === Decision));
+  // policy(rlevel, isInternal);
+  // policy(rlevel, _isAuthor &&
+  //              (CONTEXT.stage === Rebuttal || CONTEXT.stage === Decision));
 
   val body = mkSensitiveObject(rlevel, _body, NULL)
   val confidence = mkSensitiveInt(rlevel, _confidence, -1);
@@ -38,7 +38,7 @@ class PaperReview( id : Int
   // Restrict reviewer to only be seen by internal people.
   val reviewer = {
     val level = mkLevel();
-    policy(level, isInternal);
+    // policy(level, isInternal);
     mkSensitiveObject(level, _reviewer, Anonymous);
   }
 
