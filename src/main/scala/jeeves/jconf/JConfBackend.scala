@@ -6,7 +6,7 @@ import cap.scalasmt._
 import cap.jeeves._
 
 object JConfBackend extends JeevesLib {
-  private var papers : Map[Int, PaperRecord] = Map();
+  private var papers : List[PaperRecord] = Nil;
 
   /* Making papers. */
   private var _papercount = 0;
@@ -18,30 +18,21 @@ object JConfBackend extends JeevesLib {
   def mkPaper(name : Title, authors : List[ConfUser], tags : List[PaperTag])
       : PaperRecord = {
     val paper = new PaperRecord(getPaperUid(), name, authors, tags);
-    papers += (paper.id -> paper);
+    papers = paper :: papers
     paper
   }
  
   /* Updating papers. */
-  def addTag (uid : Int, tag : PaperTag) : Unit = {
-    papers.get(uid) match {
-      case Some(p) => p.addTag(tag)
-      case None => ()
-    }
-  }
+  def addTag (p: PaperRecord, tag : PaperTag) : Unit = p.addTag(tag)
   
   def addReview
-    (uid: Int, reviewer: ConfUser, rtext: String, score: Int, confidence:Int)
+    ( p: PaperRecord, reviewer: ConfUser, rtext: String, score: Int)
     : Unit = {
-    papers.get(uid) match {
-      case Some(p) => p.addReview(reviewer, rtext, score, confidence)
-      case None => ()
-    }
+    p.addReview(reviewer, rtext, score)
   }
 
   /* Searching. */
   def getPaperByTag (tag : PaperTag) : List[Symbolic] = {
-    val paperList = (papers.toList).map(x => x._2);
-    filter(paperList, (p : PaperRecord) => CONTAINS(p.getTags (), tag))
+    filter(papers, (p : PaperRecord) => CONTAINS(p.getTags (), tag))
   }
 }

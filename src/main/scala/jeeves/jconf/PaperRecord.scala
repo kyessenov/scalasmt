@@ -90,22 +90,24 @@ class PaperRecord( val id : Int
     reviewIds = reviewIds + 1;
     id
   }
-  private def dummyReview = new PaperReview(-1, null, "", -1, -1, false)
+  private def dummyReview = new PaperReview(-1, null, "", -1, false)
   val reviews : Map[Int, Symbolic] = Map[Int, Symbolic]()
-  def addReview (reviewer: ConfUser, rtext: String, score: Int, confidence: Int)
+  def addReview (reviewer: ConfUser, rtext: String, score: Int)
   : Symbolic = {
     val reviewId = getReviewId ();
     val r = {
       val level = mkLevel();
       val s = new PaperReview(
-                reviewId, reviewer, rtext, score, confidence, isAuthor);
+                reviewId, reviewer, rtext, score, isAuthor);
       policy(level, isInternal);
       policy(level, isAuthor &&
                     ((CONTEXT/'stage === Rebuttal) ||
                       (CONTEXT/'stage === Decision)));
       // The public can't see the reviews if they can see the paper name or
       // authors.
-      policy(level, () => (!(nameLevel || authorLevel)) && isPublic(getTags ()));
+      policy( level
+            , (CONTEXT/'status === PublicStatus) && (nameLevel || authorLevel)
+            , LOW);
       mkSensitiveObject(level, s, dummyReview)
     }
     reviews + (reviewId -> r);
