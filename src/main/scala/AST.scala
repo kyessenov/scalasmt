@@ -300,8 +300,8 @@ object Expr {
   implicit def fromInt(i: Int) = IntVal(i)
   implicit def fromBool(b: Boolean) = BoolVal(b)
   implicit def fromAtom[T >: Null <: Atom](o: T) = Object(o)
-  implicit def fromAtomExprs(vs: Traversable[ObjectExpr[Atom]]) = Atoms(vs)
-  implicit def fromAtoms[T >: Null <: Atom](vs: Traversable[T]) = Atoms(vs.map(Object(_)))
+  implicit def fromAtomExprs(vs: Traversable[ObjectExpr[Atom]]) = AtomExprs(vs)
+  implicit def fromAtoms[T >: Null <: Atom](vs: Traversable[T]) = Atoms[T](vs)
 }
 object Formula {
   implicit def fromList(vs: Traversable[Formula]) = vs.foldLeft(true: Formula)(_ && _)
@@ -315,10 +315,6 @@ object `package` {
   implicit def fromObjectField(f: ObjectField) = f match {
     case ObjectField(root, ObjectFieldDesc(name)) => ObjectIntField(root, IntFieldDesc(name))
   }
-  case class IF(cond: Formula) {
-    def apply(thn: IntExpr) = new {def ELSE(els: IntExpr) = cond ? thn ! els}
-    def apply(thn: ObjectExpr[Atom]) = new {def ELSE(els: ObjectExpr[Atom]) = cond ? thn ! els}
-  }
   def DISTINCT[T <% IntExpr](vs: Traversable[T]) = 
     for (vs1 <- vs; vs2 <- vs; if (vs1 != vs2)) yield ( ! (vs1 === vs2))
   def NULL = Object(null)
@@ -326,9 +322,21 @@ object `package` {
   def AND(vs: Traversable[Formula]) = vs.foldLeft(true: Formula)(_ && _)
   def ABS(x: IntExpr) = IF (x > 0) {x} ELSE {-x}
 }
-case class Atoms(vs: Traversable[ObjectExpr[Atom]]) {
-  def has(i: ObjectExpr[Atom]): Formula = 
-    OR(for (v <- vs) yield v === i)
+case class Atoms[T >: Null <: Atom](vs: Traversable[T]) {
+  def has(i: ObjectExpr[Atom]): Formula = OR(for (v <- vs) yield i === v)
+  def filter(f: T => Formula) = 
+    vs.map(o => IF (f(o)) {o} ELSE {NULL})
 }
-
+case class AtomExprs(vs: Traversable[ObjectExpr[Atom]]) {
+  def has(i: ObjectExpr[Atom]) = OR(for (v <- vs) yield i === v)
+  def filter(f: ObjectExpr[Atom] => Formula) = 
+    vs.map(o => IF (f(o)) {o} ELSE {NULL})
+}
+case class IF(cond: Formula) {
+  def apply(thn: IntExpr) = 
+    new {def ELSE(els: IntExpr) = cond ? thn ! els}
+  def apply(thn: ObjectExpr[Atom]) = 
+    new {def ELSE(els: ObjectExpr[Atom]) = cond ? thn ! els}
+}
+ 
 
