@@ -43,13 +43,13 @@ trait JeevesLib extends Sceeves {
     v;
   } 
 
-  def policy(lvar: LevelVar, f: => Formula, value: Level) {
+  def policy(lvar: LevelVar, f: => Formula, value: Level) = 
     POLICIES = (lvar, value, f _) :: POLICIES
-  }
   
   override def assume(f: Formula) = super.assume(Partial.eval(f)(EmptyEnv))
 
   def concretize[T](ctx: Symbolic, e: Expr[T]) = {
+    Debug.debug(" *** # POLICIES: " + POLICIES.size)
     val context = (CONTEXT === ctx) && 
       AND(POLICIES.map{
         case (lvar, level, f) => f() ==> (lvar === level)
