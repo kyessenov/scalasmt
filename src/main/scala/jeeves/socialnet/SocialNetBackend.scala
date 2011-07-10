@@ -36,15 +36,9 @@ object SocialNetBackend extends JeevesLib {
   def getUsersByNetwork(network : Network) : List[Symbolic] = 
     filter(users, (u: UserRecord) => u.network === network)
 
-  /** Email user's friends user's name. */
-  def announceName(user: UserRecord) = 
-    for (f <- user.getFriends()) {
-      val to = concretize(user, f.email).asInstanceOf[Email];
-      val body = concretize(f, user.name).asInstanceOf[Name];
-      email(to, body);
-    }
-
-  def email(to: Email, body: Name) = {}
+  def invite(a: Symbolic, b: Symbolic) = {
+    concretize(a, b.email)
+  }
   
   // send email to multiple people at the same time
 } 
