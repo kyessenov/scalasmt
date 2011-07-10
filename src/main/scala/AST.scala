@@ -300,6 +300,8 @@ object Expr {
   implicit def fromInt(i: Int) = IntVal(i)
   implicit def fromBool(b: Boolean) = BoolVal(b)
   implicit def fromAtom[T >: Null <: Atom](o: T) = Object(o)
+  implicit def fromAtomExprs(vs: Traversable[ObjectExpr[Atom]]) = Atoms(vs)
+  implicit def fromAtoms[T >: Null <: Atom](vs: Traversable[T]) = Atoms(vs.map(Object(_)))
 }
 object Formula {
   implicit def fromList(vs: Traversable[Formula]) = vs.foldLeft(true: Formula)(_ && _)
@@ -322,11 +324,11 @@ object `package` {
   def NULL = Object(null)
   def OR(vs: Traversable[Formula]) = vs.foldLeft(false: Formula)(_ || _)
   def AND(vs: Traversable[Formula]) = vs.foldLeft(true: Formula)(_ && _)
-  def CONTAINS[T <% IntExpr](vs: Traversable[T], i: IntExpr) = 
-    OR(for (v <- vs) yield v === i)
-  def CONTAINS[T <% ObjectExpr[Atom]](vs: Traversable[T], i: ObjectExpr[Atom]) = 
-    OR(for (v <- vs) yield v === i)
   def ABS(x: IntExpr) = IF (x > 0) {x} ELSE {-x}
+}
+case class Atoms(vs: Traversable[ObjectExpr[Atom]]) {
+  def has(i: ObjectExpr[Atom]): Formula = 
+    OR(for (v <- vs) yield v === i)
 }
 
 

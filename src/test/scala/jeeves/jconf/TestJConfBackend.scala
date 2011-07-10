@@ -75,20 +75,20 @@ class ExampleJConfBackend extends FunSuite {
   // Author list visibility
   test ("author list") {
     expect (true) {
-      concretize(getAuthorCtxt0(), CONTAINS(paper0.authors, author0))
+      concretize(getAuthorCtxt0(), paper0.authors.has(author0))
     };
     expect (true) {
-      concretize(getAuthorCtxt1(), CONTAINS(paper0.authors, author0))
+      concretize(getAuthorCtxt1(), paper0.authors.has(author0))
     }
     expect (false) {
       concretize( getReviewerCtxt0(Submission)
-                , CONTAINS(paper0.authors, author0));
+                , paper0.authors.has(author0));
     }
     expect (true) {
-      concretize(getReviewerCtxt0(Decision), CONTAINS(paper0.authors, author0));
+      concretize(getReviewerCtxt0(Decision), paper0.authors.has(author0));
     }
     expect (true) {
-      concretize(getPcCtxt0(Decision), CONTAINS(paper0.authors, author0));
+      concretize(getPcCtxt0(Decision), paper0.authors.has(author0));
     }
   }
 
@@ -153,15 +153,15 @@ class ExampleJConfBackend extends FunSuite {
     expect(Some(paper0)) { getById(paper0.id); }
     expect(false) {
       concretize( getPublicCtxt0(Public)
-                , CONTAINS(searchByName("my paper"), paper0) );
+                , searchByName("my paper").has(paper0) );
     }
     expect(true) {
       concretize( getPublicCtxt0(Public)
-                , CONTAINS(searchByName("hello world"), paper1) );
+                , searchByName("hello world").has(paper1) );
     }
     expect(true) {
       concretize( getPublicCtxt0(Public)
-                , CONTAINS(searchByAuthor(author2), paper1) );
+                , searchByAuthor(author2).has(paper1) );
     }
 
   }
