@@ -9,6 +9,8 @@ import cap.scalasmt._
 import collection.immutable.ListSet;
 import SocialNetBackend._
 
+import Expr._
+
 case class Name(s: String) extends JeevesRecord
 case class Email(s: String) extends JeevesRecord
 case class Network(s: String) extends JeevesRecord
@@ -44,7 +46,7 @@ extends JeevesRecord {
     val l = level(friendsL);
     friends.map(mkSensitive[UserRecord](l, _))
   }
-  def isFriends(u: UserRecord) = CONTAINS(getFriends, u)
+  def isFriends(u: UserRecord) = getFriends.has(u)
   def location() = {
     val l = mkLevel();
     policy(l, DISTANCE(CONTEXT, this) >= 10, LOW)
@@ -59,7 +61,7 @@ extends JeevesRecord {
       case Anyone => 
       case Self => policy(l, ! me, LOW)
       case Friends => 
-        policy(l, ! (me || CONTAINS(friends, CONTEXT)),  LOW);
+        policy(l, ! (me || friends.has(CONTEXT)),  LOW);
     }
     l
   }
