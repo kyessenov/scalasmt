@@ -30,17 +30,20 @@ object SocialNetBackend extends JeevesLib {
     record2.remove(record1);
   }
 
-  /* This function demonstrates how we can work with symbolic objects and do
-   * additional operations on them without worrying about permissions. */
   def getFriendNetworks(user: UserRecord) =
     user.getFriends().map(_.network)
 
   def getUsersByNetwork(network : Network) = 
     users.filter(_.network === network)
 
-  def invite(a: Symbolic, b: Symbolic) = {
-    concretize(a, b.email)
-  }
-  
+  def announceName(u: UserRecord) = 
+    for (f <- u.getFriends())
+      yield email(f, u.name)
+
+  def email(f: Symbolic, b: Symbolic) = 
+    Receipt(concretize(f, f.email), concretize(f, b))
+
+  case class Receipt(email: Atom, body: Atom)
+
   // send email to multiple people at the same time
 } 
