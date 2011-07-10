@@ -58,9 +58,9 @@ object JConfBackend extends JeevesLib {
     filter(papers, (p: PaperRecord) => p.name === Title(name))
   }
   def searchByAuthor (author: ConfUser) : List[Symbolic] = {
-    filter(papers, (p: PaperRecord) => CONTAINS(p.authors, author))
+    filter(papers, (p: PaperRecord) => p.authors.has(author))
   }
   def searchByTag (tag: PaperTag): List[Symbolic] = {
-    filter(papers, (p: PaperRecord) => CONTAINS(p.getTags (), tag))
+    filter(papers, (p: PaperRecord) => p.getTags().has(tag))
   }
 }
