@@ -330,7 +330,7 @@ case class Atoms[T >: Null <: Atom](vs: Traversable[T]) {
 case class AtomExprs(vs: Traversable[ObjectExpr[Atom]]) {
   def has(i: ObjectExpr[Atom]) = OR(for (v <- vs) yield i === v)
   def filter(f: ObjectExpr[Atom] => Formula) = 
-    vs.map(o => IF (f(o)) {o} ELSE {NULL})
+    vs.map(o => IF (f(o)) {o} ELSE {null})
 }
 case class IF(cond: Formula) {
   def apply(thn: IntExpr) = 
