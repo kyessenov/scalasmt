@@ -1,6 +1,7 @@
 package cap.scalasmt
 
 import Zeros._
+import Debug._
 
 /* 
  * Translator to SMT-LIB2.
@@ -31,7 +32,8 @@ trait Solver {
 }
 
 trait Logging extends Solver {
-  abstract override def >(s: String) {println(s); super.>(s)}
+  debug("Logging solver: " + this);
+  abstract override def >(s: String) {debug(s); super.>(s)}
 }
 
 class Z3 extends Solver {
@@ -40,12 +42,12 @@ class Z3 extends Solver {
 
   var TIMEOUT = 10;
   
-  def PATH = Option(System.getProperty("smt.home")) match {
+  private def PATH = Option(System.getProperty("smt.home")) match {
     case Some(path) => path
     case None => System.getProperty("user.home") + "/opt/z3/bin/z3"
   }
 
-  def COMMANDS ="-smt2" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
+  private def COMMANDS ="-smt2" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
   
   private var process = {
     val pb = new ProcessBuilder((PATH :: COMMANDS).toArray: _*);
@@ -252,7 +254,7 @@ object SMT {
     "(declare-datatypes ((Type " + objects.map("(" + sc.atomId(_) + ")").mkString(" ") + ")))" ::
     "(declare-fun $type (Object) Type)" ::
     {for (o <- objects) yield "(assert (= ($type " + sc.encode(o) + ") " + sc.atomId(o) + "))"}.toList:::
-    {for (v <- vars.collect{case v: ObjectVar[_] => v}; if ! env.has(v)) 
+    {for (v <- vars.collect{case v: ObjectVar[_] if ! env.has(v) => v}) 
       yield "(assert (or " + 
       {for (klas <- objects.map(a => if (a == null) null else a.getClass); 
           if (klas == null) || v.mayAssign(klas)) 
@@ -281,31 +283,45 @@ object SMT {
     (implicit env: Environment = DefaultEnv) = {
     implicit val scope = closure(univ(f :: defaults) ++ initial)
 
-    //println(scope)
+    debug("\n *** SMT SOLVING STATISTICS *** ")
+    debug("SCOPE: " + scope);
+    debug("# DEFAULTS: " + defaults.size)
+    debug("INITIAL SCOPE: " + initial.size)
+    debug("# FORMULA CLAUSES: " + f.clauses.size)
+    val start = System.currentTimeMillis;
 
     val solver = new Z3 //with Logging
   
     for (s <- prelude) solver.command(s)  
     for (clause <- f.clauses) 
       solver.assert(formula(clause))
+  
+    try {
+      // invariant: the model is consistent 
+      if (! solver.check) throw UnsatException
+      for (d <- defaults) {
+        solver.push;
+        solver.assert(formula(d));
+        if (! solver.check) solver.pop;
+      }
+      assert (solver.check)
+      val result = model(solver.model)
+     
+      debug(" *** SUCCESS SOLVING TIME: " + (System.currentTimeMillis - start) + " ms")
+      
+      if (checkNext && solver.next) 
+        warning("Multiple assignments") 
 
-    // invariant: the model is consistent 
-    if (! solver.check) throw UnsatException
-    for (d <- defaults) {
-      solver.push;
-      solver.assert(formula(d));
-      if (! solver.check) solver.pop;
+      result
+    } catch {
+      case e =>
+        debug(" *** FAILED SOLVING TIME: " + (System.currentTimeMillis - start) + " ms")
+        throw e;
+    } finally { 
+      solver.close;
     }
-    assert (solver.check)
-    val result = model(solver.model)
-    
-    if (checkNext && solver.next) 
-      println("Warning: multiple assignments") 
-
-    solver.close;   
- 
-    result;
-  }
+  }   
+  
 
   private def model(model: String)(implicit env: Environment, sc: Scope) = {
     // parse model

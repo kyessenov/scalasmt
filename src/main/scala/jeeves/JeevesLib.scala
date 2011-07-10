@@ -43,12 +43,8 @@ trait JeevesLib extends Sceeves {
     v;
   } 
 
-  def policy(lvar: LevelVar, f: Formula, value: Level) {
-    assume(f ==> (lvar === value));
-  }
-
-  def policy(lvar: LevelVar, f: () => Formula, value: Level) {
-    POLICIES = (lvar, value, f) :: POLICIES
+  def policy(lvar: LevelVar, f: => Formula, value: Level) {
+    POLICIES = (lvar, value, f _) :: POLICIES
   }
   
   override def assume(f: Formula) = super.assume(Partial.eval(f)(EmptyEnv))
@@ -68,13 +64,13 @@ trait JeevesLib extends Sceeves {
   def concretize[T](ctx: Symbolic, e: (Expr[T], Expr[T])): (T, T) = 
     (concretize(ctx, e._1), concretize(ctx, e._2))
 
-  def concretize[T >: Null <: JeevesRecord](ctx: Symbolic, lst: List[Symbolic]): List[T] = 
-    for (o <- lst;
+  def concretize[T >: Null <: JeevesRecord](ctx: Symbolic, lst: Traversable[Symbolic]): List[T] = 
+    for (o <- lst.toList;
       t = concretize(ctx, o).asInstanceOf[T];
       if (t != null))
       yield t;
 
-  def filter[T >: Null <: JeevesRecord](lst: List[T], filter: T => Formula) : List[Symbolic] = 
-    lst.map(o => IF (filter(o)) {o} ELSE {NULL})
+  def filter[T >: Null <: JeevesRecord](lst: Traversable[T], filter: T => Formula) : List[Symbolic] = 
+    lst.toList.map(o => IF (filter(o)) {o} ELSE {NULL})
 }
 
