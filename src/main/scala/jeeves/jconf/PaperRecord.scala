@@ -20,7 +20,7 @@ object Public extends PaperStage
 
 sealed trait PaperTag extends JeevesRecord
 object NeedsReview extends PaperTag
-case class ReviewedBy (reviewer: ConfUser) extends PaperTag
+case class ReviewedBy (name : Symbolic) extends PaperTag
 object Accepted extends PaperTag
 
 case class Title (name : String) extends JeevesRecord
@@ -38,25 +38,16 @@ class PaperRecord( val id : Int
     (CONTEXT.viewer.role === PCStatus)
 
   // The name of the paper is always visible to the authors.
-  def updateName(_name: Title) : Symbolic = {
+  val name : Symbolic = {
     val level = mkLevel ();
-    val canSee: () => Formula =
-      () => isAuthor || isInternal || isPublic(getTags ())
-    policy (level, canSee, HIGH);
-    policy (level, () => !(canSee ()), LOW);
+    policy (level, ! (isAuthor || isInternal || isPublic(getTags())), LOW);
     mkSensitive[Title](level, _name, Title(""))
   }
-  var name = updateName(_name);
 
   val authors : List[Symbolic] = {
     val level = mkLevel ();
-    val canSee: () => Formula = {
-      () =>
-        isAuthor || (isInternal && (CONTEXT.stage === Decision)) ||
-          isPublic(getTags ())
-    }
-    policy (level, canSee, HIGH);
-    policy (level, () => !(canSee ()), LOW);
+    policy (level, ! (isAuthor || (isInternal && (CONTEXT.stage === Decision)) ||
+          isPublic(getTags())), LOW);
     _authors.map(a => mkSensitive[ConfUser](level, a, NULL))
   }
 
@@ -65,20 +56,20 @@ class PaperRecord( val id : Int
     val level = mkLevel ();
     tag match {
       case NeedsReview =>
-        val canSee : Formula = isInternal && CONTEXT.stage === Review;
+        val canSee = isInternal && CONTEXT.stage === Review;
         policy (level, canSee, HIGH);
-        policy (level, !canSee, LOW);
+        policy (level, ! canSee, LOW);
       case ReviewedBy (reviewer) =>
         policy (level, isInternal, HIGH);
-        policy (level, !isInternal, LOW)
+        policy (level, ! isInternal, LOW)
       // Can see the "Accepted" tag if is an internal user at the decision
       // stage or if all information is visible.
       case Accepted =>
         val stage = CONTEXT.stage;
-        val canSee : Formula =
+        val canSee =
           (isInternal && (stage == Decision)) || (stage === Public);
         policy (level, canSee, HIGH);
-        policy (level, !canSee, LOW);
+        policy (level, ! canSee, LOW);
     }
     mkSensitive[PaperTag](level, tag, NULL)
   }
@@ -102,8 +93,8 @@ class PaperRecord( val id : Int
     reviewIds = reviewIds + 1;
     id
   }
-  
-  var reviews : List[Symbolic] = Nil
+  private def dummyReview = new PaperReview(-1, null, "", -1)
+  val reviews : Map[Int, Symbolic] = Map[Int, Symbolic]()
   def addReview (reviewer: ConfUser, rtext: String, score: Int)
   : Symbolic = {
     val reviewId = getReviewId ();
@@ -111,15 +102,14 @@ class PaperRecord( val id : Int
       val level = mkLevel();
       val s = new PaperReview(reviewId, reviewer, rtext, score);
       val canSee =
-        isInternal ||
-        (isAuthor &&
-          ((CONTEXT.stage === Rebuttal) || (CONTEXT.stage === Decision)));
+        isAuthor &&
+          ((CONTEXT.stage === Rebuttal) || (CONTEXT.stage === Decision));
       policy(level, canSee, HIGH);
-      policy(level, !canSee, LOW);
-      mkSensitive[PaperReview](level, s, NULL)
+      policy(level, ! canSee, LOW);
+      mkSensitive[PaperReview](level, s, dummyReview)
     }
-    reviews = r::reviews;
-    addTag (ReviewedBy(reviewer))
+    reviews + (reviewId -> r);
+    addTag (ReviewedBy(r.reviewer))
     r
   }
 }

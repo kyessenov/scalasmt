@@ -13,7 +13,6 @@ case class Name(s: String) extends JeevesRecord
 case class Email(s: String) extends JeevesRecord
 case class Network(s: String) extends JeevesRecord
 
-
 sealed trait UserLevel 
 object Anyone extends UserLevel
 object Self extends UserLevel
@@ -28,7 +27,7 @@ class UserRecord(
   networkL: UserLevel, 
   friendsL: UserLevel) 
 extends JeevesRecord {
-  private var friends : ListSet[UserRecord] = ListSet()
+  private var friends: Set[UserRecord] = Set()
   private var X: BigInt = 0;
   private var Y: BigInt = 0;
 
@@ -43,26 +42,26 @@ extends JeevesRecord {
   val network = mkSensitive[Network](level(networkL), networkV);
   def getFriends() = {
     val l = level(friendsL);
-    friends.map(mkSensitive[UserRecord](l, _)).toList
+    friends.map(mkSensitive[UserRecord](l, _))
   }
   def isFriends(u: UserRecord) = CONTAINS(getFriends, u)
   def location() = {
     val l = mkLevel();
-    policy(l, () => DISTANCE(CONTEXT, this) >= 10, LOW)
-    (mkSensitiveInt(l, Y), mkSensitiveInt(l, X))
+    policy(l, DISTANCE(CONTEXT, this) >= 10, LOW)
+    (mkSensitiveInt(l, X), mkSensitiveInt(l, Y))
   }
 
   /** Helpers */
-  private def level(l: UserLevel): LevelVar = {
-    val level = mkLevel();
-    l match {
+  private def level(ul: UserLevel) = {
+    val l = mkLevel();
+    val me = CONTEXT === this;
+    ul match {
       case Anyone => 
-      case Self => 
-        policy(level, ! (CONTEXT === this), LOW)
+      case Self => policy(l, ! me, LOW)
       case Friends => 
-        policy(level, () => ! CONTAINS(friends, CONTEXT) && ! (CONTEXT === this),  LOW);
+        policy(l, ! (me || CONTAINS(friends, CONTEXT)),  LOW);
     }
-    level
+    l
   }
 
   private def DISTANCE(a: Symbolic, b: Symbolic) = 
