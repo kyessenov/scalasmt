@@ -6,6 +6,8 @@ import cap.jeeves._
 import scala.collection.mutable.Map
 import scala.collection.mutable.Set
 
+import Expr._
+
 object JConfBackend extends JeevesLib {
   // We do not delegate integrity checking to Jeeves.
   var assignments : Map[Int, Set[ConfUser]] = Map[Int, Set[ConfUser]]()
@@ -51,16 +53,16 @@ object JConfBackend extends JeevesLib {
   }
 
   /* Searching. */
-  def getById (id: Int): Option[PaperRecord] = {
+  def getById (id: Int): Option[PaperRecord] = 
     papers.find ((p: PaperRecord) => p.id == id)
-  }
-  def searchByName (name: String): List[Symbolic] = {
-    filter(papers, (p: PaperRecord) => p.name === Title(name))
-  }
-  def searchByAuthor (author: ConfUser) : List[Symbolic] = {
-    filter(papers, (p: PaperRecord) => p.authors.has(author))
-  }
-  def searchByTag (tag: PaperTag): List[Symbolic] = {
-    filter(papers, (p: PaperRecord) => p.getTags().has(tag))
-  }
+  
+  def searchByName (name: String) = 
+    papers.filter(_.name === Title(name))
+  
+  def searchByAuthor (author: ConfUser) = 
+    papers.filter(_.authors.has(author))
+  
+  def searchByTag (tag: PaperTag) = 
+    papers.filter(_.getTags().has(tag))
+  
 }

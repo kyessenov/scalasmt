@@ -6,6 +6,8 @@ import scala.collection.mutable.Set;
 import cap.scalasmt._
 import cap.jeeves._
 
+import Expr._
+
 /**
  * External interface to social network.
  * @author kuat
@@ -33,8 +35,8 @@ object SocialNetBackend extends JeevesLib {
   def getFriendNetworks(user: UserRecord) =
     user.getFriends().map(_.network)
 
-  def getUsersByNetwork(network : Network) : List[Symbolic] = 
-    filter(users, (u: UserRecord) => u.network === network)
+  def getUsersByNetwork(network : Network) = 
+    users.filter(_.network === network)
 
   def invite(a: Symbolic, b: Symbolic) = {
     concretize(a, b.email)

@@ -69,8 +69,5 @@ trait JeevesLib extends Sceeves {
       t = concretize(ctx, o).asInstanceOf[T];
       if (t != null))
       yield t;
-
-  def filter[T >: Null <: JeevesRecord](lst: Traversable[T], filter: T => Formula) : List[Symbolic] = 
-    lst.toList.map(o => IF (filter(o)) {o} ELSE {NULL})
 }
 
