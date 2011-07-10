@@ -9,6 +9,8 @@ import cap.scalasmt._
 import scala.collection.immutable.List;
 import scala.collection.mutable.Map;
 
+import Expr._
+
 import JConfBackend._
 
 sealed trait PaperStage extends JeevesRecord
@@ -29,10 +31,10 @@ class PaperRecord( val id : Int
                  , _name : Title, _authors : List[ConfUser]
                  , _papertags : List[PaperTag] ) extends JeevesRecord {
   private def isPublic (curtags : List[Symbolic]) : Formula =
-    (CONTEXT.stage === Public) && CONTAINS(curtags, Accepted)
+    (CONTEXT.stage === Public) && curtags.has(Accepted)
 
   // Some predicates...
-  private val isAuthor : Formula = CONTAINS(_authors, CONTEXT.viewer);
+  private val isAuthor : Formula = _authors.has(CONTEXT.viewer);
   private val isInternal : Formula =
     (CONTEXT.viewer.role === ReviewerStatus) ||
     (CONTEXT.viewer.role === PCStatus)
@@ -86,7 +88,7 @@ class PaperRecord( val id : Int
     actualTags += (newtag -> addTagPermission(newtag))
   }
   def removeTag (oldtag : PaperTag) : Unit = actualTags -= oldtag
-  def hasTag (tag : PaperTag) : Formula = CONTAINS(getTags (), tag)
+  def hasTag (tag : PaperTag) : Formula = getTags ().has(tag)
 
   /* Managing reviews. */
   private var reviewIds = 0;
