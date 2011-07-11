@@ -30,8 +30,8 @@ class UserRecord(
   friendsL: UserLevel) 
 extends JeevesRecord {
   private var friends: Set[UserRecord] = Set()
-  private var X: IntExpr = 0
-  private var Y: IntExpr = 0;
+  var X: IntExpr = 1000
+  var Y: IntExpr = 1000
 
   /** Mutators */
   def add(u: UserRecord) {friends = friends + u}
