@@ -81,8 +81,8 @@ class ExampleSocialNetBackend extends FunSuite {
     jean.setLocation(8, 8) // top
     kuat.setLocation(4, 4)
     joe.setLocation(0, 0) // bottom
-    expect((-1, -1)) {concretize(jean, joe.location)}
-    expect((-1, -1)) {concretize(joe, jean.location)}
+    expect((1000, 1000)) {concretize(jean, joe.location)}
+    expect((1000, 1000)) {concretize(joe, jean.location)}
     expect((0, 0)) {concretize(kuat, joe.location)}
     expect((8, 8)) {concretize(kuat, jean.location)}
     expect((4, 4)) {concretize(joe, kuat.location)}
