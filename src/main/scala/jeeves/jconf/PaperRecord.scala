@@ -43,7 +43,7 @@ class PaperRecord( val id : Int
   def updateName(_name: Title): Symbolic = {
     val level = mkLevel ();
     policy (level, ! (isAuthor || isInternal || isPublic(getTags())), LOW);
-    mkSensitive[Title](level, _name, Title(""))
+    mkSensitive(level, _name, Title(""))
   }
 
   var name = updateName(_name);
@@ -52,7 +52,7 @@ class PaperRecord( val id : Int
     val level = mkLevel ();
     policy (level, ! (isAuthor || (isInternal && (CONTEXT.stage === Decision)) ||
           isPublic(getTags())), LOW);
-    _authors.map(a => mkSensitive[ConfUser](level, a, NULL))
+    _authors.map(a => mkSensitive(level, a, NULL))
   }
 
   /* Managing tags. */
@@ -75,7 +75,7 @@ class PaperRecord( val id : Int
         policy (level, canSee, HIGH);
         policy (level, ! canSee, LOW);
     }
-    mkSensitive[PaperTag](level, tag, NULL)
+    mkSensitive(level, tag, NULL)
   }
 
   private var actualTags : Map[PaperTag, Symbolic] = {
@@ -110,7 +110,7 @@ class PaperRecord( val id : Int
           ((CONTEXT.stage === Rebuttal) || (CONTEXT.stage === Decision)));
       policy(level, canSee, HIGH);
       policy(level, ! canSee, LOW);
-      mkSensitive[PaperReview](level, s, NULL)
+      mkSensitive(level, s, NULL)
     }
     reviews = r :: reviews;
     addTag (ReviewedBy(reviewer))
