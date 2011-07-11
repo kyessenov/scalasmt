@@ -32,17 +32,12 @@ trait JeevesLib extends Sceeves {
 
   def mkLevel(): LevelVar = pickBool(_ => true, HIGH)
 
-  def mkSensitiveInt(lvar: LevelVar, high: IntExpr, low: IntExpr = -1): IntVar = {
-    val v = pick(_ === (lvar ? high ! low));
-    v;
-  }
-
-  def mkSensitive[T >: Null <: JeevesRecord : Manifest](lvar: LevelVar, high: Symbolic, low: Symbolic = NULL): Symbolic = {
-    val v = pickObject[T]
-    assume(v === (lvar ? high ! low));
-    v;
-  } 
-
+  def mkSensitiveInt(lvar: LevelVar, high: IntExpr, low: IntExpr = -1): IntExpr = 
+    lvar ? high ! low
+  
+  def mkSensitive(lvar: LevelVar, high: Symbolic, low: Symbolic = NULL): Symbolic = 
+    lvar ? high ! low
+   
   def policy(lvar: LevelVar, f: => Formula, value: Level) = 
     POLICIES = (lvar, value, f _) :: POLICIES
   

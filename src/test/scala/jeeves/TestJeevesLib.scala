@@ -19,7 +19,7 @@ class ExampleJeevesLib extends FunSuite with JeevesLib {
     val l = mkLevel();
     val t = Test(1);
 
-    val x = mkSensitive[Test](l, t, NULL);
+    val x = mkSensitive(l, t, NULL);
     
     expect(t) {concretize(l === HIGH, x)};
     expect(null) {concretize(l === LOW, x)};

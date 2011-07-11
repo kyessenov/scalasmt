@@ -44,12 +44,12 @@ extends JeevesRecord {
   }
 
   /** Observers */
-  val name = mkSensitive[Name](level(nameL), nameV)
-  val email = mkSensitive[Email](level(emailL), emailV)
-  val network = mkSensitive[Network](level(networkL), networkV);
+  val name = mkSensitive(level(nameL), nameV)
+  val email = mkSensitive(level(emailL), emailV)
+  val network = mkSensitive(level(networkL), networkV);
   def getFriends() = {
     val l = level(friendsL);
-    friends.map(mkSensitive[UserRecord](l, _))
+    friends.map(mkSensitive(l, _))
   }
   def isFriends(u: UserRecord) = getFriends.has(u)
   def location() = (X, Y);
