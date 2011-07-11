@@ -11,7 +11,7 @@ import scala.collection.immutable.Map
 class ExampleSocialNetBackend extends FunSuite {
   val MIT = Network("MIT");
   val jean = new UserRecord(
-    Name("Jean Yang"), Friends, 
+    Name("Jean Yang"), Self, 
     Email("jean@mit.edu"), Friends,
     MIT, Friends, 
     Friends)
@@ -88,5 +88,15 @@ class ExampleSocialNetBackend extends FunSuite {
     expect((4, 4)) {concretize(joe, kuat.location)}
     expect((4, 4)) {concretize(jean, kuat.location)}
     expect((4, 4)) {concretize(kuat, kuat.location)}
+  }
+
+  test("symbolic context") {
+    expect(Set(Receipt(Email("kuat@mit.edu"), null))) {
+      announceName(jean)
+    }
+
+    expect(Set(Receipt(null, null))) {
+      announceName(joe)
+    }
   }
 }
