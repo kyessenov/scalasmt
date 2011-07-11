@@ -53,16 +53,15 @@ object JConfBackend extends JeevesLib {
   }
 
   /* Searching. */
-  def getById (id: Int): Option[PaperRecord] = 
+  def getById(id: Int) = 
     papers.find ((p: PaperRecord) => p.id == id)
   
-  def searchByName (name: String) = 
+  def searchByName(name: String) = 
     papers.filter(_.name === Title(name))
   
-  def searchByAuthor (author: ConfUser) = 
+  def searchByAuthor(author: ConfUser) = 
     papers.filter(_.authors.has(author))
   
-  def searchByTag (tag: PaperTag) = 
-    papers.filter(_.getTags().has(tag))
+  def searchByTag(tag: PaperTag) = papers.filter(_.getTags().has(tag))
   
 }
