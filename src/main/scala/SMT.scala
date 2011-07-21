@@ -9,26 +9,35 @@ import Debug._
  */
 object UnsatException extends RuntimeException("inconsistent model")
 
+case class SolverException(msg: String) extends RuntimeException(msg)
+
 trait Solver {
   /** Issue a command and expect success. */
-  def command(s: String)
- /** Check satisfiability. */
-  def check(): Boolean
+  def command(s: String) {>(s);
+    val reply = <();
+    if (reply != "success") 
+      throw SolverException("unexpected reply: " + reply)
+  }
+  /** Check satisfiability. */
+  def check(): Boolean = {>("(check-sat)"); <() == "sat"}
   /** Check for another model. */
-  def next(): Boolean
+  def next(): Boolean = {>("(next-sat)"); <() == "sat"}
   /** Retrieve the model. */
-  def model(): String
-  /** Terminate the solver. */
-  def close()
+  def model(): String = {>("(get-info model)"); <<().mkString}
   /** Assert a boolean condition. */
   def assert(s: String) = command("(assert " + s + ")")
   /** Push a context */
   def push() = command("(push)")
   /** Pop a context */
   def pop() = command("(pop)")
- 
+  /** Terminate the solver. */
+  def close()
+  /** Send to solver. */ 
   protected def >(s: String)
+  /** Receive a line from solver. */
   protected def <(): String
+  /** Receive all available lines from solver. */
+  protected def <<(): List[String]
 }
 
 trait Logging extends Solver {
@@ -38,7 +47,6 @@ trait Logging extends Solver {
 
 class Z3 extends Solver {
   import java.io._
-  import scala.collection.mutable
 
   var TIMEOUT = 10;
   
@@ -61,24 +69,21 @@ class Z3 extends Solver {
   protected def >(s: String) = {input.write(s); input.newLine; input.flush}
   protected def <() = output.readLine 
 
-  protected def <<() = {
-    val out = new mutable.ListBuffer[String]
-    var line = <;
-    while (line != null) {
-      out += line;
-      if (output.ready) line = < else line = null;
-    }
-    out.toList;
-  }
-
   command("""(set-logic QF_NIA)""")
   command("""(set-option set-param "ELIM_QUANTIFIERS" "true")""")
 
-  override def command(s: String) = {>(s); Predef.assert (< == "success")} 
-  override def check = {>("(check-sat)"); < == "sat"}
-  override def next  = {>("(next-sat)"); < == "sat"}
-  override def model = {>("(get-info model)"); <<.mkString}
   override def close {input.close; output.close; process.destroy;}
+
+  protected def <<() = {
+    import scala.collection.mutable
+    val out = new mutable.ListBuffer[String]
+    var line = <();
+    while (line != null) {
+      out += line;
+      if (output.ready) line = <() else line = null;
+    }
+    out.toList;
+  }
 }
  
 /**
