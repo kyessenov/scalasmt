@@ -296,4 +296,34 @@ class ExampleSceeves extends FunSuite with Sceeves {
     expect(-2) {concretize(a)}
     expect(1) {concretize(b)}
   }
+
+  test ("sorting") {
+    def merge(a: List[IntExpr], b: List[IntExpr]): List[IntExpr] = 
+      if (a.size == 0) 
+        b
+      else if (b.size == 0)
+        a
+      else {
+        // if (a(0) < b(0)) l else r 
+        // evaluate both sides symbolically
+        // unfold list to construct symbolic expressions
+        val l = a(0) :: merge(a.slice(1, a.size), b)
+        val r = b(0) :: merge(a, b.slice(1, b.size))
+        (0 until (a.size + b.size)).toList.map{i => IF (a(0) < b(0)) {l(i)} ELSE {r(i)}}
+      }
+
+    def mergesort(l: List[IntExpr]): List[IntExpr] = 
+      if (l.size <= 1)
+        l 
+      else {
+        val front = mergesort(l.slice(0, l.size / 2));
+        val back = mergesort(l.slice(l.size / 2, l.size));
+        merge(front, back)
+      }
+
+    val N = 15;
+    val i = (1 to N).toList.map(i => pick(_ === i))
+    val o = mergesort(i.reverse)
+    expect((1 to N).toList) {o.map(concretize(_))}
+  }
 }
