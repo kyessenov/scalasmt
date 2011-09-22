@@ -12,30 +12,35 @@ import scala.collection.mutable.Set
 import scala.util.Random
 
 class ExampleJConfBackend extends FunSuite {
-  def mkUser(userName : String, userStatus : UserStatus) : ConfUser =
-    new ConfUser(Name (userName), userStatus);
+  def mkUser( userName : String, name: String
+            , pwd: String, userStatus : UserStatus)
+    : ConfUser = {
+    val u = new ConfUser(Username (userName), Name(name), pwd, userStatus);
+    addUser(u);
+    u
+  }
 
   // jconf users.
-  val author0 = mkUser("author0", AuthorStatus)
+  val author0 = mkUser("author0", "Author0", "a0p", AuthorStatus)
   private def getAuthorCtxt0 (stage : PaperStage = Submission)
   : ConfContext = new ConfContext(author0, stage);
-  val author1 = mkUser("author1", AuthorStatus);
+  val author1 = mkUser("author1", "Author1", "", AuthorStatus);
   private def getAuthorCtxt1 (stage : PaperStage = Submission)
   : ConfContext = new ConfContext(author1, stage);
-  val author2 = mkUser("author2", AuthorStatus)
+  val author2 = mkUser("author2", "Author2", "", AuthorStatus)
   private def getAuthorCtxt2 (stage : PaperStage = Submission)
   : ConfContext = new ConfContext(author2, stage);
 
-  val reviewer0 = mkUser("reviewer0", ReviewerStatus);
+  val reviewer0 = mkUser("reviewer0", "Reviewer0", "", ReviewerStatus);
   private def getReviewerCtxt0 (stage : PaperStage = Submission)
   : ConfContext = new ConfContext(reviewer0, stage);
-  val reviewer1 = mkUser("reviewer1", ReviewerStatus);
+  val reviewer1 = mkUser("reviewer1", "Reviewer1", "", ReviewerStatus);
 
-  val pc0 = mkUser("pc0", PCStatus);
+  val pc0 = mkUser("pc0", "PC0", "", PCStatus);
   private def getPcCtxt0 (stage : PaperStage = Submission)
   : ConfContext = new ConfContext(pc0, stage);
 
-  val public0 = mkUser("public0", PublicStatus);
+  val public0 = mkUser("public0", "Public0", "", PublicStatus);
   private def getPublicCtxt0 (stage: PaperStage = Submission)
   : ConfContext = new ConfContext(public0, stage);
 
@@ -164,5 +169,11 @@ class ExampleJConfBackend extends FunSuite {
                 , searchByAuthor(author2).has(paper1) );
     }
 
+  }
+
+  test ("login") {
+    expect(Some(author0)) {
+      loginUser("author0", "a0p");
+    }
   }
 }
