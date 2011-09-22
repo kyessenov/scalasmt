@@ -9,9 +9,34 @@ import scala.collection.mutable.Set
 import Expr._
 
 object JConfBackend extends JeevesLib {
-  // We do not delegate integrity checking to Jeeves.
-  var assignments : Map[Int, Set[ConfUser]] = Map[Int, Set[ConfUser]]()
+  private val usercache = ".jconfusers.cache"
+  private val assignmentcache = ".jconfassignments.cache"
+  private val papercache = ".jconfpapers.cache"
+
+  private var users : Map[Username, ConfUser] = Map[Username, ConfUser]()
+  private var assignments : Map[Int, Set[ConfUser]] = Map[Int, Set[ConfUser]]()
   private var papers : List[PaperRecord] = Nil
+
+  def JConfBackend() {
+    try {
+      Persistence.readFromFile[Map[Username, ConfUser]](usercache);
+      Persistence.readFromFile[Map[Int, Set[ConfUser]]](assignmentcache);
+      Persistence.readFromFile[List[PaperRecord]](papercache)
+    } catch {
+      // There was no file, so we don't have to do anything.
+      case e: Exception =>
+        users = Map[Username, ConfUser]()
+        assignments = Map[Int, Set[ConfUser]]()
+        papers = Nil
+    }
+
+    Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+
+      def run() {
+        /* TODO: Save users. */
+      }
+    }));
+  }
 
   /* Making papers. */
   private var _papercount = 0;
@@ -20,6 +45,11 @@ object JConfBackend extends JeevesLib {
     _papercount = _papercount + 1;
     count
   }
+
+  def addUser(newUser: ConfUser) = {
+    users += (newUser.username -> newUser)
+  }
+
   def addPaper(name : Title, authors : List[ConfUser], tags : List[PaperTag])
       : PaperRecord = {
     val paper = new PaperRecord(getPaperUid(), name, authors, tags);
@@ -64,4 +94,20 @@ object JConfBackend extends JeevesLib {
   
   def searchByTag(tag: PaperTag) = papers.filter(_.getTags().has(tag))
   
+  /* More mundane logistical things. */
+  def loginUser(id: String, password: String): Option[ConfUser] = {
+    users.get(Username(id)) match {
+      case Some(user) =>
+        // Stage should not matter...
+        val userCtxt = new ConfContext(user, Submission);
+        /* TODO: Can we do this without concretizing here? */
+        val pwd : Password =
+          concretize(userCtxt, user.password).asInstanceOf[Password];
+        println(pwd.pwd);
+        if (pwd.pwd.equals(password)) Some(user) else None
+      case None =>
+        println("user not found");
+        None
+    }
+  }
 }
