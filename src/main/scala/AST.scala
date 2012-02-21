@@ -281,7 +281,7 @@ object EmptyEnv extends Environment {
   def has[T](i: Var[T]) = false
   def apply[T](i: Var[T]) = throw new UnboundVarException(i)
 }
-object DefaultEnv extends Environment {
+object DefaultEnv extends Environment with Serializable {
   def vars = Set()
   def has[T](i: Var[T]) = false
   def apply[T](i: Var[T]) = i.default
