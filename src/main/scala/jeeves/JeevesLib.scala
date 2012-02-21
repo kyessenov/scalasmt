@@ -12,13 +12,13 @@ import scala.collection.mutable.{Map => MMap};
 import scala.collection.mutable.HashMap;
 
 trait JeevesLib extends Sceeves {
-  trait JeevesRecord extends Atom {
+  trait JeevesRecord extends Atom with Serializable {
     register(this)
   }
   type LevelVar = BoolVar;
   type Symbolic = ObjectExpr[Atom];
   
-  sealed trait Level
+  sealed trait Level extends Serializable
   object HIGH extends Level
   object LOW extends Level
   implicit def level2sym(l: Level): Formula = l match {
