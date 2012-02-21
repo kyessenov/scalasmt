@@ -281,7 +281,7 @@ object EmptyEnv extends Environment {
   def has[T](i: Var[T]) = false
   def apply[T](i: Var[T]) = throw new UnboundVarException(i)
 }
-object DefaultEnv extends Environment with Serializable {
+object DefaultEnv extends Environment {
   def vars = Set()
   def has[T](i: Var[T]) = false
   def apply[T](i: Var[T]) = i.default
@@ -324,11 +324,15 @@ object `package` {
 }
 case class Atoms[T >: Null <: Atom](vs: Traversable[T]) {
   def has(i: ObjectExpr[Atom]): Formula = OR(for (v <- vs) yield i === v)
+  def hasFormula(f: ObjectExpr[Atom] => Formula): Formula =
+    OR(for (v <- vs) yield f(v))
   def filter(f: T => Formula) = 
     vs.map(o => IF (f(o)) {o} ELSE {NULL})
 }
 case class AtomExprs(vs: Traversable[ObjectExpr[Atom]]) {
   def has(i: ObjectExpr[Atom]) = OR(for (v <- vs) yield i === v)
+  def hasFormula(f: ObjectExpr[Atom] => Formula): Formula =
+    OR(for (v <- vs) yield f(v))
   def filter(f: ObjectExpr[Atom] => Formula) = 
     vs.map(o => IF (f(o)) {o} ELSE {null})
 }
