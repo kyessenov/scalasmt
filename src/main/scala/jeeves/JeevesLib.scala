@@ -11,16 +11,16 @@ import scala.collection.immutable.Map;
 import scala.collection.mutable.{Map => MMap};
 import scala.collection.mutable.HashMap;
 
-trait JeevesLib extends Sceeves with Serializable {
-  trait JeevesRecord extends Atom with Serializable {
+trait JeevesLib extends Sceeves {
+  trait JeevesRecord extends Atom {
     register(this)
   }
   type LevelVar = BoolVar;
   type Symbolic = ObjectExpr[Atom];
   
-  sealed trait Level extends Serializable
-  object HIGH extends Level with Serializable
-  object LOW extends Level with Serializable
+  sealed trait Level
+  object HIGH extends Level
+  object LOW extends Level
   implicit def level2sym(l: Level): Formula = l match {
     case HIGH => true
     case LOW => false
