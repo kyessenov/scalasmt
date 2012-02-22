@@ -165,7 +165,7 @@ case class ObjectIntField(root: ObjectExpr[Atom], f: FieldDesc[BigInt]) extends 
 /**
  * Object and field expressions.
  */
-trait Atom extends AnyRef 
+trait Atom extends AnyRef with Serializable
 sealed abstract class ObjectExpr[+T >: Null <: Atom] extends Expr[Atom] with Dynamic { 
   def ===(that: Expr[Atom]): Formula = 
     that match {case that: ObjectExpr[_] => ObjectEq(this, that)}
