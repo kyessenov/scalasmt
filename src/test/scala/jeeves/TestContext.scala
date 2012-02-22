@@ -23,13 +23,17 @@ class ExampleContext extends FunSuite with JeevesLib {
   val c = (1 to 3).toList.map(Dummy(_))
   val s = c.map(mkElt)
 
-
-  test ("high confidentialy context") {
+  test ("high confidentiality context") {
     expect (x) { concretize(x, x_s) }
   }
 
   test ("low confidentiality context") {
     expect (Dummy(0)) { concretize(NULL, x_s) }
+  }
+
+  test ("context field") {
+    expect (x.ID) { concretize[BigInt](x, x_s.ID) }
+    expect (true) { concretize(x, x_s.ID === IntVal(x.ID)) }
   }
 
   /* Lists. */
