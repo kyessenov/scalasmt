@@ -22,9 +22,18 @@ class ExampleContext extends FunSuite with JeevesLib {
   val highCtxt: DummyContext = DummyContext(1, Dummy(1))
   val lowCtxt: DummyContext = DummyContext(0, Dummy(0))
   val x_s: Symbolic = mkElt(x);
-  
+  val y: Dummy = Dummy(2);
+  val y_s: Symbolic = mkElt(y); 
+ 
   val c = (1 to 3).toList.map(Dummy(_))
   val s = c.map(mkElt)
+
+  test ("comparing two symbolic fields") {
+    expect(true) { concretize[Boolean](lowCtxt, x_s === y_s) }
+    expect(true) { concretize[Boolean](lowCtxt, x_s.ID === y_s.ID) }
+    expect(false) { concretize[Boolean](highCtxt, x_s === y_s) }
+    expect(false) { concretize[Boolean](highCtxt, x_s.ID === y_s.ID) }
+  }
 
   test ("context viewer values") {
     expect(1) { concretize[BigInt](highCtxt, CONTEXT.viewer.ID) }
