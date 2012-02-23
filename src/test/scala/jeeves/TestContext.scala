@@ -29,43 +29,43 @@ class ExampleContext extends FunSuite with JeevesLib {
   val s = c.map(mkElt)
 
   test ("comparing two symbolic fields") {
-    expect(true) { concretize[Boolean](lowCtxt, x_s === y_s) }
-    expect(true) { concretize[Boolean](lowCtxt, x_s.ID === y_s.ID) }
-    expect(false) { concretize[Boolean](highCtxt, x_s === y_s) }
-    expect(false) { concretize[Boolean](highCtxt, x_s.ID === y_s.ID) }
+    expect(true) { concretize(lowCtxt, x_s === y_s) }
+    expect(true) { concretize(lowCtxt, x_s~'ID === y_s~'ID) }
+    expect(false) { concretize(highCtxt, x_s === y_s) }
+    expect(false) { concretize(highCtxt, x_s~'ID === y_s~'ID) }
   }
 
   test ("context viewer values") {
-    expect(1) { concretize[BigInt](highCtxt, CONTEXT.viewer.ID) }
-    expect(0) { concretize[BigInt](lowCtxt, CONTEXT.viewer.ID) }
+    expect(1) { concretize(highCtxt, CONTEXT.viewer~'ID) }
+    expect(0) { concretize(lowCtxt, CONTEXT.viewer~'ID) }
     expect(true) {
-      concretize[Boolean](highCtxt, CONTEXT.viewer.ID === IntVal(1))
+      concretize(highCtxt, CONTEXT.viewer~'ID === IntVal(1))
     }
     expect(false) {
-      concretize[Boolean](highCtxt, CONTEXT.viewer.ID === IntVal(0))
+      concretize(highCtxt, CONTEXT.viewer~'ID === IntVal(0))
     }
   }
 
   // TODO: Both of these tests seem to fail...
   test ("formula with context id and object field - false") {
-    expect(0) { concretize[BigInt](lowCtxt, CONTEXT.id) }
-    expect(-1) { concretize[BigInt](lowCtxt, x_s.ID) }
+    expect(0) { concretize(lowCtxt, CONTEXT~'id) }
+    expect(-1) { concretize(lowCtxt, x_s~'ID) }
     expect(false) {
-      concretize[Boolean](lowCtxt, CONTEXT.id === x_s.ID)
+      concretize(lowCtxt, CONTEXT~'id === x_s~'ID)
     }
   }
 
   test ("formula with context viewer and object field - true") {
     expect(true) {
-      concretize[Boolean](highCtxt, CONTEXT.viewer.ID === x_s.ID)
+      concretize(highCtxt, CONTEXT.viewer~'ID === x_s~'ID)
     }
   }
 
   test ("formula with context viewer and object field - false") {
-    expect(0) { concretize[BigInt](lowCtxt, CONTEXT.viewer.ID) }
-    expect(-1) { concretize[BigInt](lowCtxt, x_s.ID) }
+    expect(0) { concretize(lowCtxt, CONTEXT.viewer~'ID) }
+    expect(-1) { concretize(lowCtxt, x_s~'ID) }
     expect(false) {
-      concretize[Boolean](lowCtxt, CONTEXT.viewer.ID === x_s.ID)
+      concretize(lowCtxt, CONTEXT.viewer~'ID === x_s~'ID)
     }
   }
 
@@ -75,11 +75,11 @@ class ExampleContext extends FunSuite with JeevesLib {
 
   test ("low confidentiality context") {
     expect (defaultVal) { concretize(NULL, x_s) }
-  }
+  } 
 
   test ("context field") {
-    expect (x.ID) { concretize[BigInt](highCtxt, x_s.ID) }
-    expect (true) { concretize(highCtxt, x_s.ID === IntVal(x.ID)) }
+    expect (x.ID) { concretize(highCtxt, x_s~'ID) }
+    expect (true) { concretize(highCtxt, x_s~'ID === IntVal(x.ID)) }
   }
 
   /* Lists. */
@@ -88,17 +88,17 @@ class ExampleContext extends FunSuite with JeevesLib {
   }
 
   test ("high confidentiality context - list") {
-    expect(true) { concretize[Boolean](highCtxt, s.has(Dummy(1))) }
+    expect(true) { concretize(highCtxt, s.has(Dummy(1))) }
   }
 
   /*
   test ("hasFormula") {
     expect(true) {
-      concretize[Boolean](highCtxt, s.hasFormula(x =>
+      concretize(highCtxt, s.hasFormula(x =>
         x.ID === CONTEXT.viewer.ID))
     }
     expect(false) {
-      concretize[Boolean](lowCtxt, s.hasFormula(x =>
+      concretize(lowCtxt, s.hasFormula(x =>
         x.ID === CONTEXT.viewer.ID))
     }
   }
