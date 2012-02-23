@@ -254,9 +254,9 @@ class ExampleSceeves extends FunSuite with Sceeves {
     assume(yVar === y);
 
     expect(true) { concretize(xVar === xVar) }
-    expect(true) { concretize(xVar.ID === xVar.ID) }
+    expect(true) { concretize(xVar~'ID === xVar~'ID) }
     expect(false) { concretize(xVar === yVar) }
-    expect(false) { concretize(xVar.ID === yVar.ID) }
+    expect(false) { concretize(xVar~'ID === yVar~'ID) }
   }
 
   test ("n queens") {
