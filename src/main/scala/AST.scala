@@ -171,6 +171,7 @@ sealed abstract class ObjectExpr[+T >: Null <: Atom] extends Expr[Atom] with Dyn
     that match {case that: ObjectExpr[_] => ObjectEq(this, that)}
   def constant(t: Atom) = Object(t)
   def default = zero[Atom]
+  def ~(name: Symbol) = ObjectIntField(this, IntFieldDesc(name.name))
   def applyDynamic(name: String)(args: Any*) = {
     assert(args.length == 0)
     ObjectField(this, ObjectFieldDesc(name))

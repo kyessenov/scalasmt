@@ -59,8 +59,8 @@ class ExampleAtoms extends FunSuite {
 
   test ("object int field") {
     import Expr._
-    val a = Dummy(1);
-    expect(1) {eval(a.ID)}
+    val a: ObjectExpr[_] = Dummy(1);
+    expect(1) {eval(a.ID: IntExpr)}
   }
 
   test ("SMT set translation") {
