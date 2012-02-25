@@ -244,7 +244,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
   }
 
   test("symbolic fields") {
-    case class Dummy(ID: BigInt) extends Atom
+    case class Dummy(uid: BigInt) extends Atom
     val x: Dummy = Dummy(0);
     val xVar: ObjectVar[Dummy] = pickObject(x);
     assume(xVar === x);
@@ -254,9 +254,9 @@ class ExampleSceeves extends FunSuite with Sceeves {
     assume(yVar === y);
 
     expect(true) { concretize(xVar === xVar) }
-    expect(true) { concretize(xVar~'ID === xVar~'ID) }
+    expect(true) { concretize(xVar~'uid === xVar~'uid) }
     expect(false) { concretize(xVar === yVar) }
-    expect(false) { concretize(xVar~'ID === yVar~'ID) }
+    expect(false) { concretize(xVar~'uid === yVar~'uid) }
   }
 
   test ("n queens") {
