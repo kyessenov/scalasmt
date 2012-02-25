@@ -38,8 +38,9 @@ trait JeevesLib extends Sceeves {
   def mkSensitive(lvar: LevelVar, high: Symbolic, low: Symbolic = NULL): Symbolic = 
     lvar ? high ! low
    
-  def policy(lvar: LevelVar, f: => Formula, value: Level) = 
+  def policy(lvar: LevelVar, f: => Formula, value: Level) = {
     POLICIES = (lvar, value, f _) :: POLICIES
+  }
   
   override def assume(f: Formula) = super.assume(Partial.eval(f)(EmptyEnv))
 

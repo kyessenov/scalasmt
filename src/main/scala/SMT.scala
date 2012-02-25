@@ -199,17 +199,19 @@ object SMT {
     override def toString = objects.size + " objects; " + fields.size + " fields; " +  vars.size + " vars"
   }
  
-  private def univ(f: Expr[_])(implicit env: Environment): Scope = (f: @unchecked) match {
-    case f: BinaryExpr[_] => univ(f.left) ++ univ(f.right)
-    case f: Ite[_] => univ(f.cond) ++ univ(f.thn) ++ univ(f.els)
-    case f: UnaryExpr[_] => univ(f.sub)
-    case v: Var[_] => v
-    case os: ObjectSet => os.eval
-    case o: Object[_] => o.eval
-    case RelJoin(root, f) => univ(root) ++ f
-    case ObjectIntField(root, f) => univ(root) ++ f
-    case ObjectField(root, f) => univ(root) ++ f
-    case _: Constant[_] => Scope()
+  private def univ(f: Expr[_])(implicit env: Environment): Scope = {
+    (f: @unchecked) match {
+      case f: BinaryExpr[_] => univ(f.left) ++ univ(f.right)
+      case f: Ite[_] => univ(f.cond) ++ univ(f.thn) ++ univ(f.els)
+      case f: UnaryExpr[_] => univ(f.sub)
+      case v: Var[_] => v
+      case os: ObjectSet => os.eval
+      case o: Object[_] => o.eval
+      case RelJoin(root, f) => univ(root) ++ f
+      case ObjectIntField(root, f) => univ(root) ++ f
+      case ObjectField(root, f) => univ(root) ++ f
+      case _: Constant[_] => Scope()
+    }
   }
 
   @annotation.tailrec 
