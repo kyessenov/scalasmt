@@ -7,7 +7,7 @@ import cap.scalasmt.{Environment => Env}
  * @author kuat
  */
 
-trait Sceeves extends Serializable {
+trait Sceeves {
   type Defaults = List[Formula]
   type Constraints = List[Formula]
 

@@ -10,7 +10,7 @@ import Zeros._
 /**
  * Expressions.
  */
-sealed trait Expr[T] extends Serializable {
+sealed trait Expr[T] {
   def vars: Set[Var[_]]
   def eval(implicit env: Environment = EmptyEnv): T
   def ===(that: Expr[T]): Expr[Boolean]
@@ -167,7 +167,7 @@ case class ObjectIntField(root: ObjectExpr[Atom], f: FieldDesc[BigInt]) extends 
 /**
  * Object and field expressions.
  */
-trait Atom extends AnyRef with Serializable
+trait Atom extends AnyRef
 sealed abstract class ObjectExpr[+T >: Null <: Atom] extends Expr[Atom] with Dynamic { 
   def ===(that: Expr[Atom]): Formula = 
     that match {case that: ObjectExpr[_] => ObjectEq(this, that)}
@@ -284,7 +284,7 @@ object EmptyEnv extends Environment {
   def has[T](i: Var[T]) = false
   def apply[T](i: Var[T]) = throw new UnboundVarException(i)
 }
-object DefaultEnv extends Environment with Serializable {
+object DefaultEnv extends Environment {
   def vars = Set()
   def has[T](i: Var[T]) = false
   def apply[T](i: Var[T]) = i.default
