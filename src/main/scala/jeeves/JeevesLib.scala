@@ -12,13 +12,13 @@ import scala.collection.mutable.{Map => MMap};
 import scala.collection.mutable.HashMap;
 
 trait JeevesLib extends Sceeves {
-  trait JeevesRecord extends Atom {
+  trait JeevesRecord extends Atom with Serializable {
     register(this)
   }
   type LevelVar = BoolVar;
   type Symbolic = ObjectExpr[Atom];
   
-  sealed trait Level
+  sealed trait Level extends Serializable
   object HIGH extends Level
   object LOW extends Level
   implicit def level2sym(l: Level): Formula = l match {
@@ -38,8 +38,9 @@ trait JeevesLib extends Sceeves {
   def mkSensitive(lvar: LevelVar, high: Symbolic, low: Symbolic = NULL): Symbolic = 
     lvar ? high ! low
    
-  def policy(lvar: LevelVar, f: => Formula, value: Level) = 
+  def policy(lvar: LevelVar, f: => Formula, value: Level) = {
     POLICIES = (lvar, value, f _) :: POLICIES
+  }
   
   override def assume(f: Formula) = super.assume(Partial.eval(f)(EmptyEnv))
 
