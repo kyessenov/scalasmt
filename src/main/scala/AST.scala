@@ -62,12 +62,14 @@ sealed trait Constant[T] extends Expr[T] {
  */
 sealed abstract class Formula extends Expr[Boolean] {
   def ===(that: Expr[Boolean]): Formula = 
-    that match {case that: Formula => BoolEq(this, that)}
+    that match {
+      case that: Formula => BoolEq(this, that)
+    }
   def constant(t: Boolean) = BoolVal(t)
   def default = zero[Boolean]
   def &&(that: Formula) = And(this, that)
   def ||(that: Formula) = Or(this, that)
-  def ==> (that: Formula) = Or(Not(this), that)
+  def ==> (that: Formula) = Not(this) || that
   def <==> (that: Formula) = ===(that)
   def unary_! = Not(this)
   def ?(thn: Formula) = new {def !(els: Formula) = BoolConditional(Formula.this, thn, els)}
@@ -165,12 +167,13 @@ case class ObjectIntField(root: ObjectExpr[Atom], f: FieldDesc[BigInt]) extends 
 /**
  * Object and field expressions.
  */
-trait Atom extends AnyRef 
+trait Atom extends AnyRef with Serializable
 sealed abstract class ObjectExpr[+T >: Null <: Atom] extends Expr[Atom] with Dynamic { 
   def ===(that: Expr[Atom]): Formula = 
     that match {case that: ObjectExpr[_] => ObjectEq(this, that)}
   def constant(t: Atom) = Object(t)
   def default = zero[Atom]
+  def ~(name: Symbol) = ObjectIntField(this, IntFieldDesc(name.name))
   def applyDynamic(name: String)(args: Any*) = {
     assert(args.length == 0)
     ObjectField(this, ObjectFieldDesc(name))
@@ -281,7 +284,7 @@ object EmptyEnv extends Environment {
   def has[T](i: Var[T]) = false
   def apply[T](i: Var[T]) = throw new UnboundVarException(i)
 }
-object DefaultEnv extends Environment {
+object DefaultEnv extends Environment with Serializable {
   def vars = Set()
   def has[T](i: Var[T]) = false
   def apply[T](i: Var[T]) = i.default
@@ -300,6 +303,7 @@ object Expr {
   implicit def fromInt(i: Int) = IntVal(i)
   implicit def fromBool(b: Boolean) = BoolVal(b)
   implicit def fromAtom[T >: Null <: Atom](o: T) = Object(o)
+  implicit def fromIntExprs(vs: Traversable[IntExpr]) = IntExprs(vs)
   implicit def fromAtomExprs(vs: Traversable[ObjectExpr[Atom]]) = AtomExprs(vs)
   implicit def fromAtoms[T >: Null <: Atom](vs: Traversable[T]) = Atoms[T](vs)
 }
@@ -322,13 +326,22 @@ object `package` {
   def AND(vs: Traversable[Formula]) = vs.foldLeft(true: Formula)(_ && _)
   def ABS(x: IntExpr) = IF (x > 0) {x} ELSE {-x}
 }
+case class IntExprs[T >: Null <: IntExpr](vs: Traversable[T]) {
+  def has(i: IntExpr): Formula = OR(for (v <- vs) yield i === v)
+  def hasFormula(f: IntExpr => Formula): Formula =
+    OR(for (v <- vs) yield f(v))
+}
 case class Atoms[T >: Null <: Atom](vs: Traversable[T]) {
   def has(i: ObjectExpr[Atom]): Formula = OR(for (v <- vs) yield i === v)
+  def hasFormula(f: ObjectExpr[Atom] => Formula): Formula =
+    OR(for (v <- vs) yield f(v))
   def filter(f: T => Formula) = 
     vs.map(o => IF (f(o)) {o} ELSE {NULL})
 }
 case class AtomExprs(vs: Traversable[ObjectExpr[Atom]]) {
   def has(i: ObjectExpr[Atom]) = OR(for (v <- vs) yield i === v)
+  def hasFormula(f: ObjectExpr[Atom] => Formula): Formula =
+    OR(for (v <- vs) yield f(v))
   def filter(f: ObjectExpr[Atom] => Formula) = 
     vs.map(o => IF (f(o)) {o} ELSE {null})
 }
