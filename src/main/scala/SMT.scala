@@ -11,19 +11,39 @@ object UnsatException extends RuntimeException("inconsistent model")
 
 case class SolverException(msg: String) extends RuntimeException(msg)
 
+/** SMT-LIB2 compliant solver. */
 trait Solver {
   /** Issue a command and expect success. */
-  def command(s: String) {>(s);
+  def command(s: String) {
+    >(s);
     val reply = <();
     if (reply != "success") 
       throw SolverException("unexpected reply: " + reply)
   }
   /** Check satisfiability. */
-  def check(): Boolean = {>("(check-sat)"); <() == "sat"}
+  def check(): Boolean = {
+    >("(check-sat)"); 
+    val reply = <();
+    if (reply == "sat") 
+      true
+    else if (reply == "unsat")
+      false
+    else 
+      throw SolverException("unexpected reply: " + reply)
+  }
   /** Check for another model. */
-  def next(): Boolean = {>("(next-sat)"); <() == "sat"}
+  def next(): Boolean = {
+    >("(next-sat)"); 
+    val reply = <();
+    if (reply == "sat")
+      true
+    else if (reply == "unsat")
+      false
+    else
+      throw SolverException("unexpected reply: " + reply)
+  }
   /** Retrieve the model. */
-  def model(): String = {>("(get-info model)"); <<().mkString}
+  def model(): String = {>("(get-info model)"); <<()}
   /** Assert a boolean condition. */
   def assert(s: String) = command("(assert " + s + ")")
   /** Push a context */
@@ -34,10 +54,10 @@ trait Solver {
   def close()
   /** Send to solver. */ 
   protected def >(s: String)
-  /** Receive a line from solver. */
+  /** Receive a line from the solver. */
   protected def <(): String
-  /** Receive all available lines from solver. */
-  protected def <<(): List[String]
+  /** Receive a term from the solver. */
+  protected def <<(): String
 }
 
 trait Logging extends Solver {
@@ -48,17 +68,18 @@ trait Logging extends Solver {
 class Z3 extends Solver {
   import java.io._
 
+  /** Execution cut-off in seconds. */
   var TIMEOUT = 10;
   
-  private def PATH = Option(System.getProperty("smt.home")) match {
+  private def BINARY = Option(System.getProperty("smt.home")) match {
     case Some(path) => path
     case None => System.getProperty("user.home") + "/opt/z3/bin/z3"
   }
 
-  private def COMMANDS ="-smt2" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
+  private def PARAMS ="-smt2" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
   
   private var process = {
-    val pb = new ProcessBuilder((PATH :: COMMANDS).toArray: _*);
+    val pb = new ProcessBuilder((BINARY :: PARAMS).toArray: _*);
     pb.redirectErrorStream(true);
     pb.start;
   }
@@ -77,12 +98,13 @@ class Z3 extends Solver {
   protected def <<() = {
     import scala.collection.mutable
     val out = new mutable.ListBuffer[String]
-    var line = <();
-    while (line != null) {
+    var balance = 0;
+    do {
+      var line = <();
+      balance = balance + line.count(_ == '(') - line.count(_ == ')');
       out += line;
-      if (output.ready) line = <() else line = null;
-    }
-    out.toList;
+    } while (balance > 0)
+    out.toList.mkString;
   }
 }
  
@@ -190,7 +212,7 @@ object SMT {
         uniq(s.substring(1).toInt)
     
     def classId(klas: Class[_]): String = 
-      if (klas == null) "Null" else klas.getName.replace(".","").replace("$","")
+      if (klas == null) "Null" else klas.getName.replace(".","_").replace("$","_")
    
     def atomId(o: Atom): String = 
       if (o == null) classId(null) else classId(o.getClass)
@@ -331,32 +353,28 @@ object SMT {
   
 
   private def model(model: String)(implicit env: Environment, sc: Scope) = {
-    try {
-      // parse model
-      var result = env;
-      val PREFIX = "((\"model\" \"";
-      val SUFFIX = "\"))";
-      val defines = model.substring(PREFIX.size, model.size - SUFFIX.size);
-      val defs = defines.split("\\(define ");
-      for (d <- defs; if d.size > 0 && ! d.startsWith("(")) {
-        val List(name, value) = d.split("\\)|\\s").toList;
-        for (v <- sc.vars; if name == v.toString)
-          v match {
+    // parse model
+    var result = env;
+    val PREFIX = "((\"model\" \"";
+    val SUFFIX = "\"))";
+    assert (model.startsWith(PREFIX), "incorrect model prefix");
+    assert (model.endsWith(SUFFIX), "incorrect model suffix");
+    // TODO: more robust S-expresssion parsing
+    val defines = model.substring(PREFIX.size, model.size - SUFFIX.size);
+    val defs = defines.split("\\(define ");
+    for (d <- defs; if d.size > 0 && ! d.startsWith("(")) {
+      val List(name, value) = d.split("\\)|\\s").toList;
+      for (v <- sc.vars; if name == v.toString)
+        v match {
           case v: IntVar => result = result + (v -> BigInt(value))
           case v: BoolVar => result = result + (v -> value.toBoolean)
           case v: ObjectVar[_] => result = result + (v -> sc.decode(value))
           case v: ObjectSetVar => 
-          // TODO: better S-expression parsing
-          throw new RuntimeException("not implemented")
+            // TODO: better S-expression parsing
+            throw new RuntimeException("not implemented")
         }
-      }
-      result
-    } catch {
-      case e: Exception =>
-        println("SMT MODEL BUG");
-        println(model);
-        throw e
     }
+    result
   }
 }
 
