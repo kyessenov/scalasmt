@@ -26,7 +26,7 @@ trait JeevesLib extends Sceeves {
     case LOW => false
   }
 
-  val CONTEXT: Symbolic = pickObject[JeevesRecord];
+  val CONTEXT: Symbolic = pickObject[Atom];
   
   private var POLICIES: List[(LevelVar, Level, () => Formula)] = Nil
 
@@ -60,7 +60,7 @@ trait JeevesLib extends Sceeves {
   def concretize[T](ctx: Symbolic, e: (Expr[T], Expr[T])): (T, T) = 
     (concretize(ctx, e._1), concretize(ctx, e._2))
 
-  def concretize[T >: Null <: JeevesRecord](ctx: Symbolic, lst: Traversable[Symbolic]): List[T] = 
+  def concretize[T >: Null <: Atom](ctx: Symbolic, lst: Traversable[Symbolic]): List[T] = 
     for (o <- lst.toList;
       t = concretize(ctx, o).asInstanceOf[T];
       if (t != null))
