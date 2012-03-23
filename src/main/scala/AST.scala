@@ -165,6 +165,17 @@ case class ObjectIntField(root: ObjectExpr[Atom], f: FieldDesc[BigInt]) extends 
 }
 
 /**
+ * Strings.
+ */
+sealed abstract class StringExpr extends Expr[String] {
+  // TODO
+  /*
+  def ===(that: Expr[String]): Formula =
+    that match { case that: StringExpr => StringEq(this, that) }
+  */
+}
+
+/**
  * Object and field expressions.
  */
 trait Atom extends AnyRef

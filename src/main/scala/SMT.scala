@@ -327,7 +327,10 @@ object SMT {
   
     try {
       // invariant: the model is consistent 
-      if (! solver.check) throw UnsatException
+      if (! solver.check) {
+        println(f)
+        throw UnsatException
+      }
       for (d <- defaults) {
         solver.push;
         solver.assert(formula(d));
