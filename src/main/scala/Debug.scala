@@ -5,7 +5,7 @@ package cap.scalasmt
  * @author kuat
  */
 object Debug {
-  var DEBUG = true;
+  var DEBUG = false;
 
   def debug(m: => String) = 
     if (DEBUG) 

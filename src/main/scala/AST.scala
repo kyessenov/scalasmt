@@ -165,23 +165,15 @@ case class ObjectIntField(root: ObjectExpr[Atom], f: FieldDesc[BigInt]) extends 
 }
 
 /**
- * Strings.
- */
-sealed abstract class StringExpr extends Expr[String] {
-  // TODO
-  /*
-  def ===(that: Expr[String]): Formula =
-    that match { case that: StringExpr => StringEq(this, that) }
-  */
-}
-
-/**
  * Object and field expressions.
  */
+
+/* Atom is uniquely identified by its string representation.*/
 trait Atom extends AnyRef
 sealed abstract class ObjectExpr[+T >: Null <: Atom] extends Expr[Atom] with Dynamic { 
   def ===(that: Expr[Atom]): Formula = 
     that match {case that: ObjectExpr[_] => ObjectEq(this, that)}
+  def !==(that: Expr[Atom]) = ! (this === that)
   def constant(t: Atom) = Object(t)
   def default = zero[Atom]
   def ~(name: Symbol) = ObjectIntField(this, IntFieldDesc(name.name))
@@ -317,6 +309,7 @@ object Expr {
   implicit def fromIntExprs(vs: Traversable[IntExpr]) = IntExprs(vs)
   implicit def fromAtomExprs(vs: Traversable[ObjectExpr[Atom]]) = AtomExprs(vs)
   implicit def fromAtoms[T >: Null <: Atom](vs: Traversable[T]) = Atoms[T](vs)
+  implicit def fromString(s: String) = Object(S(s))
 }
 object Formula {
   implicit def fromList(vs: Traversable[Formula]) = vs.foldLeft(true: Formula)(_ && _)
@@ -337,6 +330,7 @@ object `package` {
   def AND(vs: Traversable[Formula]) = vs.foldLeft(true: Formula)(_ && _)
   def ABS(x: IntExpr) = IF (x > 0) {x} ELSE {-x}
 }
+/** Lists of symbolic values. */
 case class IntExprs[T >: Null <: IntExpr](vs: Traversable[T]) {
   def has(i: IntExpr): Formula = OR(for (v <- vs) yield i === v)
   def hasFormula(f: IntExpr => Formula): Formula =
@@ -356,11 +350,13 @@ case class AtomExprs(vs: Traversable[ObjectExpr[Atom]]) {
   def filter(f: ObjectExpr[Atom] => Formula) = 
     vs.map(o => IF (f(o)) {o} ELSE {null})
 }
+/** Conditional expression constructors. */
 case class IF(cond: Formula) {
   def apply(thn: IntExpr) = 
     new {def ELSE(els: IntExpr) = cond ? thn ! els}
   def apply(thn: ObjectExpr[Atom]) = 
     new {def ELSE(els: ObjectExpr[Atom]) = cond ? thn ! els}
 }
- 
+/** String expression constructors. */
+case class S(s: String) extends Atom
 

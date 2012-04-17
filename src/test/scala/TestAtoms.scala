@@ -28,8 +28,8 @@ class ExampleAtoms extends FunSuite {
     val k = 20
     val a = (1 to k).toList.map(Dummy(_))
     val b = (k + 1 to 2*k).toList.map(Dummy(_))
-    SMT.solve(a in (a ++ b))
-    SMT.solve((a & b) === Set())
+    expect(false) {SMT.solve(a in (a ++ b)).isEmpty}
+    expect(false) {SMT.solve((a & b) === Set()).isEmpty}
   } 
 
   test ("conditional") {
@@ -67,9 +67,9 @@ class ExampleAtoms extends FunSuite {
     import RelExpr._
 
     val List(a,b,c) = (1 to 3).toList.map(Dummy(_))
-    SMT.solve(a in ((a ++ b) -- ((b ++ c) & b))) 
-    SMT.solve(a in a)
-    SMT.solve((b in (b ++ c)) && (b in (b -- c)))
+    expect(false) {SMT.solve(a in ((a ++ b) -- ((b ++ c) & b))).isEmpty}
+    expect(false) {SMT.solve(a in a).isEmpty}
+    expect(false) {SMT.solve((b in (b ++ c)) && (b in (b -- c))).isEmpty}
   }  
 
   test ("SMT relational join") {
@@ -77,14 +77,16 @@ class ExampleAtoms extends FunSuite {
 
     val x = Dummy(1);
     val y: RelExpr = Node(x);
-    SMT.solve(y.sub === x)
-    SMT.solve(y.sub.sub === NULL)
+    expect(false) {SMT.solve(y.sub === x).isEmpty}
+    expect(false) {SMT.solve(y.sub.sub === NULL).isEmpty}
   }
 
   test ("SMT variable translation") {
     val a = Var.makeObject[Atom];
     val b = Dummy(1);
-    expect(b) {val env = SMT.solve( a === ((a === a) ? b ! NULL)); env(a)}
+    val env = SMT.solve( a === ((a === a) ? b ! NULL)); 
+    expect(false) {env.isEmpty}
+    expect(b) {env.get(a)}
   }
 
   case class Record(F: IntExpr, I: BigInt) extends Atom
@@ -93,7 +95,11 @@ class ExampleAtoms extends FunSuite {
     val i = Var.makeInt;
     val a = Var.makeObject[Record];
     val r = Record(i, 1337);
-    val env = SMT.solve( (a === r && (a.F: IntExpr) === (a.I: IntExpr)));
+    val env = SMT.solve( (a === r && (a.F: IntExpr) === (a.I: IntExpr))) match {
+      case Some(e) => e
+      case None => fail()
+    }
+
     expect(1337) {env(i)}; 
     expect(r) {env(a)};
   }
@@ -102,6 +108,13 @@ class ExampleAtoms extends FunSuite {
     import Expr._
     var x = Dummy(1);
     var y = Node(x);
-    SMT.solve(y.sub === x);
+    expect(false) {SMT.solve(y.sub === x).isEmpty}
+    expect(true) {SMT.solve(y.sub === NULL).isEmpty}
+  }
+
+  test ("string expression") {
+    var x = Var.makeObject[Atom];
+    expect(false) {SMT.solve(x === "me").isEmpty}
+    expect(true) {SMT.solve(x === "me" && x === "you").isEmpty}
   }
 }
