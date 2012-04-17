@@ -9,14 +9,14 @@ object ChoiceStmt {
 
   def choose(spec: IntVar => Formula) = {
     val x = Var.makeInt
-    val out = solve(spec(x))
+    val out = solve(spec(x)).get
     out(x).toInt;
   }
 
   def choose(spec: (IntVar, IntVar) => Formula) = {
     val x = Var.makeInt
     val y = Var.makeInt
-    val out = solve(spec(x, y))
+    val out = solve(spec(x, y)).get
     (out(x).toInt, out(y).toInt)
   }
 
@@ -24,7 +24,7 @@ object ChoiceStmt {
     val x = Var.makeInt
     val y = Var.makeInt
     val z = Var.makeInt
-    val out = solve(spec(x,y,z))
+    val out = solve(spec(x,y,z)).get
     (out(x).toInt, out(y).toInt, out(z).toInt)
   }
 }

@@ -25,9 +25,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
   test ("unsatisfiable") {
     new Sceeves {
       val x = pick (_ => false);
-      intercept[UnsatException.type] {
-        println(concretize(x));
-      }
+      intercept[Inconsistency.type] {println(concretize(x));}
     }
   }
 
@@ -223,7 +221,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
     val hidden = (key === 1) ? 1 ! 0;
     expect(1) {concretize(key === 1, hidden)}
     expect(0) {concretize(key === 2, hidden)}
-    intercept[UnsatException.type] {concretize(key === 0, hidden)}
+    intercept[Inconsistency.type] {concretize(key === 0, hidden)}
   }
 
   test("symbolic context") {
@@ -233,7 +231,7 @@ class ExampleSceeves extends FunSuite with Sceeves {
     val y = pick(_ === 2);
     expect(1) {concretize(key === x, hidden)}
     expect(0) {concretize(key === y, hidden)}
-    intercept[UnsatException.type] { concretize(key === 0, hidden) }
+    intercept[Inconsistency.type] { concretize(key === 0, hidden) }
   }
 
   test("deterministic context concretize") {
