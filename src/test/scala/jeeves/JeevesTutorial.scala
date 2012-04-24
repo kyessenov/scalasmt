@@ -22,7 +22,7 @@ class JeevesTutorial extends FunSuite with JeevesLib {
   }
 
   // Some users.
-  val alice = User (getNextUid ());
+  val alice = User (getNextUid ())
   val bob = User (getNextUid ())
   val claire = User (getNextUid ())
 
@@ -52,19 +52,27 @@ class JeevesTutorial extends FunSuite with JeevesLib {
   case object AuthorRole extends UserRole
   case object ReviewerRole extends UserRole
   case object PCRole extends UserRole
+  case object PublicRole extends UserRole
+
+  case class ConfUser (id: Int, role: UserRole) extends JeevesRecord
+  val defaultUser = ConfUser(getNextUid (), PublicRole)
+  val aliceUser = ConfUser(getNextUid (), AuthorRole)
+  val bobUser = ConfUser(getNextUid (), ReviewerRole)
+  val claireUser = ConfUser(getNextUid (), PCRole)
+
+  private val _isInternalF: Formula = {
+    ((CONTEXT.viewer.role === ReviewerRole)
+    || (CONTEXT.viewer.role === PCRole))
+  }
 
   case class Paper(
       private val title: String
-    , private val author: User
+    , private val author: ConfUser
+    , private var reviews: List[Review]
     , private var isAccepted: Boolean ) extends JeevesRecord {
     // Level variables.
     private val _titleL = mkLevel()
     private val _acceptedL = mkLevel()
-
-    private val _isInternalF: Formula = {
-      ((CONTEXT.viewer.role === ReviewerRole)
-      || (CONTEXT.viewer.role === PCRole))
-    }
 
     policy(_titleL
       , !((CONTEXT.viewer === author) || _isInternalF
@@ -89,17 +97,46 @@ class JeevesTutorial extends FunSuite with JeevesLib {
     }
   }
 
+  case class Review(
+      private val reviewer: User
+    , private var score: BigInt
+    , private var body: StringVal)
+    extends JeevesRecord {
+ 
+    private val _reviewerL = mkLevel()
+    policy( _reviewerL
+      , !((CONTEXT.viewer === reviewer)
+        || (CONTEXT.viewer.role === PCRole))
+      , LOW)
+    def getReviewer() = {
+      mkSensitive(_reviewerL, reviewer, defaultUser)
+    }
+
+    private val _scoreL = mkLevel()
+    policy ( _reviewerL
+      , !_isInternalF
+      , LOW)
+    def getScore() = {
+      mkSensitiveInt(_scoreL, score, -1)
+    }
+  }
+
   sealed trait ConfStage extends JeevesRecord
   case object Submission extends ConfStage
   case object Review extends ConfStage
   case object Decision extends ConfStage
   case object Public extends ConfStage
 
-  case class ConfContext(viewer: User, stage: ConfStage) extends JeevesRecord
+  case class ConfContext(viewer: ConfUser, stage: ConfStage)
+    extends JeevesRecord
 
-//  val paper0 = new Paper("Paper", alice)
+  // TODO: Make some papers and reviews.
+  val paper0 = new Paper("Paper", aliceUser, Nil, false)
 
   test ("title policy") {
-  
+    expect("Paper") { paper0.showTitle(ConfContext(aliceUser, Submission)) }
+    expect("") { paper0.showTitle(ConfContext(defaultUser, Submission)) }
+    expect("Paper") { paper0.showTitle(ConfContext(bobUser, Submission)) }
+    expect("Paper") { paper0.showTitle(ConfContext(claireUser, Submission)) }
   }
 }
