@@ -7,3 +7,4 @@ project/boot
 .idea
 *.class
 sbt-launch-0.7.*.jar
+sbt-launcher.jar
