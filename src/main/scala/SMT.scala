@@ -7,7 +7,7 @@ import Debug._
  * Translator to SMT-LIB2.
  * @author kuat
  */
-object UnsatException extends RuntimeException("inconsistent model")
+private object UnsatException extends RuntimeException("inconsistent model")
 
 case class SolverException(msg: String) extends RuntimeException(msg)
 
@@ -31,25 +31,16 @@ trait Solver {
     else 
       throw SolverException("unexpected reply: " + reply)
   }
-  /** Check for another model. */
-  def next(): Boolean = {
-    >("(next-sat)"); 
-    val reply = <();
-    if (reply == "sat")
-      true
-    else if (reply == "unsat")
-      false
-    else
-      throw SolverException("unexpected reply: " + reply)
-  }
-  /** Retrieve the model. */
-  def model(): String = {>("(get-info model)"); <<()}
+  /** Evaluate the term in the current model. */
+  def eval(term: String): String = {>("(get-value (" + term + "))"); <<()}
   /** Assert a boolean condition. */
   def assert(s: String) = command("(assert " + s + ")")
   /** Push a context */
   def push() = command("(push)")
   /** Pop a context */
   def pop() = command("(pop)")
+  /** Reset the solver */
+  def reset() = command("(reset)")
   /** Terminate the solver. */
   def close()
   /** Send to solver. */ 
@@ -57,45 +48,7 @@ trait Solver {
   /** Receive a line from the solver. */
   protected def <(): String
   /** Receive a term from the solver. */
-  protected def <<(): String
-}
-
-trait Logging extends Solver {
-  debug("Logging solver: " + this);
-  abstract override def >(s: String) {debug(s); super.>(s)}
-}
-
-class Z3 extends Solver {
-  import java.io._
-
-  /** Execution cut-off in seconds. */
-  var TIMEOUT = 10;
-  
-  private def BINARY = Option(System.getProperty("smt.home")) match {
-    case Some(path) => path
-    case None => System.getProperty("user.home") + "/opt/z3/bin/z3"
-  }
-
-  private def PARAMS ="-smt2" :: "-m" :: "-t:" + TIMEOUT :: "-in" :: Nil
-  
-  private var process = {
-    val pb = new ProcessBuilder((BINARY :: PARAMS).toArray: _*);
-    pb.redirectErrorStream(true);
-    pb.start;
-  }
-  
-  private var input = new BufferedWriter(new OutputStreamWriter(process.getOutputStream));
-  private var output = new BufferedReader(new InputStreamReader(process.getInputStream));
-  
-  protected def >(s: String) = {input.write(s); input.newLine; input.flush}
-  protected def <() = output.readLine 
-
-  command("""(set-logic QF_NIA)""")
-  command("""(set-option set-param "ELIM_QUANTIFIERS" "true")""")
-
-  override def close {input.close; output.close; process.destroy;}
-
-  protected def <<() = {
+  def <<() = {
     import scala.collection.mutable
     val out = new mutable.ListBuffer[String]
     var balance = 0;
@@ -107,10 +60,63 @@ class Z3 extends Solver {
     out.toList.mkString;
   }
 }
- 
-/**
- * Expression translators.
- */ 
+
+/** Log input and output of a solver. */
+trait Logging extends Solver {
+  abstract override def >(s: String) {debug("> " + s); super.>(s)}
+  abstract override def <() = {val s = super.<(); debug("< " + s); s}
+  abstract override def close() = {super.close(); debug(this + " closed")}
+}
+
+/** Retrieve solver metadata. */
+trait SolverDescription extends Solver {
+  override val toString = {
+    >("(get-info :name)")
+    val name = <()
+      >("(get-info :version)")
+    val version = <()
+      name + version
+  } 
+}
+
+/** Z3 version 3.2+. */
+class Z3 extends Solver {
+  import java.io._
+
+  private def BINARY = Option(System.getProperty("smt.home")) match {
+    case Some(path) => path
+    case None => System.getProperty("user.home") + "/opt/z3/bin/z3"
+  }
+
+  private def PARAMS ="-smt2" :: "-in" :: Nil
+  
+  private var process = {
+    val pb = new ProcessBuilder((BINARY :: PARAMS).toArray: _*);
+    pb.redirectErrorStream(true);
+    pb.start;
+  }
+  
+  private var input = new BufferedWriter(new OutputStreamWriter(process.getOutputStream));
+  private var output = new BufferedReader(new InputStreamReader(process.getInputStream));
+  
+  override def >(s: String) = {input.write(s); input.newLine; input.flush}
+  override def <() = output.readLine 
+  
+  command("(set-option :print-success true)")
+  command("(set-option :produce-models true)")
+  command("(set-option :elim-quantifiers true)")
+  command("(set-option :mbqi false)")
+  command("(set-option :auto-config false)") // disable saturation engine, use all theories
+  command("(set-option :ematching false)")
+
+  override def close() {
+    input.close; 
+    output.close; 
+    process.destroy;
+  }
+}
+
+/** Expression translators to SMT-LIB2. */ 
 object SMT {
   private def variable(v: Var[_])(implicit env: Environment) =
     if (env.has(v))
@@ -132,9 +138,9 @@ object SMT {
     case BoolConditional(c,a,b) => "(if " + formula(c) + " " + 
       formula(a) + " " + formula(b) + ")" 
     case ObjectEq(a,b) => "(= " +  atom(a) + " " + atom(b) + ")"
-    case RelEq(a,b) => "(forall (x Object) (iff " + 
+    case RelEq(a,b) => "(forall ((x Object)) (iff " + 
       set(a)("x", env, sc) + " " + set(b)("x", env, sc) + "))"
-    case RelSub(a,b) => "(forall (x Object) (=> " + 
+    case RelSub(a,b) => "(forall ((x Object)) (=> " + 
       set(a)("x", env, sc) + " " + set(b)("x", env, sc) + "))"
     case v: BoolVar => variable(v)
   }
@@ -144,7 +150,7 @@ object SMT {
     case Minus(a,b) => "(- " + integer(a) + " " + integer(b) + ")"
     case Times(a,b) => "(* " + integer(a) + " " + integer(b) + ")"
     case IntConditional(c,a,b) => "(if " + formula(c) + " " + integer(a) + " " + integer(b) + ")"
-    case IntVal(i) => i.toString
+    case IntVal(i) => if (i >= 0) i.toString else "(- " + i.abs.toString + ")"
     case ObjectIntField(root, f) => "(" + f + " " + atom(root) + ")"
     case v: IntVar => variable(v) 
   }
@@ -168,7 +174,7 @@ object SMT {
     case ObjectSet(os) => if (os.size == 0) "false" else "(or " + os.map("(= " + q + " " + sc.encode(_) + ")").mkString(" ") + ")"
     case RelJoin(root, f) => 
       val r = q + "0";
-      "(exists (" + r + " Object) (and (= " + q + 
+      "(exists ((" + r + " Object)) (and (= " + q + 
         " (" + f + " " + r + ")) " + set(root)(r, env, sc) + "))"
     case v: ObjectSetVar => 
       if (env.has(v))
@@ -177,10 +183,10 @@ object SMT {
         "(" + v + " " + q + ")"
   }
 
-  /** 
-   * Bounded universe of atoms (and their fields)   
-   */
+  private def sanitize(s: String) = 
+    "|" + s.replace("|",".").replace("\\", ".") + "|"
 
+  /* Bounded universe of atoms (and their fields). */
   private object Scope {
     implicit def fromField(f: FieldDesc[_]) = Scope(fields = Set(f))
     implicit def fromVar(v: Var[_]) = Scope(vars = Set(v))
@@ -197,27 +203,37 @@ object SMT {
       this.vars ++ that.vars
     )
 
-    lazy val uniq = objects.toList
-    def encode(o: Atom): String = 
-      if (o == null) 
-        "null"
-      else {
-        assert(uniq.contains(o))
-        "o" + uniq.indexOf(o)
+    lazy val ENCODING: List[(Atom, String)] = {
+      val result = objects.toList.map(o => (o, if (o == null) "|null|" else sanitize(o.toString)))
+      if (result.map(_._2).toSet.size != objects.size)
+        throw SolverException("atom name collision detected")
+      result
+    }
+
+    def encode(o: Atom) = 
+      ENCODING.find(_._1 == o) match {
+        case Some(p) => p._2
+        case _ => throw SolverException("cannot encode atom " + o)
       }
-    def decode(s: String): Atom = 
-      if (s == "null")
-        null
-      else 
-        uniq(s.substring(1).toInt)
+
+    def decode(s: String) = 
+      ENCODING.find(_._2 == (
+        if (s.startsWith("|")) 
+          s 
+        else 
+          "|" + s + "|")) match {
+        case Some(p) => p._1
+        case _ => throw SolverException("cannot decode atom " + s)
+      }
     
     def classId(klas: Class[_]): String = 
-      if (klas == null) "Null" else klas.getName.replace(".","_").replace("$","_")
+      if (klas == null) "Null" else sanitize(klas.getName)
    
-    def atomId(o: Atom): String = 
+    def atomClassId(o: Atom): String = 
       if (o == null) classId(null) else classId(o.getClass)
 
     def size = objects.size + fields.size + vars.size
+    
     override def toString = objects.size + " objects; " + fields.size + " fields; " +  vars.size + " vars"
   }
  
@@ -256,16 +272,13 @@ object SMT {
     else 
       cur
   }
-
-  /**
-   * SMT-LIB 2 translation.
-   */
-
+  
+  /** Encoding of the universe as a prelude. */
   private def prelude(implicit env: Environment, sc: Scope): List[String] = {
     val Scope(objects, fields, vars) = sc;
 
     // declare all objects
-    "(declare-datatypes ((Object " + objects.map("(" + sc.encode(_) + ")").mkString(" ") + ")))" :: 
+    "(declare-datatypes () ((Object " + objects.map(sc.encode(_)).mkString(" ") + ")))" :: 
     // declare all fields
     {for (f <- fields) yield "(declare-fun " + f + {f match {
       case _: ObjectFieldDesc => " (Object) Object)"
@@ -280,9 +293,9 @@ object SMT {
         case _: ObjectSetVar => " (Object) Bool)"
     }}}.toList :::
     // declare types
-    "(declare-datatypes ((Type " + objects.map("(" + sc.atomId(_) + ")").mkString(" ") + ")))" ::
+    "(declare-datatypes () ((Type " + objects.map(sc.atomClassId(_)).mkString(" ") + ")))" ::
     "(declare-fun $type (Object) Type)" ::
-    {for (o <- objects) yield "(assert (= ($type " + sc.encode(o) + ") " + sc.atomId(o) + "))"}.toList:::
+    {for (o <- objects) yield "(assert (= ($type " + sc.encode(o) + ") " + sc.atomClassId(o) + "))"}.toList:::
     {for (v <- vars.collect{case v: ObjectVar[_] if ! env.has(v) => v}) 
       yield "(assert (or " + 
       {for (klas <- objects.map(a => if (a == null) null else a.getClass); 
@@ -308,8 +321,8 @@ object SMT {
    * 
    * Initial scope of objects is used to make sound equality theory for objects.
    */
-  def solve(f: Formula, defaults: List[Formula] = Nil, initial: Set[Atom] = Set(), checkNext: Boolean = true)
-    (implicit env: Environment = DefaultEnv) = {
+  def solve(f: Formula, defaults: List[Formula] = Nil, initial: Set[Atom] = Set())
+    (implicit env: Environment = DefaultEnv): Option[Environment] = {
     implicit val scope = closure(univ(f :: defaults) ++ initial)
 
     debug("\n *** SMT SOLVING STATISTICS *** ")
@@ -317,67 +330,61 @@ object SMT {
     debug("# DEFAULTS: " + defaults.size)
     debug("INITIAL SCOPE: " + initial.size)
     debug("# FORMULA CLAUSES: " + f.clauses.size)
-    val start = System.currentTimeMillis;
 
-    val solver = new Z3 //with Logging
-  
-    for (s <- prelude) solver.command(s)  
-    for (clause <- f.clauses) 
-      solver.assert(formula(clause))
-  
+    implicit var solver = new Z3 with Logging with SolverDescription;
+
+    val start = System.currentTimeMillis
+ 
     try {
-      // invariant: the model is consistent 
-      if (! solver.check) {
-        println(f)
+      for (s <- prelude) 
+        solver.command(s)  
+     
+      for (clause <- f.clauses) 
+        solver.assert(formula(clause))
+      
+      if (! solver.check())
         throw UnsatException
-      }
+      
+      // invariant: the model is consistent 
       for (d <- defaults) {
-        solver.push;
+        solver.push();
         solver.assert(formula(d));
-        if (! solver.check) solver.pop;
+        if (! solver.check()) solver.pop();
       }
-      assert (solver.check)
-      val result = model(solver.model)
+      assert(solver.check())
      
       debug(" *** SUCCESS SOLVING TIME: " + (System.currentTimeMillis - start) + " ms")
       
-      if (checkNext && solver.next) 
-        warning("Multiple assignments") 
+      // retrieve values for the variables      
+      var result = env;
+    
+      for (v <- scope.vars; if (! env.has(v))) {
+        val out = solver.eval(variable(v));
+        // pattern ((v _))
+        val value = out.substring(out.indexOf(" ") + 1, out.length() - 2)
+        v match {
+          case v: IntVar =>
+            val clean = value.replace(" ", "").replace("(", "").replace(")", "");
+            result = result + (v -> BigInt(clean));
+          case v: BoolVar => 
+            result = result + (v -> value.toBoolean);
+          case v: ObjectVar[_] =>
+            result = result + (v -> scope.decode(value));
+          case v: ObjectSetVar =>
+            throw SolverException("unsupported opertion") 
+        }
+      }
 
-      result
+      Some(result);
     } catch {
-      case e =>
+      case UnsatException =>
         debug(" *** FAILED SOLVING TIME: " + (System.currentTimeMillis - start) + " ms")
+        None;
+      case e => 
         throw e;
-    } finally { 
-      solver.close;
+    } finally {
+      solver.close()
     }
   }   
-  
-
-  private def model(model: String)(implicit env: Environment, sc: Scope) = {
-    // parse model
-    var result = env;
-    val PREFIX = "((\"model\" \"";
-    val SUFFIX = "\"))";
-    assert (model.startsWith(PREFIX), "incorrect model prefix");
-    assert (model.endsWith(SUFFIX), "incorrect model suffix");
-    // TODO: more robust S-expresssion parsing
-    val defines = model.substring(PREFIX.size, model.size - SUFFIX.size);
-    val defs = defines.split("\\(define ");
-    for (d <- defs; if d.size > 0 && ! d.startsWith("(")) {
-      val List(name, value) = d.split("\\)|\\s").toList;
-      for (v <- sc.vars; if name == v.toString)
-        v match {
-          case v: IntVar => result = result + (v -> BigInt(value))
-          case v: BoolVar => result = result + (v -> value.toBoolean)
-          case v: ObjectVar[_] => result = result + (v -> sc.decode(value))
-          case v: ObjectSetVar => 
-            // TODO: better S-expression parsing
-            throw new RuntimeException("not implemented")
-        }
-    }
-    result
-  }
-}
+}  
 

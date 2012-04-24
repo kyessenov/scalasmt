@@ -7,6 +7,7 @@ import cap.scalasmt.{Environment => Env}
  * @author kuat
  */
 
+object Inconsistency extends RuntimeException
 trait Sceeves {
   type Defaults = List[Formula]
   type Constraints = List[Formula]
@@ -17,7 +18,10 @@ trait Sceeves {
   private var ENV: Env = DefaultEnv
 
   private def solve(fs: List[Formula]) =  
-    SMT.solve(fs, DEFAULTS, SCOPE)(ENV)
+    SMT.solve(fs, DEFAULTS, SCOPE)(ENV) match {
+      case Some(e) => e
+      case None => throw Inconsistency
+    }
   
   def pick(spec: IntVar => Formula = _ => true): IntVar = {
     val x = Var.makeInt; 
