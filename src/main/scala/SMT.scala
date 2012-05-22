@@ -236,7 +236,14 @@ object SMT {
     
     override def toString = objects.size + " objects; " + fields.size + " fields; " +  vars.size + " vars"
   }
- 
+
+  /**
+   * Returns the set of variables in the "universe" of the current function: the
+   * objects involved in the current computation.
+   *
+   * This computation is necessary because we need to capture all objects relevant
+   * to the objects involved in our constraints.
+   */
   private def univ(f: Expr[_])(implicit env: Environment): Scope = {
     (f: @unchecked) match {
       case f: BinaryExpr[_] => univ(f.left) ++ univ(f.right)
@@ -252,10 +259,15 @@ object SMT {
     }
   }
 
+  /**
+   * Iterate over variables we need until we get to a fixed point.
+   */
   @annotation.tailrec 
   private def closure(cur: Scope)(implicit env: Environment): Scope = {
+    // Gets the fields of each object.
     val fields = for (o <- cur.objects; f <- cur.fields) yield f(o)
 
+    // Adds the values mapped to variables in the scope.
     val variables = {for (v <- cur.vars; if env.has(v)) yield v match {
       case v: ObjectVar[_] => Set(env(v))
       case v: ObjectSetVar => env(v)
@@ -323,6 +335,8 @@ object SMT {
    */
   def solve(f: Formula, defaults: List[Formula] = Nil, initial: Set[Atom] = Set())
     (implicit env: Environment = DefaultEnv): Option[Environment] = {
+    // Compute the scope of our current objects that is the transitive closure of the
+    // objects mentioned in our current set of values.
     implicit val scope = closure(univ(f :: defaults) ++ initial)
 
     debug("\n *** SMT SOLVING STATISTICS *** ")
