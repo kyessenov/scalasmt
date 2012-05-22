@@ -14,7 +14,7 @@ import Debug.debug
 
 trait JeevesLib extends Sceeves {
   trait JeevesRecord extends Atom with Serializable {
-    register(this)
+    // register(this)
   }
   type LevelVar = BoolVar;
   type Symbolic = ObjectExpr[Atom];
