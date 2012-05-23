@@ -32,7 +32,7 @@ class JeevesTutorial extends FunSuite with JeevesLib {
 
     val name: Symbolic = {
       val a = mkLevel ();
-      policy(a, !(CONTEXT === alice), LOW)
+      policy(a, !(CONTEXT === alice))
       mkSensitive(a // Level variable
         , aliceName     // High-confidentiality value
         , anonymousName // Low-confidentiality value
@@ -76,8 +76,7 @@ class JeevesTutorial extends FunSuite with JeevesLib {
 
     policy(_titleL
       , !((CONTEXT.viewer === author) || _isInternalF
-          || ((CONTEXT.stage === Public) && (getIsAccepted ())))
-      , LOW)
+          || ((CONTEXT.stage === Public) && (getIsAccepted ()))) )
     def getTitle() = {
       mkSensitive(_titleL, StringVal(title), StringVal(""))
     }
@@ -106,16 +105,13 @@ class JeevesTutorial extends FunSuite with JeevesLib {
     private val _reviewerL = mkLevel()
     policy( _reviewerL
       , !((CONTEXT.viewer === reviewer)
-        || (CONTEXT.viewer.role === PCRole))
-      , LOW)
+        || (CONTEXT.viewer.role === PCRole)) )
     def getReviewer() = {
       mkSensitive(_reviewerL, reviewer, defaultUser)
     }
 
     private val _scoreL = mkLevel()
-    policy ( _reviewerL
-      , !_isInternalF
-      , LOW)
+    policy ( _reviewerL, !_isInternalF )
     def getScore() = {
       mkSensitiveInt(_scoreL, score, -1)
     }
