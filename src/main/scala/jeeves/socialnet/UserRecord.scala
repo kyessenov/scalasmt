@@ -38,7 +38,7 @@ extends JeevesRecord {
   def remove(u: UserRecord) {friends = friends - u}
   def setLocation(x: BigInt, y: BigInt) {
     val l = mkLevel();
-    policy(l, DISTANCE(CONTEXT, this) >= 10, LOW);
+    policy(l, DISTANCE(CONTEXT, this) >= 10);
     this.X = mkSensitiveInt(l, x, 1000);
     this.Y = mkSensitiveInt(l, y, 1000);
   }
@@ -60,8 +60,8 @@ extends JeevesRecord {
     val me = CONTEXT === this;
     ul match {
       case Anyone => 
-      case Self => policy(l, ! me, LOW)
-      case Friends => policy(l, ! (me || friends.has(CONTEXT)),  LOW);
+      case Self => policy(l, ! me)
+      case Friends => policy(l, ! (me || friends.has(CONTEXT)));
     }
     l
   }

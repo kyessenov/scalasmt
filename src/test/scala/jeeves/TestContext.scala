@@ -14,7 +14,7 @@ class ExampleContext extends FunSuite with JeevesLib {
 
   def mkElt(x: Dummy): Symbolic = {
     val l = mkLevel();
-    policy(l, !(CONTEXT.viewer.ID === IntVal(1)), LOW);
+    policy(l, !(CONTEXT.viewer.ID === IntVal(1)));
     mkSensitive(l, x, defaultVal)
   }
 
@@ -46,7 +46,6 @@ class ExampleContext extends FunSuite with JeevesLib {
     }
   }
 
-  // TODO: Both of these tests seem to fail...
   test ("formula with context id and object field - false") {
     expect(0) { concretize(lowCtxt, CONTEXT~'id) }
     expect(-1) { concretize(lowCtxt, x_s~'ID) }
