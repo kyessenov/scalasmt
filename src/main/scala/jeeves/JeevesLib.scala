@@ -9,7 +9,7 @@ package cap.jeeves
 import cap.scalasmt._
 import scala.collection.immutable.Map;
 import scala.collection.mutable.{Map => MMap};
-import scala.collection.mutable.HashMap;
+import scala.collection.mutable.WeakHashMap;
 import Debug.debug
 
 trait JeevesLib extends Sceeves {
@@ -29,7 +29,7 @@ trait JeevesLib extends Sceeves {
 
   val CONTEXT: Symbolic = pickObject[Atom];
   
-  private var POLICIES: List[(LevelVar, Level, () => Formula)] = Nil
+  private var POLICIES: WeakHashMap[LevelVar, (Level, () => Formula)] = new WeakHashMap()
 
   def mkLevel(): LevelVar = pickBool(_ => true, HIGH)
 
@@ -38,9 +38,17 @@ trait JeevesLib extends Sceeves {
   
   def mkSensitive(lvar: LevelVar, high: Symbolic, low: Symbolic = NULL): Symbolic = 
     lvar ? high ! low
-   
-  def policy(lvar: LevelVar, f: => Formula, value: Level) = {
-    POLICIES = (lvar, value, f _) :: POLICIES
+  
+  /**
+   * Policies take the form policy(a, f), where a is the level variable and f is a
+   * formula that sets a to LOW if f is true.
+   * 
+   * We store policies as a weak hash map between the level variable and a pair of
+   * the value (LOW/HIGH) and the policy.  If the system has no more pointers to the
+   * level variable, then the value/formula pair can be garbage-collected as well.
+   */
+  def policy(lvar: LevelVar, f: => Formula) = {
+    POLICIES += (lvar -> (LOW, f _))
   }
   
   override def assume(f: Formula) = super.assume(Partial.eval(f)(EmptyEnv))
@@ -49,7 +57,7 @@ trait JeevesLib extends Sceeves {
     debug(" *** # POLICIES: " + POLICIES.size)
     val context = (CONTEXT === ctx) && 
       AND(POLICIES.map{
-        case (lvar, level, f) => f() ==> (lvar === level)
+        case (lvar, (level, f)) => f() ==> (lvar === level)
       })
     super.concretize(context, e);
   }
