@@ -16,5 +16,7 @@ class IFlow extends FunSuite with JeevesLib {
   class Label extends JeevesRecord
   case object High extends Label
   case object Low extends Label
-  case object Join(l1: Label, l2: Label) extends Label
+  case class Join(l1: Label, l2: Label) extends Label
+
+  // TODO: Rest of the example.
 }
