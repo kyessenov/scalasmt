@@ -11,8 +11,6 @@ import scala.collection.immutable.Map
  * @author jeanyang
  */
 class Authentication extends FunSuite with JeevesLib {
-  case class StringVal (v: String) extends JeevesRecord
-
   /**
    * Principals, users, and credentials.
    */
@@ -45,9 +43,9 @@ class Authentication extends FunSuite with JeevesLib {
       policy (canWrite
         , !((CONTEXT.prin === Authentication.Admin)
               && (CONTEXT.cred.p === CONTEXT.prin)))
-      def getWriteLoc () = mkSensitive(canWrite, StringVal(_loc), StringVal(""))
+      def getWriteLoc () = mkSensitive(canWrite, _loc, "")
       def showWriteLoc (ctxt: Authentication.AuthContext): String =
-        concretize(ctxt, getWriteLoc ()).asInstanceOf[StringVal].v
+        concretize(ctxt, getWriteLoc ()).asInstanceOf[S].s
     }
   }
 
