@@ -68,7 +68,7 @@ class ExampleSocialNetBackend extends FunSuite {
     
   }
 
-  test ("networks") {
+  test ("network") {
     expect (null) {concretize(jean, kuat.network)}
     expect (MIT) {concretize(kuat, jean.network)}
     
