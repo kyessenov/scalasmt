@@ -34,25 +34,38 @@ class ExampleSocialNetBackend extends FunSuite {
 
   test ("name") {
     expect (null) { concretize(kuat, joe.name) }
+    expect (null) {concretize (jean, joe.name)}
+    
     expect (null) { concretize(joe, jean.name) }
+    expect (null) {concretize (kuat, jean.name)}
+    
     expect (Name("Kuat Yessenov")) { concretize(jean, kuat.name) }
     expect (Name ("Kuat Yessenov")) {concretize (joe, kuat.name)}
-    expect (null) {concretize (kuat, jean.name)}
-    expect (null) {concretize (jean, joe.name)}
   }
 
   test ("getFriends") {
+    expect (Nil) {concretize(kuat, joe.getFriends())}
+    expect (Nil) {concretize (jean, joe.getFriends())}
+    
     expect (kuat :: Nil) {concretize(kuat, jean.getFriends())}
     expect (Nil) {concretize(joe, jean.getFriends())}
-    expect (Nil) {concretize(kuat, joe.getFriends())}
+    
+    expect (jean::joe::Nil) {concretize (joe, kuat.getFriends())}
+    expect (jean::joe::Nil) {concretize (jean, kuat.getFriends())}
   }
 
   test ("isFriends") {
     expect (true) { concretize(jean, jean.isFriends(kuat)) }
-    expect (true) { concretize(kuat, jean.isFriends(kuat)) }
     expect (true) { concretize(joe, joe.isFriends(kuat)) }
-    expect (true) { concretize(jean, kuat.isFriends(joe)) }
+    
+    expect (true) { concretize(kuat, jean.isFriends(kuat)) }
+    
+    expect (false) {concretize (kuat, joe.isFriends(jean))}
     expect (false) { concretize(jean, joe.isFriends(kuat)) }
+    
+    expect (true) { concretize(jean, kuat.isFriends(joe)) }
+    expect (true) {concretize(joe, kuat.isFriends(jean))}
+    
   }
 
   test ("networks") {
