@@ -69,8 +69,20 @@ class ExampleSocialNetBackend extends FunSuite {
   }
 
   test ("networks") {
-    expect (MIT) {concretize(kuat, jean.network)}
     expect (null) {concretize(jean, kuat.network)}
+    expect (MIT) {concretize(kuat, jean.network)}
+    
+    expect (null) {concretize(joe, kuat.network)}
+    expect (MIT) {concretize(kuat, joe.network)}
+    
+    expect (null) {concretize(jean, joe.network)}
+    expect (null) {concretize(joe, jean.network)}
+}
+  
+  test ("users-by-network")
+  {
+    expect (joe::kuat::jean::Nil) {concretize(kuat, getUsersByNetwork(MIT))}
+    expect (joe::Nil) {concretize(joe, getUsersByNetwork(MIT))}
     expect (jean :: Nil) {concretize(jean, getUsersByNetwork(MIT))}
   }
 
