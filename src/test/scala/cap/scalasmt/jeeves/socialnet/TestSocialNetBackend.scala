@@ -36,6 +36,9 @@ class ExampleSocialNetBackend extends FunSuite {
     expect (null) { concretize(kuat, joe.name) }
     expect (null) { concretize(joe, jean.name) }
     expect (Name("Kuat Yessenov")) { concretize(jean, kuat.name) }
+    expect (Name ("Kuat Yessenov")) {concretize (joe, kuat.name)}
+    expect (null) {concretize (kuat, jean.name)}
+    expect (null) {concretize (jean, joe.name)}
   }
 
   test ("getFriends") {
