@@ -8,6 +8,7 @@ import cap.scalasmt.{Environment => Env}
  */
 
 object Inconsistency extends RuntimeException
+
 trait Sceeves {
   type Defaults = List[Formula]
   type Constraints = List[Formula]
