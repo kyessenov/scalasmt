@@ -7,7 +7,7 @@ package cap.jeeves.socialnet
 
 import cap.scalasmt._
 import collection.immutable.ListSet;
-import SocialNetBackend._
+import cap.jeeves.socialnet.SocialNetBackend._
 
 import Expr._
 
