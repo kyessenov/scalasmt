@@ -8,3 +8,7 @@ project/boot
 *.class
 sbt-launch-0.7.*.jar
 sbt-launcher.jar
+*~
+.tmp
+nbproject/private/*
+nbproject/*~
