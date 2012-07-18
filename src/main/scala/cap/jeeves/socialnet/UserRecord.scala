@@ -6,11 +6,9 @@ package cap.jeeves.socialnet
  */
 
 import cap.scalasmt._
-import collection.immutable.ListSet;
 import cap.jeeves.socialnet.SocialNetBackend._
-
-import Expr._
-
+import cap.scalasmt.Expr._
+                                                                                                                                                                                            
 case class Name(s: String) extends JeevesRecord
 case class Email(s: String) extends JeevesRecord
 case class Network(s: String) extends JeevesRecord
