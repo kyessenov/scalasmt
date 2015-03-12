@@ -2,8 +2,8 @@
 This is a playground project for testing ideas on integrating declarative constraints into a general-purpose programming language. SAT, SMT, CSP, and Logic Programming are all welcome as back-ends.
 
 We have the following dependencies:
-  * [http://code.google.com/p/simple-build-tool/][SBT] build tool
-  * [http://research.microsoft.com/en-us/um/redmond/projects/z3/][Z3] version 3.2 or later. In theory, any SMT-LIB2 compliant solver should work.
+  * (SBT)[http://code.google.com/p/simple-build-tool/] build tool
+  * (Z3)[http://research.microsoft.com/en-us/um/redmond/projects/z3/] version 3.2 or later. In theory, any SMT-LIB2 compliant solver should work.
 
 To run the tests:
   * set `smt.home` to wherever you placed Z3 binary ("~/opt/z3" by default)
@@ -34,39 +34,39 @@ The examples are in `test` directory.
 
 Example (Sudoku solver):
 ```scala
-    val M = 3;
-    val N = M * M;
-    
-    // create symbolic variables 
-    val s = Array.ofDim[IntVar](N,N);
-    for (i <- 0 until N; j <- 0 until N) 
-      s(i)(j) = pick (x => 0 < x && x <= N)
-    
-    // all rows are distinct
-    for (i <- 0 until N) 
-      assume(DISTINCT(s(i)))
-
-    // all columns are distinct
-    for (j <- 0 until N) 
-      assume(DISTINCT(for (i <- 0 until N) yield s(i)(j)))
-
-    // all M blocks are distinct
-    for (mi <- 0 until M;
-         mj <- 0 until M)
-      assume(DISTINCT(for (i <- 0 until M; j <- 0 until M) 
-                yield s(M*mi + i)(M*mj + j)))
-    
-    // fill in known cells
-    assert (input.length == N * N);
-    for (i <- 0 until N; 
-         j <- 0 until N;
-         c = input(i*N + j);
-         if c != '0')
-      assume(s(i)(j) === c.toString.toInt);
+ val M = 3;
+ val N = M * M;
  
-    // solve for constraints
-    for (i <- 0 until N; j <- 0 until N) 
-      concretize(s(i)(j));
+ // create symbolic variables 
+ val s = Array.ofDim[IntVar](N,N);
+ for (i <- 0 until N; j <- 0 until N) 
+   s(i)(j) = pick (x => 0 < x && x <= N)
+ 
+ // all rows are distinct
+ for (i <- 0 until N) 
+   assume(DISTINCT(s(i)))
+
+ // all columns are distinct
+ for (j <- 0 until N) 
+   assume(DISTINCT(for (i <- 0 until N) yield s(i)(j)))
+
+ // all M blocks are distinct
+ for (mi <- 0 until M;
+      mj <- 0 until M)
+   assume(DISTINCT(for (i <- 0 until M; j <- 0 until M) 
+             yield s(M*mi + i)(M*mj + j)))
+ 
+ // fill in known cells
+ assert (input.length == N * N);
+ for (i <- 0 until N; 
+      j <- 0 until N;
+      c = input(i*N + j);
+      if c != '0')
+   assume(s(i)(j) === c.toString.toInt);
+
+ // solve for constraints
+ for (i <- 0 until N; j <- 0 until N) 
+   concretize(s(i)(j));
 ```
 
 Example (Jeeves social network):
